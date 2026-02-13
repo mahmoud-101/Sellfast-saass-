@@ -1,0 +1,7 @@
+{
+  "name": "Ebdaa Pro Intelligence",
+  "description": "The complete AI production house for branding, photography, and high-end marketing automation.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
