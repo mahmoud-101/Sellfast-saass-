@@ -1,8 +1,2 @@
-'git' is not recognized as an internal or external command,
-operable program or batch file.
-'git' is not recognized as an internal or external command,
-operable program or batch file.
- 
-"--- NEW PUSH ATTEMPT ---" 
-'git' is not recognized as an internal or external command,
-operable program or batch file.
+To https://github.com/mahmoud-101/Sellfast-saass-.git
+   92fd828..88eaa30  main -> main
