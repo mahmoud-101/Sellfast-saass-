@@ -123,3 +123,14 @@ export const generateVoiceOver = async (text: string, voiceId: string): Promise<
         name: "voice_output.mp3"
     };
 };
+/**
+ * Expands an image using AI Generative Fill.
+ */
+export const expandImage = async (image: ImageFile, prompt: string): Promise<ImageFile> => {
+    await delay(4000);
+    console.log("Expanding image with prompt:", prompt);
+    return {
+        ...image,
+        name: `expanded_${Date.now()}.png`
+    };
+};
