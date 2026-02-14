@@ -134,3 +134,12 @@ export const expandImage = async (image: ImageFile, prompt: string): Promise<Ima
         name: `expanded_${Date.now()}.png`
     };
 };
+/**
+ * Generates speech from text (Mock for now to satisfy build).
+ */
+export const generateSpeech = async (text: string, voiceId: string): Promise<ArrayBuffer> => {
+    await delay(3000);
+    console.log("Generating speech for:", text);
+    // Return a dummy buffer (1 second of silence)
+    return new ArrayBuffer(44100 * 2);
+};
