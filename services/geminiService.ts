@@ -143,3 +143,19 @@ export const generateSpeech = async (text: string, voiceId: string): Promise<Arr
     // Return a dummy buffer (1 second of silence)
     return new ArrayBuffer(44100 * 2);
 };
+
+/**
+ * Analyzes an image to generate a prompt (Mock).
+ */
+export const analyzeImageForPrompt = async (image: ImageFile): Promise<string> => {
+    await delay(3000);
+    return "A futuristic city with flying cars and neon lights, cyberpunk style, high resolution.";
+};
+
+/**
+ * Generates a prompt from text instructions (Mock).
+ */
+export const generatePromptFromText = async (instructions: string): Promise<string> => {
+    await delay(2000);
+    return `Enhanced prompt based on: ${instructions}. Professional photography, 8k resolution, highly detailed.`;
+};
