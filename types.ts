@@ -37,9 +37,9 @@ export interface ProjectBase {
 export interface PowerStudioResult {
     analysis: string;
     visualPrompt: string;
-    socialPlan: Array<{hook: string, caption: string, schedule: string, hashtags: string[]}>;
-    reelsScripts: Array<{scene: string, visualDesc: string, audioOverlay: string}>;
-    adCopies: Array<{platform: string, headline: string, body: string}>;
+    socialPlan: Array<{ hook: string, caption: string, schedule: string, hashtags: string[] }>;
+    reelsScripts: Array<{ scene: string, visualDesc: string, audioOverlay: string }>;
+    adCopies: Array<{ platform: string, headline: string, body: string }>;
     voiceScript: string;
     visual: ImageFile;
     brandingColors: string[];
@@ -298,8 +298,17 @@ export interface CampaignStudioProject extends ProjectBase {
     error: string | null;
 }
 
+export interface VideoStudioProject extends ProjectBase {
+    prompt: string;
+    isGenerating: boolean;
+    videoUrl: string | null;
+    progress: number;
+    statusText: string;
+    error: string | null;
+}
+
 // الأجنحة المدمجة الجديدة لتبسيط الواجهة
-export type AppSuite = 
+export type AppSuite =
     | 'power'
     | 'photography'
     | 'marketing'
@@ -307,7 +316,7 @@ export type AppSuite =
     | 'design'
     | 'ai_lab';
 
-export type AppView = 
+export type AppView =
     | 'landing'
     | 'faq'
     | 'suite_view'

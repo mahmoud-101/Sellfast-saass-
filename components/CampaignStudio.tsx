@@ -8,8 +8,8 @@ import BrandingResultsGrid from './BrandingResultsGrid';
 
 // Scenarios updated for diversity and lifestyle elements, reduced to 3 as requested
 const CAMPAIGN_SCENARIOS = [
-    'Professional Hero Front View (Studio)', 
-    'Lifestyle: A person using the product naturally (Human connection)', 
+    'Professional Hero Front View (Studio)',
+    'Lifestyle: A person using the product naturally (Human connection)',
     'Aesthetic Flat Lay Shot (Environment)'
 ];
 
@@ -39,7 +39,9 @@ const PaletteIcon = () => (
 const CampaignStudio: React.FC<{
     project: CampaignStudioProject;
     setProject: React.Dispatch<React.SetStateAction<CampaignStudioProject>>;
-}> = ({ project, setProject }) => {
+    userId?: string;
+    refreshCredits?: () => void;
+}> = ({ project, setProject, userId, refreshCredits }) => {
 
     if (!project) return null;
     const productImages = project.productImages || [];
@@ -89,28 +91,28 @@ const CampaignStudio: React.FC<{
 
     const onGenerate = useCallback(async () => {
         if (productImages.length === 0) return;
-        
+
         if (mode === 'custom' && project.customIdeas.every(idea => !idea.trim())) {
             setProject(s => ({ ...s, error: 'Please write at least one idea description.' }));
             return;
         }
 
         setProject(s => ({ ...s, isGenerating: true, error: null, results: [] }));
-        
+
         try {
             let analysis = project.productAnalysis || await analyzeProductForCampaign(productImages);
-            
-            const scenarios = mode === 'auto' 
-                ? CAMPAIGN_SCENARIOS 
+
+            const scenarios = mode === 'auto'
+                ? CAMPAIGN_SCENARIOS
                 : project.customIdeas.filter(idea => idea.trim().length > 0);
 
-            const initial = scenarios.map(scenario => ({ 
-                scenario, 
-                image: null, 
-                isLoading: true, 
-                error: null, 
-                editPrompt: '', 
-                isEditing: false 
+            const initial = scenarios.map(scenario => ({
+                scenario,
+                image: null,
+                isLoading: true,
+                error: null,
+                editPrompt: '',
+                isEditing: false
             }));
 
             setProject(s => ({ ...s, results: initial as any }));
@@ -118,21 +120,21 @@ const CampaignStudio: React.FC<{
             const promises = scenarios.map((scenario) => {
                 const moodV = mode === 'auto' ? (CAMPAIGN_MOODS.find(m => m.label === project.selectedMood)?.value || '') : '';
                 const backgroundInfo = project.customPrompt ? ` Style details: ${project.customPrompt}.` : '';
-                
+
                 // Refined constraints to protect existing product text while preventing AI-hallucinated extra text
                 const textConstraint = "STRICTLY PRESERVE all original text, labels, and branding on the product. DO NOT erase or modify existing writing. NO EXTRA generated text in the scene environment.";
 
                 const prompt = mode === 'auto'
                     ? `Professional Commercial Photography: ${analysis}. Scenario: ${scenario}. Style: ${moodV}.${backgroundInfo} PHOTOREALISTIC, HIGH-RESOLUTION, CLEAN IMAGE. ${textConstraint}`
                     : `Professional Product Idea Shoot: ${analysis}. Idea: ${scenario}.${backgroundInfo} PHOTOREALISTIC, STRICT IDENTITY PRESERVATION. ${textConstraint}`;
-                
+
                 return generateImage(productImages, prompt, null)
                     .then(image => ({ scenario, image }))
                     .catch(error => ({ scenario, error: error.message }));
             });
 
             const completed = await Promise.all(promises);
-            
+
             setProject(s => {
                 const nextResults = [...s.results];
                 completed.forEach(res => {
@@ -192,13 +194,13 @@ const CampaignStudio: React.FC<{
             {/* Mode Switcher */}
             <div className="flex justify-center">
                 <div className="bg-black/20 p-1 rounded-2xl border border-white/5 flex gap-1">
-                    <button 
+                    <button
                         onClick={() => setProject(s => ({ ...s, mode: 'auto' }))}
                         className={`px-8 py-2 rounded-xl text-sm font-bold transition-all ${mode === 'auto' ? 'bg-[var(--color-accent)] text-white shadow-lg' : 'text-white/40 hover:text-white/60'}`}
                     >
                         Auto Scenarios
                     </button>
-                    <button 
+                    <button
                         onClick={() => setProject(s => ({ ...s, mode: 'custom' }))}
                         className={`px-8 py-2 rounded-xl text-sm font-bold transition-all ${mode === 'custom' ? 'bg-[var(--color-accent)] text-white shadow-lg' : 'text-white/40 hover:text-white/60'}`}
                     >
@@ -232,18 +234,18 @@ const CampaignStudio: React.FC<{
                                 {mode === 'auto' ? 'Social Media Campaign Studio' : 'Custom Idea Studio'}
                             </h2>
                             <p className="text-sm text-white/50 mt-1">
-                                {mode === 'auto' 
-                                    ? 'AI will generate 3 unique Social Media feed posts based on product use cases.' 
+                                {mode === 'auto'
+                                    ? 'AI will generate 3 unique Social Media feed posts based on product use cases.'
                                     : 'Describe up to 3 custom ideas to generate specialized campaign posts.'}
                             </p>
                         </div>
-                        <button 
-                            onClick={onGenerate} 
-                            disabled={productImages.length === 0 || project.isGenerating} 
+                        <button
+                            onClick={onGenerate}
+                            disabled={productImages.length === 0 || project.isGenerating}
                             className="bg-[var(--color-accent)] hover:bg-[var(--color-accent-dark)] text-white font-black py-4 px-8 rounded-xl shadow-xl shadow-[var(--color-accent)]/20 transition-all active:scale-95 disabled:opacity-30 whitespace-nowrap"
                         >
-                            {project.isGenerating 
-                                ? 'Generating...' 
+                            {project.isGenerating
+                                ? 'Generating...'
                                 : mode === 'auto' ? 'Generate 3 Feed Posts' : 'Generate 3 Custom Posts'}
                         </button>
                     </div>
@@ -253,10 +255,10 @@ const CampaignStudio: React.FC<{
                         <label className="text-[10px] font-black text-[var(--color-accent)] uppercase tracking-widest flex items-center gap-2">
                             <PaletteIcon /> Design Theme & Aesthetics
                         </label>
-                        <textarea 
-                            value={project.customPrompt} 
-                            onChange={(e) => setProject(s => ({ ...s, customPrompt: e.target.value }))} 
-                            placeholder="Specify aesthetics (e.g., 'Luxury marble surfaces with soft rim lighting' or 'Minimalist geometric shadows')" 
+                        <textarea
+                            value={project.customPrompt}
+                            onChange={(e) => setProject(s => ({ ...s, customPrompt: e.target.value }))}
+                            placeholder="Specify aesthetics (e.g., 'Luxury marble surfaces with soft rim lighting' or 'Minimalist geometric shadows')"
                             className="w-full bg-transparent border-none p-0 text-sm font-medium focus:ring-0 placeholder:text-white/20 resize-none min-h-[60px]"
                         />
                     </div>
@@ -267,14 +269,13 @@ const CampaignStudio: React.FC<{
                             <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-1">Quick Mood Preset</label>
                             <div className="flex flex-wrap gap-2">
                                 {CAMPAIGN_MOODS.map(mood => (
-                                    <button 
-                                        key={mood.label} 
-                                        onClick={() => setProject(s => ({ ...s, selectedMood: mood.label }))} 
-                                        className={`px-5 py-2 text-xs font-bold rounded-full transition-all border ${
-                                            project.selectedMood === mood.label 
-                                            ? 'bg-[var(--color-accent)] text-white border-[var(--color-accent)] shadow-lg shadow-[var(--color-accent)]/20' 
-                                            : 'bg-black/20 text-white/60 border-white/5 hover:border-white/20 hover:text-white'
-                                        }`}
+                                    <button
+                                        key={mood.label}
+                                        onClick={() => setProject(s => ({ ...s, selectedMood: mood.label }))}
+                                        className={`px-5 py-2 text-xs font-bold rounded-full transition-all border ${project.selectedMood === mood.label
+                                                ? 'bg-[var(--color-accent)] text-white border-[var(--color-accent)] shadow-lg shadow-[var(--color-accent)]/20'
+                                                : 'bg-black/20 text-white/60 border-white/5 hover:border-white/20 hover:text-white'
+                                            }`}
                                     >
                                         {mood.label}
                                     </button>
@@ -287,7 +288,7 @@ const CampaignStudio: React.FC<{
                             {[0, 1, 2].map((idx) => (
                                 <div key={idx} className="flex flex-col gap-2">
                                     <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-1">Custom Idea {idx + 1}</label>
-                                    <textarea 
+                                    <textarea
                                         value={project.customIdeas[idx]}
                                         onChange={(e) => handleCustomIdeaChange(idx, e.target.value)}
                                         placeholder={`e.g. "Product being unboxed by a stylish hand..."`}
@@ -310,14 +311,14 @@ const CampaignStudio: React.FC<{
                                     </div>
                                 )}
                             </div>
-                            
+
                             {project.isAnalyzing ? (
                                 <div className="flex items-center gap-3 text-emerald-400/60 animate-pulse py-2">
                                     <div className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin"></div>
                                     <span className="text-xs font-bold uppercase tracking-widest">Analyzing your product...</span>
                                 </div>
                             ) : (
-                                <textarea 
+                                <textarea
                                     value={project.productAnalysis || ''}
                                     onChange={(e) => setProject(s => ({ ...s, productAnalysis: e.target.value }))}
                                     rows={4}
@@ -337,14 +338,14 @@ const CampaignStudio: React.FC<{
                         <h3 className="text-xl font-bold text-white tracking-tight">Campaign Gallery</h3>
                         <div className="h-px flex-grow bg-white/5"></div>
                     </div>
-                    <BrandingResultsGrid 
+                    <BrandingResultsGrid
                         results={safeGridResults}
                         gridClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
                         onEditResult={handleEditResult}
                     />
                 </div>
             )}
-            
+
             {project.error && (
                 <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl text-sm text-center">
                     {project.error}

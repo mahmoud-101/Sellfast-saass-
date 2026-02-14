@@ -14,19 +14,21 @@ const MOCKUP_CATEGORIES = [
 ];
 
 const BrandingStudio: React.FC<{
-  project: BrandingStudioProject;
-  setProject: React.Dispatch<React.SetStateAction<BrandingStudioProject>>;
-}> = ({ project, setProject }) => {
+    project: BrandingStudioProject;
+    setProject: React.Dispatch<React.SetStateAction<BrandingStudioProject>>;
+    userId?: string;
+    refreshCredits?: () => void;
+}> = ({ project, setProject, userId, refreshCredits }) => {
 
     const onGenerate = useCallback(async () => {
         if (project.logos.length === 0) return;
-        setProject(s => ({...s, isAnalyzing: true, isGenerating: true, error: null, results: []}));
+        setProject(s => ({ ...s, isAnalyzing: true, isGenerating: true, error: null, results: [] }));
         try {
             const analysis = await analyzeLogoForBranding(project.logos);
-            setProject(s => ({...s, colors: analysis.colors, isAnalyzing: false}));
-            
+            setProject(s => ({ ...s, colors: analysis.colors, isAnalyzing: false }));
+
             const initialResults = MOCKUP_CATEGORIES.map(category => ({ category, image: null, isLoading: true, error: null, editPrompt: '', isEditing: false }));
-            setProject(s => ({...s, results: initialResults as any}));
+            setProject(s => ({ ...s, results: initialResults as any }));
 
             const promises = MOCKUP_CATEGORIES.map(category => {
                 const prompt = `Premium Brand Identity: ${category} using the provided logo. Aspect ratio: ${project.aspectRatio}. 4k resolution, professional presentation.`;
@@ -47,8 +49,8 @@ const BrandingStudio: React.FC<{
                 });
                 return { ...s, results: next };
             });
-        } catch(err) { setProject(s => ({...s, error: 'Analysis failed' })); }
-        finally { setProject(s => ({...s, isGenerating: false})); }
+        } catch (err) { setProject(s => ({ ...s, error: 'Analysis failed' })); }
+        finally { setProject(s => ({ ...s, isGenerating: false })); }
     }, [project.logos, project.aspectRatio, setProject]);
 
     return (
@@ -80,7 +82,7 @@ const BrandingStudio: React.FC<{
                     <div className="flex flex-wrap gap-4 justify-end">
                         {project.colors.map(c => (
                             <div key={c} className="flex flex-col items-center gap-2">
-                                <div className="w-16 h-16 rounded-2xl border border-white/10 shadow-lg" style={{backgroundColor: c}}></div>
+                                <div className="w-16 h-16 rounded-2xl border border-white/10 shadow-lg" style={{ backgroundColor: c }}></div>
                                 <span className="text-[10px] font-mono text-white/50">{c}</span>
                             </div>
                         ))}

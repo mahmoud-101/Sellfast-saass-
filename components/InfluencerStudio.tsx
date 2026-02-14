@@ -5,44 +5,46 @@ import { generateImage } from '../services/geminiService';
 import ImageWorkspace from './ImageWorkspace';
 
 const Personas = [
-    { 
-        id: 'saudi_male', 
-        label: 'شاب سعودي مودرن', 
-        prompt: 'High-end commercial lifestyle photo of a stylish young Saudi man in luxury traditional-modern fusion attire. He is naturally interacting with the product in a minimalist high-tech lounge in Riyadh. Cinematic lighting, soft shadows, photorealistic skin textures, blurry desert-chic background.' 
+    {
+        id: 'saudi_male',
+        label: 'شاب سعودي مودرن',
+        prompt: 'High-end commercial lifestyle photo of a stylish young Saudi man in luxury traditional-modern fusion attire. He is naturally interacting with the product in a minimalist high-tech lounge in Riyadh. Cinematic lighting, soft shadows, photorealistic skin textures, blurry desert-chic background.'
     },
-    { 
-        id: 'egy_female', 
-        label: 'فتاة مصرية عملية', 
-        prompt: 'Professional advertisement photo of a confident young Egyptian businesswoman in a modern Cairo office. She is smiling naturally while holding the product. Soft window daylight, high-end editorial style, depth of field, real office environment background.' 
+    {
+        id: 'egy_female',
+        label: 'فتاة مصرية عملية',
+        prompt: 'Professional advertisement photo of a confident young Egyptian businesswoman in a modern Cairo office. She is smiling naturally while holding the product. Soft window daylight, high-end editorial style, depth of field, real office environment background.'
     },
-    { 
-        id: 'global_model', 
-        label: 'موديل عالمي (فاشن)', 
-        prompt: 'Ultra-luxury fashion editorial. A world-class professional model posing with the product. Minimalist artistic studio environment, dramatic rim lighting, vogue aesthetic, sharp textures, high-fashion color grading.' 
+    {
+        id: 'global_model',
+        label: 'موديل عالمي (فاشن)',
+        prompt: 'Ultra-luxury fashion editorial. A world-class professional model posing with the product. Minimalist artistic studio environment, dramatic rim lighting, vogue aesthetic, sharp textures, high-fashion color grading.'
     },
-    { 
-        id: 'family_home', 
-        label: 'أم في منزل عصري', 
-        prompt: 'Warm, authentic lifestyle photography. A beautiful Arab mother in a luxury modern home kitchen, using the product naturally with a warm smile. Soft morning sun through the window, cozy domestic atmosphere, photorealistic, commercial quality.' 
+    {
+        id: 'family_home',
+        label: 'أم في منزل عصري',
+        prompt: 'Warm, authentic lifestyle photography. A beautiful Arab mother in a luxury modern home kitchen, using the product naturally with a warm smile. Soft morning sun through the window, cozy domestic atmosphere, photorealistic, commercial quality.'
     }
 ];
 
 const InfluencerStudio: React.FC<{
     project: InfluencerStudioProject;
     setProject: React.Dispatch<React.SetStateAction<InfluencerStudioProject>>;
-}> = ({ project, setProject }) => {
+    userId?: string;
+    refreshCredits?: () => void;
+}> = ({ project, setProject, userId, refreshCredits }) => {
 
     const handleGenerate = async () => {
         if (project.productImages.length === 0 || project.selectedPersonas.length === 0) return;
-        
-        setProject(s => ({ 
-            ...s, 
-            isGenerating: true, 
+
+        setProject(s => ({
+            ...s,
+            isGenerating: true,
             results: project.selectedPersonas.map(id => ({
-                id, 
-                image: null, 
-                isLoading: true, 
-                persona: Personas.find(p => p.id === id)?.label || '', 
+                id,
+                image: null,
+                isLoading: true,
+                persona: Personas.find(p => p.id === id)?.label || '',
                 error: null
             }))
         }));
@@ -53,25 +55,25 @@ const InfluencerStudio: React.FC<{
                 // We send the product image + the refined persona prompt
                 const img = await generateImage(project.productImages, persona!.prompt, null, "3:4");
                 return { id, img, error: null };
-            } catch (err) { 
-                return { id, img: null, error: 'فشل التوليد' }; 
+            } catch (err) {
+                return { id, img: null, error: 'فشل التوليد' };
             }
         });
 
         const completed = await Promise.all(promises);
-        
-        setProject(s => ({ 
-            ...s, 
-            isGenerating: false, 
+
+        setProject(s => ({
+            ...s,
+            isGenerating: false,
             results: s.results.map(r => {
                 const comp = completed.find(c => c.id === r.id);
-                return { 
-                    ...r, 
-                    image: comp?.img || null, 
-                    isLoading: false, 
-                    error: comp?.error || null 
+                return {
+                    ...r,
+                    image: comp?.img || null,
+                    isLoading: false,
+                    error: comp?.error || null
                 };
-            }) 
+            })
         }));
     };
 
@@ -93,12 +95,12 @@ const InfluencerStudio: React.FC<{
                             <h2 className="text-4xl font-black text-white">استوديو الموديلز الافتراضيين</h2>
                             <p className="text-white/50 text-lg">اختر الشخصية المناسبة لعلامتك التجارية، وسيقوم المحرك بوضع منتجك في يدها بلمسة احترافية.</p>
                         </div>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {Personas.map(p => (
-                                <button 
-                                    key={p.id} 
-                                    onClick={() => setProject(s => ({ ...s, selectedPersonas: s.selectedPersonas.includes(p.id) ? s.selectedPersonas.filter(i => i !== p.id) : [...s.selectedPersonas, p.id] }))} 
+                                <button
+                                    key={p.id}
+                                    onClick={() => setProject(s => ({ ...s, selectedPersonas: s.selectedPersonas.includes(p.id) ? s.selectedPersonas.filter(i => i !== p.id) : [...s.selectedPersonas, p.id] }))}
                                     className={`p-5 rounded-2xl border-2 transition-all flex items-center justify-between group ${project.selectedPersonas.includes(p.id) ? 'bg-[var(--color-accent)]/20 border-[var(--color-accent)] text-white' : 'bg-white/5 border-white/5 text-white/40 hover:border-white/20'}`}
                                 >
                                     <div className={`w-3 h-3 rounded-full transition-all ${project.selectedPersonas.includes(p.id) ? 'bg-[var(--color-accent)] scale-125 shadow-[0_0_10px_var(--color-accent)]' : 'bg-white/10'}`}></div>
@@ -107,9 +109,9 @@ const InfluencerStudio: React.FC<{
                             ))}
                         </div>
 
-                        <button 
-                            onClick={handleGenerate} 
-                            disabled={project.isGenerating || project.productImages.length === 0 || project.selectedPersonas.length === 0} 
+                        <button
+                            onClick={handleGenerate}
+                            disabled={project.isGenerating || project.productImages.length === 0 || project.selectedPersonas.length === 0}
                             className="h-20 bg-[var(--color-accent)] hover:bg-[var(--color-accent-dark)] text-white font-black rounded-2xl shadow-2xl shadow-[var(--color-accent)]/30 transition-all transform active:scale-95 disabled:opacity-30 disabled:transform-none"
                         >
                             {project.isGenerating ? 'جاري استدعاء الموديل وتجهيز الإضاءة...' : 'توليد الصور الإعلانية الآن'}
@@ -136,7 +138,7 @@ const InfluencerStudio: React.FC<{
                                 )}
                             </div>
                             {res.image && (
-                                <button 
+                                <button
                                     onClick={() => {
                                         const link = document.createElement('a');
                                         link.href = `data:${res.image!.mimeType};base64,${res.image!.base64}`;

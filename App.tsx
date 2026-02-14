@@ -18,7 +18,7 @@ import {
     PhotoshootDirectorProject,
     CopywriterStudioProject
 } from './types';
-import { supabase, getUserCredits } from './lib/supabase';
+import { supabase, getUserCredits, saveProject, loadProjects, SavedProject, deleteProject } from './lib/supabase';
 import UGCStudio from './components/UGCStudio';
 import VoiceOverStudio from './components/VoiceOverStudio';
 import PromptStudio from './components/PromptStudio';
@@ -60,6 +60,8 @@ const initialVideo: VideoStudioProject = {
     id: 'demo-video', name: 'Video Studio', prompt: '', isGenerating: false, videoUrl: null,
     progress: 0, statusText: '', error: null
 };
+
+
 
 const initialPower: PowerStudioProject = {
     id: 'demo-power', name: 'Power Studio', productImages: [], goal: '', targetMarket: '', dialect: 'Gulf',
@@ -149,6 +151,7 @@ const App = () => {
     const [ugcProject, setUGCProject] = useState<UGCStudioProject>(initialUGC);
     const [voiceProject, setVoiceProject] = useState<VoiceOverStudioProject>(initialVoice);
     const [promptProject, setPromptProject] = useState<PromptStudioProject>(initialPrompt);
+    const [videoProject, setVideoProject] = useState<VideoStudioProject>(initialVideo);
     const [powerProject, setPowerProject] = useState<PowerStudioProject>(initialPower);
     const [campaignProject, setCampaignProject] = useState<CampaignStudioProject>(initialCampaign);
     const [controllerProject, setControllerProject] = useState<ControllerStudioProject>(initialController);
@@ -173,6 +176,50 @@ const App = () => {
         const interval = setInterval(refreshCredits, 30000);
         return () => clearInterval(interval);
     }, [user]);
+
+    // Load projects on startup
+    useEffect(() => {
+        if (user?.id && user.id !== 'demo-user') {
+            loadProjects(user.id).then(savedProjects => {
+                if (savedProjects && savedProjects.length > 0) {
+                    console.log("Loaded projects:", savedProjects);
+                    // In a real implementation, we would map these back to the individual state objects
+                }
+            });
+        }
+    }, [user]);
+
+    // Save active project on change
+    useEffect(() => {
+        if (user.id === 'demo-user') return;
+
+        const activeProject = projects[activeProjectIndex];
+        let projectData = null;
+
+        switch (activeProject.name) {
+            case 'UGC Studio': projectData = ugcProject; break;
+            case 'Voice Studio': projectData = voiceProject; break;
+            case 'Prompt Studio': projectData = promptProject; break;
+            case 'Video Studio': projectData = videoProject; break;
+            case 'Power Studio': projectData = powerProject; break;
+            case 'Campaign Studio': projectData = campaignProject; break;
+            case 'Controller Studio': projectData = controllerProject; break;
+            case 'Branding Studio': projectData = brandingProject; break;
+            case 'Plan Studio': projectData = planProject; break;
+            case 'Creator Studio': projectData = creatorProject; break;
+            case 'Influencer Studio': projectData = influencerProject; break;
+            case 'Edit Studio': projectData = editProject; break;
+            case 'Photoshoot Director': projectData = photoshootProject; break;
+            case 'Copywriter Studio': projectData = copywriterProject; break;
+        }
+
+        if (projectData) {
+            const saveTimer = setTimeout(() => {
+                saveProject(user.id, activeProject.name, projectData, activeProject.name);
+            }, 2000);
+            return () => clearTimeout(saveTimer);
+        }
+    }, [ugcProject, voiceProject, promptProject, videoProject, powerProject, campaignProject, controllerProject, brandingProject, planProject, creatorProject, influencerProject, editProject, photoshootProject, copywriterProject, activeProjectIndex]);
 
     const renderActiveStudio = () => {
         const activeProject = projects[activeProjectIndex];
@@ -244,7 +291,7 @@ const App = () => {
 
                 <div className="flex items-center gap-4">
                     <CreditsDisplay credits={credits} />
-                    <ThemeSwitcher theme={theme} setTheme={setTheme} />
+                    <ThemeSwitcher currentTheme={theme} onThemeChange={setTheme} />
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 border-2 border-white/10 shadow-xl"></div>
                 </div>
             </header>

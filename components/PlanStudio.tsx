@@ -35,7 +35,9 @@ const LOGO_IMAGE_URL = "https://i.ibb.co/MDrpHPzS/Artboard-1.png";
 const PlanStudio: React.FC<{
     project: PlanStudioProject;
     setProject: React.Dispatch<React.SetStateAction<PlanStudioProject>>;
-}> = ({ project, setProject }) => {
+    userId?: string;
+    refreshCredits?: () => void;
+}> = ({ project, setProject, userId, refreshCredits }) => {
 
     const [isDownloading, setIsDownloading] = useState<string | null>(null);
 
