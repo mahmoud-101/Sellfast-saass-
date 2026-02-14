@@ -37,68 +37,9 @@
 }
 </script>
     <style>
-      @keyframes glowPulse {
-        0%, 100% { transform: scale(1); opacity: 0.5; }
-        50% { transform: scale(1.3); opacity: 0.8; }
-      }
-      @keyframes float {
-        0%, 100% { transform: translateY(0px); }
-        50% { transform: translateY(-15px); }
-      }
-      .animate-float { animation: float 6s ease-in-out infinite; }
-      :root {
-        --color-glass-bg: rgba(15, 15, 25, 0.6);
-        --color-glass-border: rgba(255, 255, 255, 0.08);
-        --color-glass-shadow: rgba(0, 0, 0, 0.4);
-      }
-      body[data-theme='dark'] {
-        --color-background-base-rgb: 8, 8, 14;
-        --color-background-gradient-start: #0F0F1A;
-        --color-accent-rgb: 99, 102, 241;
-        --color-accent: #6366f1;
-        --color-accent-light: #818cf8;
-        --color-accent-dark: #4f46e5;
-        --color-accent-darker: #3730a3;
-        --color-text-base: #f8fafc;
-        --color-text-base-rgb: 248, 250, 252;
-        --color-text-medium: #cbd5e1;
-        --color-text-secondary: #94a3b8;
-        --color-text-muted: #64748b;
-        --color-text-inverted: #08080E;
-      }
-      html, body { margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; overscroll-behavior-y: contain; }
-      body {
-        background-color: rgb(var(--color-background-base-rgb));
-        background-image: radial-gradient(circle at top right, var(--color-background-gradient-start) 0%, rgb(var(--color-background-base-rgb)) 100%);
-        background-attachment: fixed;
-        color: var(--color-text-base);
-        overflow-x: hidden;
-        font-family: 'Tajawal', sans-serif;
-      }
-      body::before {
-        content: '';
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background-image: radial-gradient(circle at center, rgba(var(--color-accent-rgb), 0.08) 0%, transparent 70%);
-        z-index: -1; animation: glowPulse 10s ease-in-out infinite;
-      }
-      .glass-card {
-        background: var(--color-glass-bg);
-        backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-        border: 1px solid var(--color-glass-border);
-        box-shadow: 0 10px 40px -10px var(--color-glass-shadow);
-      }
-      .glass-input {
-         background: rgba(0, 0, 0, 0.2); 
-         border: 1px solid rgba(255, 255, 255, 0.05);
-         color: var(--color-text-base);
-         transition: all 0.3s ease;
-         font-size: 16px !important;
-      }
-      .glass-input:focus { border-color: var(--color-accent); box-shadow: 0 0 0 4px rgba(var(--color-accent-rgb), 0.1); }
-      ::-webkit-scrollbar { width: 4px; height: 4px; }
-      ::-webkit-scrollbar-track { background: transparent; }
-      ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.2); border-radius: 10px; }
-      .no-tap-highlight { -webkit-tap-highlight-color: transparent; }
+      /* Critical setup styles only - rest in styles.css */
+      html, body { margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+      #root { min-height: 100vh; }
     </style>
   </head>
   <body data-theme="dark">

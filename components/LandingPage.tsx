@@ -17,9 +17,12 @@ const LandingPage: React.FC<{ onGetStarted: () => void }> = ({ onGetStarted }) =
                             <div className="absolute inset-0 bg-purple-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity"></div>
                             <img src={LOGO_IMAGE_URL} alt="Ebdaa Pro" className="h-12 w-auto relative z-10" />
                         </div>
-                        <span className="text-3xl font-black tracking-tight text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-purple-200 transition-all">
-                            إبداع <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-400">برو</span>
-                        </span>
+                        <div className="flex flex-col">
+                            <span className="text-3xl font-black tracking-tight text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-purple-200 transition-all">
+                                إبداع <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-400">برو</span>
+                            </span>
+                            <span className="text-[10px] text-white/30 font-mono tracking-widest uppercase">Premium v2.0</span>
+                        </div>
                     </div>
                     <button
                         onClick={onGetStarted}
