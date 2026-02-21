@@ -10,7 +10,6 @@ import {
     ControllerStudioProject,
     BrandingStudioProject,
     ProjectBase,
-    ImageFile,
     PlanStudioProject,
     CreatorStudioProject,
     InfluencerStudioProject,
@@ -18,7 +17,8 @@ import {
     PhotoshootDirectorProject,
     CopywriterStudioProject
 } from './types';
-import { supabase, getUserCredits, saveProject, loadProjects, SavedProject, deleteProject } from './lib/supabase';
+import { supabase, getUserCredits, saveProject, loadProjects, deleteProject } from './lib/supabase';
+import Auth from './components/Auth';
 import UGCStudio from './components/UGCStudio';
 import VoiceOverStudio from './components/VoiceOverStudio';
 import PromptStudio from './components/PromptStudio';
@@ -124,9 +124,32 @@ const initialCopywriter: CopywriterStudioProject = {
 
 const App = () => {
     const [view, setView] = useState<AppView>('landing');
-    const [user, setUser] = useState({ id: 'demo-user', email: 'demo@ebdaapro.com' });
-    const [credits, setCredits] = useState(999);
+    const [user, setUser] = useState<{ id: string; email: string } | null>(null);
+    const [authLoading, setAuthLoading] = useState(true);
+    const [credits, setCredits] = useState(0);
     const [theme, setTheme] = useState('dark');
+
+    // Listen for real Supabase auth changes
+    useEffect(() => {
+        // Get initial session
+        supabase?.auth.getSession().then(({ data: { session } }) => {
+            if (session?.user) {
+                setUser({ id: session.user.id, email: session.user.email ?? '' });
+            }
+            setAuthLoading(false);
+        });
+
+        // Subscribe to auth state changes
+        const { data: { subscription } } = supabase?.auth.onAuthStateChange((_event, session) => {
+            if (session?.user) {
+                setUser({ id: session.user.id, email: session.user.email ?? '' });
+            } else {
+                setUser(null);
+            }
+        }) ?? { data: { subscription: { unsubscribe: () => { } } } };
+
+        return () => subscription.unsubscribe();
+    }, []);
 
     // Project State
     const [activeProjectIndex, setActiveProjectIndex] = useState(0);
@@ -163,96 +186,95 @@ const App = () => {
     const [photoshootProject, setPhotoshootProject] = useState<PhotoshootDirectorProject>(initialPhotoshoot);
     const [copywriterProject, setCopywriterProject] = useState<CopywriterStudioProject>(initialCopywriter);
 
-    const refreshCredits = async () => {
+    const refreshCredits = useCallback(async () => {
         if (user?.id) {
             const c = await getUserCredits(user.id);
             if (c !== null) setCredits(c);
         }
-    };
+    }, [user?.id]);
 
     useEffect(() => {
         refreshCredits();
-        // Refresh credits every 30 seconds
         const interval = setInterval(refreshCredits, 30000);
         return () => clearInterval(interval);
-    }, [user]);
+    }, [refreshCredits]);
 
     // Load projects on startup
     useEffect(() => {
-        if (user?.id && user.id !== 'demo-user') {
+        if (user?.id) {
             loadProjects(user.id).then(savedProjects => {
                 if (savedProjects && savedProjects.length > 0) {
                     console.log("Loaded projects:", savedProjects);
-                    // In a real implementation, we would map these back to the individual state objects
                 }
             });
         }
-    }, [user]);
+    }, [user?.id]);
 
-    // Save active project on change
+    // Auto-save active project on change (debounced 2s)
     useEffect(() => {
-        if (user.id === 'demo-user') return;
+        if (!user?.id) return;
 
         const activeProject = projects[activeProjectIndex];
-        let projectData = null;
+        let projectData: Record<string, unknown> | null = null;
 
         switch (activeProject.name) {
-            case 'UGC Studio': projectData = ugcProject; break;
-            case 'Voice Studio': projectData = voiceProject; break;
-            case 'Prompt Studio': projectData = promptProject; break;
-            case 'Video Studio': projectData = videoProject; break;
-            case 'Power Studio': projectData = powerProject; break;
-            case 'Campaign Studio': projectData = campaignProject; break;
-            case 'Controller Studio': projectData = controllerProject; break;
-            case 'Branding Studio': projectData = brandingProject; break;
-            case 'Plan Studio': projectData = planProject; break;
-            case 'Creator Studio': projectData = creatorProject; break;
-            case 'Influencer Studio': projectData = influencerProject; break;
-            case 'Edit Studio': projectData = editProject; break;
-            case 'Photoshoot Director': projectData = photoshootProject; break;
-            case 'Copywriter Studio': projectData = copywriterProject; break;
+            case 'UGC Studio': projectData = ugcProject as unknown as Record<string, unknown>; break;
+            case 'Voice Studio': projectData = voiceProject as unknown as Record<string, unknown>; break;
+            case 'Prompt Studio': projectData = promptProject as unknown as Record<string, unknown>; break;
+            case 'Video Studio': projectData = videoProject as unknown as Record<string, unknown>; break;
+            case 'Power Studio': projectData = powerProject as unknown as Record<string, unknown>; break;
+            case 'Campaign Studio': projectData = campaignProject as unknown as Record<string, unknown>; break;
+            case 'Controller Studio': projectData = controllerProject as unknown as Record<string, unknown>; break;
+            case 'Branding Studio': projectData = brandingProject as unknown as Record<string, unknown>; break;
+            case 'Plan Studio': projectData = planProject as unknown as Record<string, unknown>; break;
+            case 'Creator Studio': projectData = creatorProject as unknown as Record<string, unknown>; break;
+            case 'Influencer Studio': projectData = influencerProject as unknown as Record<string, unknown>; break;
+            case 'Edit Studio': projectData = editProject as unknown as Record<string, unknown>; break;
+            case 'Photoshoot Director': projectData = photoshootProject as unknown as Record<string, unknown>; break;
+            case 'Copywriter Studio': projectData = copywriterProject as unknown as Record<string, unknown>; break;
         }
 
         if (projectData) {
             const saveTimer = setTimeout(() => {
-                saveProject(user.id, activeProject.name, projectData, activeProject.name);
+                saveProject(user.id, activeProject.name, projectData!, activeProject.name);
             }, 2000);
             return () => clearTimeout(saveTimer);
         }
-    }, [ugcProject, voiceProject, promptProject, videoProject, powerProject, campaignProject, controllerProject, brandingProject, planProject, creatorProject, influencerProject, editProject, photoshootProject, copywriterProject, activeProjectIndex]);
+    }, [ugcProject, voiceProject, promptProject, videoProject, powerProject, campaignProject, controllerProject, brandingProject, planProject, creatorProject, influencerProject, editProject, photoshootProject, copywriterProject, activeProjectIndex, user?.id]);
 
     const renderActiveStudio = () => {
         const activeProject = projects[activeProjectIndex];
+        const userId = user!.id; // user is always non-null here (guarded above)
 
         switch (activeProject.name) {
             case 'Power Studio':
-                return <PowerStudio project={powerProject} setProject={setPowerProject} userId={user.id} refreshCredits={refreshCredits} />;
+                return <PowerStudio project={powerProject} setProject={setPowerProject} userId={userId} refreshCredits={refreshCredits} />;
             case 'UGC Studio':
-                return <UGCStudio project={ugcProject} setProject={setUGCProject} userId={user.id} refreshCredits={refreshCredits} />;
+                return <UGCStudio project={ugcProject} setProject={setUGCProject} userId={userId} refreshCredits={refreshCredits} />;
             case 'Voice Studio':
-                return <VoiceOverStudio project={voiceProject} setProject={setVoiceProject} userId={user.id} refreshCredits={refreshCredits} />;
+                return <VoiceOverStudio project={voiceProject} setProject={setVoiceProject} userId={userId} refreshCredits={refreshCredits} />;
             case 'Video Studio':
-                return <VideoStudio userId={user.id} refreshCredits={refreshCredits} />;
+                return <VideoStudio userId={userId} refreshCredits={refreshCredits} />;
             case 'Campaign Studio':
-                return <CampaignStudio project={campaignProject} setProject={setCampaignProject} userId={user.id} refreshCredits={refreshCredits} />;
+                return <CampaignStudio project={campaignProject} setProject={setCampaignProject} userId={userId} refreshCredits={refreshCredits} />;
             case 'Branding Studio':
-                return <BrandingStudio project={brandingProject} setProject={setBrandingProject} userId={user.id} refreshCredits={refreshCredits} />;
+                return <BrandingStudio project={brandingProject} setProject={setBrandingProject} userId={userId} refreshCredits={refreshCredits} />;
             case 'Prompt Studio':
                 return <PromptStudio project={promptProject} setProject={setPromptProject} />;
             case 'Controller Studio':
                 return <ControllerStudio project={controllerProject} setProject={setControllerProject} />;
             case 'Plan Studio':
-                return <PlanStudio project={planProject} setProject={setPlanProject} userId={user.id} refreshCredits={refreshCredits} />;
+                return <PlanStudio project={planProject} setProject={setPlanProject} userId={userId} refreshCredits={refreshCredits} />;
             case 'Creator Studio':
-                return <CreatorStudio project={creatorProject} setProject={setCreatorProject} userId={user.id} refreshCredits={refreshCredits} />;
+                return <CreatorStudio project={creatorProject} setProject={setCreatorProject} userId={userId} refreshCredits={refreshCredits} />;
             case 'Influencer Studio':
-                return <InfluencerStudio project={influencerProject} setProject={setInfluencerProject} userId={user.id} refreshCredits={refreshCredits} />;
+                return <InfluencerStudio project={influencerProject} setProject={setInfluencerProject} userId={userId} refreshCredits={refreshCredits} />;
             case 'Edit Studio':
                 return <EditStudio project={editProject} setProject={setEditProject} />;
             case 'Photoshoot Director':
-                return <PhotoshootDirector project={photoshootProject} setProject={setPhotoshootProject} userId={user.id} refreshCredits={refreshCredits} />;
+                return <PhotoshootDirector project={photoshootProject} setProject={setPhotoshootProject} userId={userId} refreshCredits={refreshCredits} />;
             case 'Copywriter Studio':
-                return <CopywriterStudio project={copywriterProject} setProject={setCopywriterProject} userId={user.id} refreshCredits={refreshCredits} />;
+                return <CopywriterStudio project={copywriterProject} setProject={setCopywriterProject} userId={userId} refreshCredits={refreshCredits} />;
             default:
                 return <div className="text-white text-center p-20">Select a studio to begin</div>;
         }
@@ -276,6 +298,26 @@ const App = () => {
         setView('suite_view');
     };
 
+    const handleSignOut = async () => {
+        await supabase?.auth.signOut();
+        setUser(null);
+        setView('landing');
+    };
+
+    // Show loading spinner while checking auth
+    if (authLoading) {
+        return (
+            <div className="min-h-screen bg-[#08080e] flex items-center justify-center">
+                <div className="w-10 h-10 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
+            </div>
+        );
+    }
+
+    // Show auth screen if not logged in
+    if (!user) {
+        return <Auth />;
+    }
+
     if (view === 'landing') {
         return <LandingPage onGetStarted={handleGetStarted} />;
     }
@@ -292,7 +334,13 @@ const App = () => {
                 <div className="flex items-center gap-4">
                     <CreditsDisplay credits={credits} />
                     <ThemeSwitcher currentTheme={theme} onThemeChange={setTheme} />
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 border-2 border-white/10 shadow-xl"></div>
+                    <button
+                        onClick={handleSignOut}
+                        title={user.email}
+                        className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 border-2 border-white/10 shadow-xl hover:opacity-80 transition-opacity flex items-center justify-center text-white text-xs font-black"
+                    >
+                        {user.email.charAt(0).toUpperCase()}
+                    </button>
                 </div>
             </header>
 

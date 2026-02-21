@@ -35,7 +35,7 @@ const SetupGuide = () => (
       <div style={{ fontSize: '3rem', marginBottom: '20px' }}>🚀</div>
       <h1 style={{ fontSize: '2rem', fontWeight: '900', color: '#6366f1', marginBottom: '15px' }}>مرحباً بك في إبداع برو</h1>
       <p style={{ color: '#94a3b8', lineHeight: '1.8', marginBottom: '25px' }}>
-        لتبدأ العمل، يرجى إضافة مفاتيح الربط في إعدادات <b>Netlify</b> (Environment variables).<br />
+        لتبدأ العمل، يرجى إضافة مفاتيح الربط في إعدادات <b>Netlify / Amplify</b> (Environment variables).<br />
         هذه الخطوة ضرورية لتشغيل الذكاء الاصطناعي وقاعدة البيانات.
       </p>
 
@@ -48,11 +48,11 @@ const SetupGuide = () => (
         fontSize: '0.85rem',
         border: '1px solid rgba(255,255,255,0.05)'
       }}>
-        <div style={{ color: '#818cf8', fontWeight: 'bold', marginBottom: '5px' }}># المطلوب في Netlify:</div>
+        <div style={{ color: '#818cf8', fontWeight: 'bold', marginBottom: '5px' }}># المطلوب في إعدادات النشر:</div>
         <code style={{ color: '#f8fafc' }}>
-          API_KEY=AIza...<br />
-          SUPABASE_URL=https://vfgpzqdsnmmerfpyypve.supabase.co<br />
-          SUPABASE_ANON_KEY=sb_pub...
+          VITE_GEMINI_API_KEY=AIza...<br />
+          VITE_SUPABASE_URL=https://xxx.supabase.co<br />
+          VITE_SUPABASE_ANON_KEY=eyJ...
         </code>
       </div>
 
@@ -80,12 +80,11 @@ const SetupGuide = () => (
   </div>
 );
 
+// Check config using Vite's import.meta.env (VITE_ prefix required)
 const checkConfig = () => {
-  // فحص القيم سواء كانت في process.env أو window.process.env
-  const env = (window as any).process?.env || (process as any).env || {};
-  const api = env.API_KEY;
-  const sUrl = env.SUPABASE_URL;
-  return api && api.length > 10 && sUrl && sUrl.includes('supabase.co');
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  return apiKey && apiKey.length > 10 && supabaseUrl && supabaseUrl.includes('supabase.co');
 };
 
 if (checkConfig()) {

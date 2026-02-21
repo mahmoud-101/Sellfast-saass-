@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ebdaa Pro - Visual Preview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;900&display=swap"
+        rel="stylesheet">
+    <style>
+        /* Embedded CSS from styles.css */
+        :root {
+            --bg-deep: #030014;
+            --bg-card: rgba(255, 255, 255, 0.03);
+            --color-accent: #6d28d9;
+            --color-accent-light: #a78bfa;
+            --color-accent-glow: rgba(124, 58, 237, 0.5);
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-highlight: rgba(255, 255, 255, 0.15);
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-primary);
+            font-family: 'Tajawal', sans-serif;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        @keyframes aurora {
+            0% {
+                background-position: 50% 50%, 50% 50%;
+            }
+
+            100% {
+                background-position: 350% 50%, 350% 50%;
+            }
+        }
+
+        .aurora-bg {
+            position: absolute;
+            inset: -50%;
+            background-image:
+                conic-gradient(from 0deg at 50% 50%, #1a0b2e 0deg, transparent 60deg, #2e1065 120deg, transparent 180deg, #1a0b2e 240deg, transparent 300deg, #2e1065 360deg),
+                radial-gradient(circle at 50% 50%, rgba(124, 58, 237, 0.1) 0%, transparent 50%);
+            filter: blur(80px);
+            opacity: 0.6;
+            animation: aurora 60s linear infinite;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .animate-float-delayed {
+            animation: float 7s ease-in-out infinite;
+            animation-delay: 2s;
+        }
+
+        .glass-card-premium {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card-premium::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--glass-highlight), transparent);
+            opacity: 0.5;
+        }
+
+        .btn-shiny {
+            position: relative;
+            background: linear-gradient(to right, #4f46e5, #7c3aed);
+            color: white;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            z-index: 1;
+        }
+
+        .btn-shiny::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s ease;
+            z-index: -1;
+        }
+
+        .btn-shiny:hover::after {
+            left: 100%;
+        }
+
+        .btn-shiny:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px var(--color-accent-glow);
+        }
+
+        .text-gradient {
+            background: linear-gradient(to right, #c4b5fd, #a78bfa, #818cf8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="min-h-screen relative overflow-x-hidden font-tajawal selection:bg-purple-500/30">
+        <!-- Dynamic Background -->
+        <div class="aurora-bg"></div>
+
+        <!-- Header -->
+        <nav class="fixed top-0 w-full z-[100] backdrop-blur-xl bg-black/10 border-b border-white/5">
+            <div class="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between">
+                <div class="flex items-center gap-4 group cursor-pointer">
+                    <div class="relative">
+                        <div
+                            class="absolute inset-0 bg-purple-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity">
+                        </div>
+                        <img src="https://i.ibb.co/MDrpHPzS/Artboard-1.png" alt="Ebdaa Pro"
+                            class="h-12 w-auto relative z-10" />
+                    </div>
+                    <div class="flex flex-col">
+                        <span
+                            class="text-3xl font-black tracking-tight text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-purple-200 transition-all">
+                            إبداع <span
+                                class="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-400">برو</span>
+                        </span>
+                        <span class="text-[10px] text-white/30 font-mono tracking-widest uppercase">Premium v2.0</span>
+                    </div>
+                </div>
+                <!-- Login Button -->
+                <button
+                    class="btn-shiny px-8 py-3 rounded-2xl font-bold text-sm shadow-lg tracking-wide hover:shadow-purple-500/20">
+                    دخول المنصة
+                </button>
+            </div>
+        </nav>
+
+        <!-- Hero Section -->
+        <section class="pt-48 pb-32 px-6 relative z-10">
+            <div class="max-w-6xl mx-auto text-center space-y-10">
+                <div class="animate-float">
+                    <div
+                        class="inline-flex px-6 py-2 bg-white/5 backdrop-blur-md border border-white/10 rounded-full text-xs font-bold uppercase tracking-[0.3em] text-purple-300 shadow-xl shadow-purple-900/20 mb-8">
+                        ✨ مستقبلك الإبداعي يبدأ هنا
+                    </div>
+                </div>
+
+                <h1
+                    class="text-7xl md:text-9xl font-black leading-[0.9] tracking-tighter mix-blend-overlay opacity-50 absolute top-20 left-1/2 -translate-x-1/2 w-full pointer-events-none select-none">
+                    CREATIVE
+                </h1>
+
+                <h1
+                    class="text-6xl md:text-8xl font-black leading-tight tracking-tighter relative z-10 drop-shadow-2xl">
+                    امتلك <span class="text-gradient">قوة الذكاء الاصطناعي</span><br /> في استوديو واحد
+                </h1>
+
+                <p class="text-xl md:text-2xl text-white/60 max-w-3xl mx-auto leading-relaxed font-light">
+                    منصة واحدة تجمع لك المصور، المصمم، والمسوق المحترف. <br />
+                    <span class="text-purple-300 font-medium">وفر الوقت، ضاعف الإنتاجية، وأبهر عملاءك.</span>
+                </p>
+
+                <div class="flex flex-wrap justify-center gap-6 pt-8">
+                    <button
+                        class="btn-shiny px-12 py-6 text-xl font-bold rounded-2xl min-w-[200px] hover:scale-105 transition-transform">
+                        ابدأ الآن مجاناً 🚀
+                    </button>
+                    <a href="#"
+                        class="px-12 py-6 glass-card-premium text-white text-xl font-bold rounded-2xl hover:bg-white/5 transition-all min-w-[200px] flex items-center justify-center gap-3 group">
+                        <span>تواصل معنا</span>
+                        <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                                d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="py-24 px-6 relative">
+            <div class="max-w-7xl mx-auto">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Card 1 -->
+                    <div
+                        class="glass-card-premium p-8 rounded-[2rem] group hover:-translate-y-2 transition-transform duration-300 cursor-default animate-float">
+                        <div
+                            class="w-16 h-16 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-3xl mb-6 shadow-lg group-hover:scale-110 transition-transform">
+                            ⚡
+                        </div>
+                        <h3 class="text-2xl font-bold mb-3 text-white">Power Studio</h3>
+                        <p class="text-white/50 leading-relaxed text-sm">تحليل شامل للمنتجات، تصميم صور، وكتابة خطط
+                            محتوى في ثوانٍ.</p>
+                    </div>
+                    <!-- Card 2 -->
+                    <div
+                        class="glass-card-premium p-8 rounded-[2rem] group hover:-translate-y-2 transition-transform duration-300 cursor-default animate-float-delayed">
+                        <div
+                            class="w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-3xl mb-6 shadow-lg group-hover:scale-110 transition-transform">
+                            👗
+                        </div>
+                        <h3 class="text-2xl font-bold mb-3 text-white">Virtual Models</h3>
+                        <p class="text-white/50 leading-relaxed text-sm">موديلز ذكاء اصطناعي سعوديين، مصريين، وعالميين
+                            لعرض منتجاتك.</p>
+                    </div>
+                    <!-- Card 3 -->
+                    <div
+                        class="glass-card-premium p-8 rounded-[2rem] group hover:-translate-y-2 transition-transform duration-300 cursor-default animate-float">
+                        <div
+                            class="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-3xl mb-6 shadow-lg group-hover:scale-110 transition-transform">
+                            🎬
+                        </div>
+                        <h3 class="text-2xl font-bold mb-3 text-white">AI Cinema</h3>
+                        <p class="text-white/50 leading-relaxed text-sm">إنتاج فيديوهات إعلانية سينمائية (Reels) تجذب
+                            الانتباه.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="py-12 text-center relative z-10">
+            <p className="text-white/20 text-sm font-medium">
+                © 2025 Ebdaa Pro. Designed for the Future.
+            </p>
+        </footer>
+    </div>
+
+</body>
+
+</html>

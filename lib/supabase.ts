@@ -1,17 +1,11 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// توحيد جلب متغيرات البيئة لضمان العمل في كل البيئات (Vite, Netlify, process)
-const getEnv = (key: string) => {
-    if (typeof window !== 'undefined' && (window as any).process?.env?.[key]) return (window as any).process.env[key];
-    if (typeof process !== 'undefined' && process.env?.[key]) return process.env[key];
-    return '';
-};
+// Use Vite's import.meta.env for safe environment variable access
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-const supabaseUrl = getEnv('SUPABASE_URL');
-const supabaseAnonKey = getEnv('SUPABASE_ANON_KEY');
-
-// التحقق من الإعدادات قبل إنشاء العميل لمنع runtime errors
+// Only create the client if both env variables are properly configured
 const isConfigured = supabaseUrl && supabaseAnonKey && supabaseUrl.includes('supabase.co');
 
 export const supabase = isConfigured
@@ -19,7 +13,7 @@ export const supabase = isConfigured
         auth: {
             persistSession: true,
             autoRefreshToken: true,
-            detectSessionInUrl: true // ضروري جداً لتأكيد الإيميل
+            detectSessionInUrl: true
         }
     })
     : null;
@@ -40,7 +34,7 @@ const ADMIN_EMAIL = 'telmahmoud4@gmail.com';
  * جلب الرصيد مع معالجة حالة "أول دخول" للمستخدم وحالة "الآدمن"
  */
 export const getUserCredits = async (userId: string): Promise<number> => {
-    if (!supabase || userId === 'dev-user') return 9999;
+    if (!supabase || userId === 'demo-user') return 999;
 
     try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -53,6 +47,7 @@ export const getUserCredits = async (userId: string): Promise<number> => {
             .single();
 
         if (error) {
+            // New user — create profile with 10 starter credits
             if (error.code === 'PGRST116') {
                 const { data: newData } = await supabase
                     .from('profiles')
@@ -64,13 +59,13 @@ export const getUserCredits = async (userId: string): Promise<number> => {
             return 0;
         }
         return data?.credits ?? 0;
-    } catch (e) {
+    } catch {
         return 0;
     }
 };
 
 export const deductCredits = async (userId: string, amount: number): Promise<boolean> => {
-    if (!supabase || userId === 'dev-user') return true;
+    if (!supabase || userId === 'demo-user') return true;
 
     try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -90,7 +85,7 @@ export const deductCredits = async (userId: string, amount: number): Promise<boo
             .eq('id', userId);
 
         return !error;
-    } catch (e) {
+    } catch {
         return false;
     }
 };
@@ -114,14 +109,13 @@ export const getAdminStats = async () => {
     const totalCredits = data?.reduce((s, i) => s + (i.credits || 0), 0) || 0;
     return { totalUsers: count || 0, totalCredits, activeToday: Math.floor((count || 0) * 0.1) };
 };
-// ... existing code ...
 
 export interface SavedProject {
     id: string;
     user_id: string;
-    name: string; // Project Name (e.g. "My UGC Campaign")
-    studio: string; // Studio Type (e.g. "UGC Studio")
-    data: any; // The full JSON state
+    name: string;
+    studio: string;
+    data: Record<string, unknown>;
     created_at: string;
     updated_at: string;
 }
@@ -129,28 +123,16 @@ export interface SavedProject {
 /**
  * حفظ مشروع (إنشاء جديد أو تحديث موجود)
  */
-export const saveProject = async (userId: string, studio: string, data: any, name: string = 'Untitled Project') => {
+export const saveProject = async (userId: string, studio: string, data: Record<string, unknown>, name: string = 'Untitled Project') => {
     if (!supabase) return null;
 
-    // Check if project already has an ID in the data, if so update it
-    const projectId = data.id && data.id.length > 10 ? data.id : undefined; // simple check to avoid 'demo-...' ids if we want real uuids
-
-    // For now, we will use the 'id' from the data as the primary key if it's a valid UUID, otherwise let Supabase generate one
-    // But since our app uses 'demo-' IDs initially, we need a strategy.
-    // Strategy: If ID starts with 'demo-', treat as new insert. If UUID, update.
-
     try {
-        const isDemo = data.id?.startsWith('demo');
+        const isDemo = typeof data.id === 'string' && data.id.startsWith('demo');
 
         if (isDemo) {
             const { data: newProj, error } = await supabase
                 .from('projects')
-                .insert({
-                    user_id: userId,
-                    studio: studio,
-                    name: name,
-                    data: data
-                })
+                .insert({ user_id: userId, studio, name, data })
                 .select()
                 .single();
 
@@ -159,11 +141,7 @@ export const saveProject = async (userId: string, studio: string, data: any, nam
         } else {
             const { data: updatedProj, error } = await supabase
                 .from('projects')
-                .update({
-                    data: data,
-                    name: name,
-                    updated_at: new Date().toISOString()
-                })
+                .update({ data, name, updated_at: new Date().toISOString() })
                 .eq('id', data.id)
                 .select()
                 .single();
