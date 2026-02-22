@@ -10,16 +10,33 @@ export interface AudioFile {
   name: string;
 }
 
+export interface SavedAsset {
+  id: string;
+  user_id: string;
+  asset_type: string;
+  url: string;
+  config: any;
+  created_at: string;
+}
+
 export interface ProjectBase {
   id: string;
   name: string;
 }
 
+<<<<<<< HEAD
 export type AppView = 
     | 'landing' | 'dashboard' | 'daily_pack' | 'photoshoot' | 'video_studio' | 'plan_studio'
     | 'branding_mockups' | 'strategy_engine' | 'trend_engine' | 'brand_kit' | 'pricing'
     | 'suite_view' | 'power' | 'ads_studio' | 'faq' | 'privacy_policy' | 'terms_of_service'
     | 'production_factory' | 'ugc_studio' | 'admin' | 'performance_studio';
+=======
+export type AppView =
+  | 'landing' | 'dashboard' | 'daily_pack' | 'photoshoot' | 'video_studio' | 'plan_studio'
+  | 'branding_mockups' | 'strategy_engine' | 'trend_engine' | 'brand_kit' | 'pricing'
+  | 'suite_view' | 'power' | 'ads_studio' | 'faq' | 'privacy_policy' | 'terms_of_service'
+  | 'production_factory' | 'ugc_studio' | 'admin' | 'performance_studio' | 'content_library';
+>>>>>>> abcc1b4 (feat: built awesome Content Library to save and view generated assets)
 
 export interface EliteChatMessage {
   role: 'user' | 'bot';

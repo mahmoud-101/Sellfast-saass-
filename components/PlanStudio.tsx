@@ -4,6 +4,7 @@ import { PlanStudioProject, ImageFile, PlanIdea } from '../types';
 import { resizeImage } from '../utils';
 import { generateCampaignPlan, generateImage } from '../services/geminiService';
 import ImageWorkspace from './ImageWorkspace';
+import { saveGeneratedAsset } from '../lib/supabase';
 
 const TARGET_MARKETS = ['مصر', 'السعودية', 'الإمارات', 'الخليج العربي', 'عالمي'];
 const DIALECTS = ['لهجة مصرية', 'لهجة سعودية', 'فصحى بسيطة', 'لهجة شامية', 'الإنجليزية'];
@@ -12,9 +13,10 @@ interface Props {
     project: PlanStudioProject;
     setProject: React.Dispatch<React.SetStateAction<PlanStudioProject>>;
     onBridgeToPhotoshoot: (context: string) => void;
+    userId: string;
 }
 
-const PlanStudio: React.FC<Props> = ({ project, setProject, onBridgeToPhotoshoot }) => {
+const PlanStudio: React.FC<Props> = ({ project, setProject, onBridgeToPhotoshoot, userId }) => {
 
     const handleFileUpload = async (files: File[]) => {
         if (!files.length) return;
@@ -40,6 +42,9 @@ const PlanStudio: React.FC<Props> = ({ project, setProject, onBridgeToPhotoshoot
         try {
             const plan = await generateCampaignPlan(project.productImages, project.prompt, project.targetMarket, project.dialect);
             const ideas: PlanIdea[] = plan.map((p: any) => ({ ...p, image: null, isLoadingImage: false, imageError: null }));
+
+            await saveGeneratedAsset(userId, 'CAMPAIGN_PLAN', { plan_content: JSON.stringify(plan) }, { prompt: project.prompt, market: project.targetMarket });
+
             setProject(s => ({ ...s, ideas, isGeneratingPlan: false }));
         } catch (err) { setProject(s => ({ ...s, isGeneratingPlan: false, error: "فشل إنشاء الخطة" })); }
     };

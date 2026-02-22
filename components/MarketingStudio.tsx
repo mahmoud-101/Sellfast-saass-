@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { MarketingStudioProject } from '../types';
 import { generateMarketingAnalysis } from '../services/geminiService';
+import { saveGeneratedAsset } from '../lib/supabase';
 
 const MarketingIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -15,9 +16,37 @@ interface Props {
     project: MarketingStudioProject;
     setProject: React.Dispatch<React.SetStateAction<MarketingStudioProject>>;
     onBridgeToPlan: (context: string) => void;
+    userId: string;
 }
 
+<<<<<<< HEAD
 const MarketingStudio: React.FC<Props> = ({ project, setProject, onBridgeToPlan }) => {
+=======
+// Parse markdown sections into cards
+const parseResultSections = (text: string) => {
+    const sections: { icon: string; title: string; content: string }[] = [];
+    const iconMap: Record<string, string> = {
+        'الجمهور': '🎯', 'رسائل': '💥', 'ميزة': '🏆', 'قنوات': '📱',
+        'خطة': '📆', 'توصية': '💰', 'استراتيج': '📊', 'تنافسية': '⚔️',
+    };
+    const lines = text.split('\n');
+    let current: { icon: string; title: string; content: string } | null = null;
+    for (const line of lines) {
+        if (line.startsWith('## ') || line.startsWith('# ')) {
+            if (current) sections.push(current);
+            const title = line.replace(/^#+\s*/, '').replace(/[🎯💥🏆📱📆💰📊⚔️]/g, '').trim();
+            const icon = Object.entries(iconMap).find(([k]) => title.includes(k))?.[1] || '📋';
+            current = { icon, title, content: '' };
+        } else if (current) {
+            current.content += line + '\n';
+        }
+    }
+    if (current) sections.push(current);
+    return sections.filter(s => s.content.trim());
+};
+
+const MarketingStudio: React.FC<Props> = ({ project, setProject, onBridgeToPlan, userId }) => {
+>>>>>>> abcc1b4 (feat: built awesome Content Library to save and view generated assets)
     const [copied, setCopied] = useState(false);
 
     const onGenerate = async () => {
@@ -37,6 +66,9 @@ const MarketingStudio: React.FC<Props> = ({ project, setProject, onBridgeToPlan 
                 : { type: project.brandType, link: project.websiteLink };
             
             const strategy = await generateMarketingAnalysis(data as any, project.language);
+
+            await saveGeneratedAsset(userId, 'MARKETING_PLAN', { plan_content: strategy }, data);
+
             setProject(s => ({ ...s, result: strategy, isGenerating: false }));
         } catch (err) {
             setProject(s => ({ ...s, isGenerating: false, error: 'Strategy generation failed. Please try again.' }));

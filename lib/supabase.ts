@@ -6,79 +6,79 @@ const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || '';
 
 export const isSupabaseConfigured = () => {
-    return supabaseUrl && 
-           supabaseUrl.includes('supabase.co') && 
-           supabaseAnonKey &&
-           supabaseAnonKey !== 'placeholder-key';
+    return supabaseUrl &&
+        supabaseUrl.includes('supabase.co') &&
+        supabaseAnonKey &&
+        supabaseAnonKey !== 'placeholder-key';
 };
 
 // إنشاء العميل - سيستخدم رابط تجريبي إذا لم تتوفر البيانات لمنع انهيار الموقع
 export const supabase = createClient(
-    supabaseUrl || 'https://placeholder-project.supabase.co', 
+    supabaseUrl || 'https://placeholder-project.supabase.co',
     supabaseAnonKey || 'placeholder-key'
 );
 
 export const CREDIT_COSTS = {
-  IMAGE_BASIC: 5,
-  IMAGE_PRO: 10,
-  COPYWRITING: 5,
-  VOICE_OVER: 10,
-  VIDEO_VEO: 100,
-  POWER_PROD: 250,
-  AD_VIDEO: 20,
-  AI_EXPAND: 10,
+    IMAGE_BASIC: 5,
+    IMAGE_PRO: 10,
+    COPYWRITING: 5,
+    VOICE_OVER: 10,
+    VIDEO_VEO: 100,
+    POWER_PROD: 250,
+    AD_VIDEO: 20,
+    AI_EXPAND: 10,
 };
 
 /**
  * جلب بيانات المستخدم أو إنشاؤه إذا لم يكن موجوداً
  */
 export const getUserProfile = async (userId: string) => {
-  if (!isSupabaseConfigured()) return { id: userId, credits: 50, is_demo: true };
-  try {
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
-    if (error) throw error;
-    if (!data) {
-        const { data: newData, error: insertError } = await supabase.from('profiles').insert([{ id: userId, credits: 50 }]).select().single();
-        if (insertError) throw insertError;
-        return newData;
+    if (!isSupabaseConfigured()) return { id: userId, credits: 50, is_demo: true };
+    try {
+        const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+        if (error) throw error;
+        if (!data) {
+            const { data: newData, error: insertError } = await supabase.from('profiles').insert([{ id: userId, credits: 50 }]).select().single();
+            if (insertError) throw insertError;
+            return newData;
+        }
+        return data;
+    } catch (e) {
+        console.error("Supabase Error:", e);
+        return { id: userId, credits: 0, error: true };
     }
-    return data;
-  } catch (e) {
-    console.error("Supabase Error:", e);
-    return { id: userId, credits: 0, error: true };
-  }
 };
 
 export const getUserCredits = async (userId: string): Promise<number> => {
-  if (!userId) return 0;
-  const profile = await getUserProfile(userId);
-  return profile?.credits ?? 0;
+    if (!userId) return 0;
+    const profile = await getUserProfile(userId);
+    return profile?.credits ?? 0;
 };
 
 /**
  * خصم النقاط من رصيد المستخدم بعد التأكد من كفايته
  */
 export const deductCredits = async (userId: string, amount: number): Promise<boolean> => {
-  if (!userId || !isSupabaseConfigured()) return true; // وضع التجربة (Preview)
-  try {
-    const currentCredits = await getUserCredits(userId);
-    if (currentCredits < amount) return false;
-    
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({ credits: currentCredits - amount })
-      .eq('id', userId);
-      
-    if (updateError) throw updateError;
-    
-    // تسجيل العملية في سجل العمليات
-    await logAction(userId, 'CREDIT_DEDUCTION', `خصم ${amount} نقطة لاستخدام خدمة AI`);
-    
-    return true;
-  } catch (e) {
-    console.error("Deduct Error:", e);
-    return false;
-  }
+    if (!userId || !isSupabaseConfigured()) return true; // وضع التجربة (Preview)
+    try {
+        const currentCredits = await getUserCredits(userId);
+        if (currentCredits < amount) return false;
+
+        const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ credits: currentCredits - amount })
+            .eq('id', userId);
+
+        if (updateError) throw updateError;
+
+        // تسجيل العملية في سجل العمليات
+        await logAction(userId, 'CREDIT_DEDUCTION', `خصم ${amount} نقطة لاستخدام خدمة AI`);
+
+        return true;
+    } catch (e) {
+        console.error("Deduct Error:", e);
+        return false;
+    }
 };
 
 /**
@@ -117,9 +117,20 @@ export const saveGeneratedAsset = async (userId: string, type: string, result: a
     await supabase.from('assets').insert([{
         user_id: userId,
         asset_type: type,
-        url: result.image?.base64 || result.video_url,
+        url: result.image?.base64 || result.video_url || result.plan_content,
         config: config
     }]);
+};
+
+export const getGeneratedAssets = async (userId: string) => {
+    if (!isSupabaseConfigured()) return [];
+    const { data } = await supabase.from('assets').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+    return data || [];
+};
+
+export const deleteGeneratedAsset = async (id: string, userId: string) => {
+    if (!isSupabaseConfigured()) return;
+    await supabase.from('assets').delete().eq('id', id).eq('user_id', userId);
 };
 
 /**
@@ -127,8 +138,8 @@ export const saveGeneratedAsset = async (userId: string, type: string, result: a
  */
 export const saveBrandKit = async (userId: string, brandData: any) => {
     if (!isSupabaseConfigured()) return;
-    const { data, error } = await supabase.from('brand_kits').upsert([{ 
-        ...brandData, 
+    const { data, error } = await supabase.from('brand_kits').upsert([{
+        ...brandData,
         user_id: userId,
         updated_at: new Date().toISOString()
     }]).select().single();
@@ -162,7 +173,7 @@ export const createPaymentRequest = async (userId: string, planData: any) => {
         created_at: new Date().toISOString()
     }]).select().single();
     if (error) throw error;
-    
+
     await logAction(userId, 'PAYMENT_REQUEST', `طلب شحن باقة ${planData.name} بقيمة ${planData.price} ج.م`);
     return data;
 };
@@ -175,7 +186,7 @@ export const getPendingPayments = async () => {
 
 export const approvePayment = async (requestId: string, adminId: string) => {
     if (!isSupabaseConfigured()) return;
-    
+
     // 1. جلب بيانات الطلب
     const { data: request } = await supabase.from('payment_requests').select('*').eq('id', requestId).single();
     if (!request) return;
@@ -183,14 +194,14 @@ export const approvePayment = async (requestId: string, adminId: string) => {
     // 2. تحديث رصيد المستخدم
     const { data: profile } = await supabase.from('profiles').select('credits').eq('id', request.user_id).single();
     const newCredits = (profile?.credits || 0) + parseInt(request.credits);
-    
+
     await supabase.from('profiles').update({ credits: newCredits }).eq('id', request.user_id);
-    
+
     // 3. تحديث حالة الطلب
-    await supabase.from('payment_requests').update({ 
-        status: 'approved', 
+    await supabase.from('payment_requests').update({
+        status: 'approved',
         approved_at: new Date().toISOString(),
-        approved_by: adminId 
+        approved_by: adminId
     }).eq('id', requestId);
 
     await logAction(request.user_id, 'PAYMENT_APPROVED', `تمت الموافقة على شحن ${request.credits} نقطة`);
