@@ -15,11 +15,11 @@ export interface ProjectBase {
   name: string;
 }
 
-export type AppView =
-  | 'landing' | 'dashboard' | 'daily_pack' | 'photoshoot' | 'video_studio' | 'plan_studio'
-  | 'branding_mockups' | 'strategy_engine' | 'trend_engine' | 'brand_kit' | 'pricing'
-  | 'suite_view' | 'power' | 'ads_studio' | 'faq' | 'privacy_policy' | 'terms_of_service'
-  | 'production_factory' | 'ugc_studio' | 'admin' | 'performance_studio';
+export type AppView = 
+    | 'landing' | 'dashboard' | 'daily_pack' | 'photoshoot' | 'video_studio' | 'plan_studio'
+    | 'branding_mockups' | 'strategy_engine' | 'trend_engine' | 'brand_kit' | 'pricing'
+    | 'suite_view' | 'power' | 'ads_studio' | 'faq' | 'privacy_policy' | 'terms_of_service'
+    | 'production_factory' | 'ugc_studio' | 'admin' | 'performance_studio';
 
 export interface EliteChatMessage {
   role: 'user' | 'bot';
@@ -53,12 +53,12 @@ export interface UGCScriptProject extends ProjectBase {
 }
 
 export interface DailyPackProject extends ProjectBase {
-  productImages: ImageFile[];
-  description: string;
-  tone: string;
-  isGenerating: boolean;
-  progress: number;
-  result: any | null;
+    productImages: ImageFile[];
+    description: string;
+    tone: string;
+    isGenerating: boolean;
+    progress: number;
+    result: any | null;
 }
 
 export interface PlanIdea {
@@ -70,7 +70,7 @@ export interface PlanStudioProject extends ProjectBase {
 }
 
 export interface BrandKit {
-  logo: ImageFile | null; colors: string[]; brandName: string; industry: string;
+    logo: ImageFile | null; colors: string[]; brandName: string; industry: string;
 }
 
 export type LightingStyle = 'Natural Light' | 'Studio Light' | 'Golden Hour' | 'Blue Hour' | 'Cinematic' | 'Dramatic';
@@ -132,13 +132,13 @@ export interface TrendEngineProject extends ProjectBase {
 export type ControlCategory = 'Face' | 'Retouch';
 
 export interface ControllerSlider {
-  id: string;
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  step: number;
-  category: ControlCategory;
+    id: string;
+    label: string;
+    value: number;
+    min: number;
+    max: number;
+    step: number;
+    category: ControlCategory;
 }
 
 export interface PowerStudioResult {
@@ -160,253 +160,253 @@ export interface PowerStudioResult {
 export type ShotType = string;
 
 export interface PromptStudioHistoryItem {
-  image: ImageFile;
-  instructions: string;
-  generatedPrompt: string;
+    image: ImageFile;
+    instructions: string;
+    generatedPrompt: string;
 }
 
 export interface PromptStudioProject extends ProjectBase {
-  images: ImageFile[];
-  instructions: string;
-  isUploading: boolean;
-  isLoading: boolean;
-  error: string | null;
-  generatedPrompt: string | null;
-  history: PromptStudioHistoryItem[];
+    images: ImageFile[];
+    instructions: string;
+    isUploading: boolean;
+    isLoading: boolean;
+    error: string | null;
+    generatedPrompt: string | null;
+    history: PromptStudioHistoryItem[];
 }
 
 export interface VoiceOverHistoryItem {
-  audio: AudioFile;
-  text: string;
-  style: string;
-  voice: string;
+    audio: AudioFile;
+    text: string;
+    style: string;
+    voice: string;
 }
 
 export interface VoiceOverStudioProject extends ProjectBase {
-  text: string;
-  styleInstructions: string;
-  selectedVoice: string;
-  isLoading: boolean;
-  isPlaying: boolean;
-  error: string | null;
-  generatedAudio: AudioFile | null;
-  history: VoiceOverHistoryItem[];
+    text: string;
+    styleInstructions: string;
+    selectedVoice: string;
+    isLoading: boolean;
+    isPlaying: boolean;
+    error: string | null;
+    generatedAudio: AudioFile | null;
+    history: VoiceOverHistoryItem[];
 }
 
 export interface ControllerStudioProject extends ProjectBase {
-  sourceImages: ImageFile[];
-  generatedImage: ImageFile | null;
-  isUploading: boolean;
-  isGenerating: boolean;
-  error: string | null;
-  sliders: ControllerSlider[];
-  history: HistoryItem[];
+    sourceImages: ImageFile[];
+    generatedImage: ImageFile | null;
+    isUploading: boolean;
+    isGenerating: boolean;
+    error: string | null;
+    sliders: ControllerSlider[];
+    history: HistoryItem[];
 }
 
 export interface CampaignResult {
-  scenario: string;
-  image: ImageFile | null;
-  isLoading?: boolean;
-  isEditing?: boolean;
-  error?: string | null;
-  editPrompt?: string;
+    scenario: string;
+    image: ImageFile | null;
+    isLoading?: boolean;
+    isEditing?: boolean;
+    error?: string | null;
+    editPrompt?: string;
 }
 
 export interface CampaignStudioProject extends ProjectBase {
-  productImages: ImageFile[];
-  mode: 'auto' | 'custom';
-  selectedMood: string;
-  customPrompt: string;
-  customIdeas: string[];
-  isUploading: boolean;
-  isGenerating: boolean;
-  isAnalyzing: boolean;
-  productAnalysis: string | null;
-  results: CampaignResult[];
-  error: string | null;
+    productImages: ImageFile[];
+    mode: 'auto' | 'custom';
+    selectedMood: string;
+    customPrompt: string;
+    customIdeas: string[];
+    isUploading: boolean;
+    isGenerating: boolean;
+    isAnalyzing: boolean;
+    productAnalysis: string | null;
+    results: CampaignResult[];
+    error: string | null;
 }
 
 export interface EditAdjustments {
-  lut: string;
-  sharpness: number;
+    lut: string;
+    sharpness: number;
 }
 
 export interface LocalText {
-  id: string;
-  content: string;
-  fontSize: number;
-  color: string;
-  fontFamily: string;
-  fontWeight: string;
-  x: number;
-  y: number;
-  isVisible: boolean;
-  rotation: number;
-  letterSpacing: number;
-  lineHeight: number;
-  maxWidth: number;
+    id: string;
+    content: string;
+    fontSize: number;
+    color: string;
+    fontFamily: string;
+    fontWeight: string;
+    x: number;
+    y: number;
+    isVisible: boolean;
+    rotation: number;
+    letterSpacing: number;
+    lineHeight: number;
+    maxWidth: number;
 }
 
 export interface GlobalLayer {
-  id: string;
-  type: 'text' | 'image';
+    id: string;
+    type: 'text' | 'image';
 }
 
 export interface EditStudioProject extends ProjectBase {
-  baseImages: ImageFile[];
-  isUploading: boolean;
-  adjustments: EditAdjustments;
-  localTexts: { [slotIdx: number]: LocalText[] };
+    baseImages: ImageFile[];
+    isUploading: boolean;
+    adjustments: EditAdjustments;
+    localTexts: { [slotIdx: number]: LocalText[] };
 }
 
 export interface PowerStudioProject extends ProjectBase {
-  brandName: string;
-  productCategory: string;
-  productDescription: string;
-  productImages: ImageFile[];
-  goal: string;
-  targetMarket: string;
-  dialect: string;
-  isGenerating: boolean;
-  progress: number;
-  currentStep: string;
-  result: PowerStudioResult | null;
-  error: string | null;
+    brandName: string;
+    productCategory: string;
+    productDescription: string;
+    productImages: ImageFile[];
+    goal: string;
+    targetMarket: string;
+    dialect: string;
+    isGenerating: boolean;
+    progress: number;
+    currentStep: string;
+    result: PowerStudioResult | null;
+    error: string | null;
 }
 
 export interface UGCStudioProject extends ProjectBase {
-  productImages: ImageFile[];
-  selectedScenarios: string[];
-  isUploading: boolean;
-  isGenerating: boolean;
-  results: BrandingResult[];
-  error: string | null;
+    productImages: ImageFile[];
+    selectedScenarios: string[];
+    isUploading: boolean;
+    isGenerating: boolean;
+    results: BrandingResult[];
+    error: string | null;
 }
 
 export interface InfluencerResult {
-  id: string;
-  image: ImageFile | null;
-  isLoading: boolean;
-  persona: string;
-  error: string | null;
+    id: string;
+    image: ImageFile | null;
+    isLoading: boolean;
+    persona: string;
+    error: string | null;
 }
 
 export interface InfluencerStudioProject extends ProjectBase {
-  productImages: ImageFile[];
-  selectedPersonas: string[];
-  isUploading: boolean;
-  isGenerating: boolean;
-  results: InfluencerResult[];
+    productImages: ImageFile[];
+    selectedPersonas: string[];
+    isUploading: boolean;
+    isGenerating: boolean;
+    results: InfluencerResult[];
 }
 
 export interface VideoJob {
-  id: string;
-  product_name: string;
-  status: 'pending' | 'scripting' | 'voicing' | 'rendering' | 'completed' | 'failed';
-  script?: string;
-  video_url?: string;
-  created_at: string;
+    id: string;
+    product_name: string;
+    status: 'pending' | 'scripting' | 'voicing' | 'rendering' | 'completed' | 'failed';
+    script?: string;
+    video_url?: string;
+    created_at: string;
 }
 
 export interface AdsStudioProject extends ProjectBase {
-  productName: string;
-  benefits: string;
-  price: string;
-  language: 'ar' | 'en';
-  template: 'ugc' | 'classic';
-  isGenerating: boolean;
-  currentStep: string;
-  jobs: VideoJob[];
-  error: string | null;
+    productName: string;
+    benefits: string;
+    price: string;
+    language: 'ar' | 'en';
+    template: 'ugc' | 'classic';
+    isGenerating: boolean;
+    currentStep: string;
+    jobs: VideoJob[];
+    error: string | null;
 }
 
 export interface PerformanceStudioProject extends ProjectBase {
-  targetMarket: string;
-  campaignGoal: string;
-  dialect: string;
-  platform: string;
-  productDescription: string;
-  sellingPrice: string;
-  brandTone: string;
-  referenceImage: ImageFile | null;
-  isGenerating: boolean;
-  isGeneratingFull: boolean;
-  result: {
-    strategicIntelligence: {
-      productType: string;
-      riskLevel: string;
-      emotionalDriver: string;
-      archetype: string;
-      psychologicalTrigger: string;
-      biggestObjection: string;
-    };
-    creativeStrategyMatrix: {
-      angles: {
-        title: string;
-        trigger: string;
-        principle: string;
-        marketReason: string;
-        objectionNeutralizer: string;
-        rank: number;
-        isRecommended: boolean;
-      }[];
-      recommendationReason: string;
-    };
-    launchPack: {
-      hooks: string[];
-      adCopy: string;
-      ugcScript: string;
-      offerStructure: string;
-      upsellSuggestion: string;
-      cta: string;
-      testingHooks: string[];
-    };
-    visualMatchingEngine: {
-      imageConcepts: {
-        description: string;
-        angle: string;
-        emotion: string;
-        lighting: string;
-        why: string;
-      }[];
-      thumbnailConcept: string;
-      storyboard: {
-        frame: number;
-        scene: string;
-        shot: string;
-        movement: string;
-        text: string;
-        purpose: string;
-      }[];
-    };
-    profitBrain: {
-      valueStacking: string;
-      aovIncrease: string;
-      scarcityUrgency: string;
-      riskReversal: string;
-    };
-    performanceSimulation: {
-      hookStrength: 'Low' | 'Medium' | 'High';
-      conversionConfidence: number;
-      riskLevel: string;
-      testingStructure: string;
-    };
-  } | null;
-  fullCampaign: {
-    adSets: {
-      angle: string;
-      visualPrompt: string;
-      storyboard: any[];
-      image?: string;
-    }[];
-  } | null;
-  error: string | null;
+    targetMarket: string;
+    campaignGoal: string;
+    dialect: string;
+    platform: string;
+    productDescription: string;
+    sellingPrice: string;
+    brandTone: string;
+    referenceImage: ImageFile | null;
+    isGenerating: boolean;
+    isGeneratingFull: boolean;
+    result: {
+        strategicIntelligence: {
+            productType: string;
+            riskLevel: string;
+            emotionalDriver: string;
+            archetype: string;
+            psychologicalTrigger: string;
+            biggestObjection: string;
+        };
+        creativeStrategyMatrix: {
+            angles: {
+                title: string;
+                trigger: string;
+                principle: string;
+                marketReason: string;
+                objectionNeutralizer: string;
+                rank: number;
+                isRecommended: boolean;
+            }[];
+            recommendationReason: string;
+        };
+        launchPack: {
+            hooks: string[];
+            adCopy: string;
+            ugcScript: string;
+            offerStructure: string;
+            upsellSuggestion: string;
+            cta: string;
+            testingHooks: string[];
+        };
+        visualMatchingEngine: {
+            imageConcepts: {
+                description: string;
+                angle: string;
+                emotion: string;
+                lighting: string;
+                why: string;
+            }[];
+            thumbnailConcept: string;
+            storyboard: {
+                frame: number;
+                scene: string;
+                shot: string;
+                movement: string;
+                text: string;
+                purpose: string;
+            }[];
+        };
+        profitBrain: {
+            valueStacking: string;
+            aovIncrease: string;
+            scarcityUrgency: string;
+            riskReversal: string;
+        };
+        performanceSimulation: {
+            hookStrength: 'Low' | 'Medium' | 'High';
+            conversionConfidence: number;
+            riskLevel: string;
+            testingStructure: string;
+        };
+    } | null;
+    fullCampaign: {
+        adSets: {
+            angle: string;
+            visualPrompt: string;
+            storyboard: any[];
+            image?: string;
+        }[];
+    } | null;
+    error: string | null;
 }
 
 export interface EliteScriptProject extends ProjectBase {
-  currentMode: string;
-  messages: EliteChatMessage[];
-  isGenerating: boolean;
-  step: number;
-  error: string | null;
+    currentMode: string;
+    messages: EliteChatMessage[];
+    isGenerating: boolean;
+    step: number;
+    error: string | null;
 }

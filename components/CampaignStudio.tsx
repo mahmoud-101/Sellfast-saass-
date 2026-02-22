@@ -8,21 +8,20 @@ import ImageWorkspace from './ImageWorkspace';
 import BrandingResultsGrid from './BrandingResultsGrid';
 
 const CAMPAIGN_SCENARIOS = [
-    'لقطة Hero احترافية أمامية على خلفية استوديو نظيفة (Professional Hero Shot)',
-    'لايف ستايل: شخص يستخدم المنتج بشكل طبيعي (Human Lifestyle Connection)',
-    'Flat Lay جمالي: المنتج محاط بعناصر تعبّر عن قيمته (Aesthetic Flat Lay)'
+    'Professional Hero Front View (Studio)', 
+    'Lifestyle: A person using the product naturally (Human connection)', 
+    'Aesthetic Flat Lay Shot (Environment)'
 ];
 
 const CAMPAIGN_MOODS = [
     { label: 'الأصلي', value: '' },
-    { label: 'مينيماليست أبيض', value: 'Clean, minimalist white studio with soft shadows, luxury editorial feel' },
-    { label: 'فخامة داكنة', value: 'Dramatic dark luxury background with gold rim lighting and premium feel' },
-    { label: 'ألوان باستيل', value: 'Soft playful pastel colors, feminine and elegant aesthetic' },
-    { label: 'طبيعة خضراء', value: 'Organic fresh natural green botanical environment, warm earthy tones' },
-    { label: 'أزرق محيطي', value: 'Deep serene ocean blue with misty soft tones, calming luxury' },
-    { label: 'ذهبي دافئ', value: 'Warm golden hour luxury lighting, bokeh background, cinematic glow' },
-    { label: 'نيون سايبربانك', value: 'Vibrant neon lights cyberpunk style, high contrast, futuristic' },
-    { label: 'رخامي فاخر', value: 'White and grey marble surface, minimalist luxury, shadow play' },
+    { label: 'مينيماليست أبيض', value: 'Clean, minimalist white studio aesthetic' },
+    { label: 'فخامة داكنة', value: 'Dramatic dark luxury with gold accents' },
+    { label: 'ألوان باستيل', value: 'Soft playful pastel colors' },
+    { label: 'طبيعة خضراء', value: 'Organic fresh natural green aesthetic' },
+    { label: 'أزرق محيطي', value: 'Deep serene ocean blue tones' },
+    { label: 'ذهبي دافئ', value: 'Warm, golden hour luxury lighting' },
+    { label: 'نيون سايبربانك', value: 'Vibrant neon cyberpunk style' },
 ];
 
 const EditIcon = () => (
@@ -92,14 +91,14 @@ const CampaignStudio: React.FC<{
 
     const onGenerate = useCallback(async () => {
         if (productImages.length === 0 || !userId) return;
-
+        
         if (mode === 'custom' && project.customIdeas.every(idea => !idea.trim())) {
             setProject(s => ({ ...s, error: 'فضلاً اكتب فكرة واحدة على الأقل.' }));
             return;
         }
 
         setProject(s => ({ ...s, isGenerating: true, error: null, results: [] }));
-
+        
         try {
             const deducted = await deductCredits(userId, 30); // 10 points * 3 images
             if (!deducted) {
@@ -108,18 +107,18 @@ const CampaignStudio: React.FC<{
             }
 
             let analysis = project.productAnalysis || await analyzeProductForCampaign(productImages);
-
-            const scenarios = mode === 'auto'
-                ? CAMPAIGN_SCENARIOS
+            
+            const scenarios = mode === 'auto' 
+                ? CAMPAIGN_SCENARIOS 
                 : project.customIdeas.filter(idea => idea.trim().length > 0);
 
-            const initial = scenarios.map(scenario => ({
-                scenario,
-                image: null,
-                isLoading: true,
-                error: null,
-                editPrompt: '',
-                isEditing: false
+            const initial = scenarios.map(scenario => ({ 
+                scenario, 
+                image: null, 
+                isLoading: true, 
+                error: null, 
+                editPrompt: '', 
+                isEditing: false 
             }));
 
             setProject(s => ({ ...s, results: initial as any }));
@@ -127,20 +126,20 @@ const CampaignStudio: React.FC<{
             const promises = scenarios.map((scenario) => {
                 const moodV = mode === 'auto' ? (CAMPAIGN_MOODS.find(m => m.label === project.selectedMood)?.value || '') : '';
                 const backgroundInfo = project.customPrompt ? ` Style details: ${project.customPrompt}.` : '';
-
+                
                 const textConstraint = "STRICTLY PRESERVE all original text, labels, and branding on the product. DO NOT erase or modify existing writing. NO EXTRA generated text in the scene environment.";
 
                 const prompt = mode === 'auto'
                     ? `Professional Commercial Photography: ${analysis}. Scenario: ${scenario}. Style: ${moodV}.${backgroundInfo} PHOTOREALISTIC, HIGH-RESOLUTION, CLEAN IMAGE. ${textConstraint}`
                     : `Professional Product Idea Shoot: ${analysis}. Idea: ${scenario}.${backgroundInfo} PHOTOREALISTIC, STRICT IDENTITY PRESERVATION. ${textConstraint}`;
-
+                
                 return generateImage(productImages, prompt, null)
                     .then(image => ({ scenario, image }))
                     .catch(error => ({ scenario, error: error.message }));
             });
 
             const completed = await Promise.all(promises);
-
+            
             setProject(s => {
                 const nextResults = [...s.results];
                 completed.forEach(res => {
@@ -211,13 +210,13 @@ const CampaignStudio: React.FC<{
             {/* Mode Switcher */}
             <div className="flex justify-center">
                 <div className="bg-white/5 p-1 rounded-2xl border border-white/5 flex gap-1 shadow-sm">
-                    <button
+                    <button 
                         onClick={() => setProject(s => ({ ...s, mode: 'auto' }))}
                         className={`px-8 py-2 rounded-xl text-sm font-black transition-all ${mode === 'auto' ? 'bg-[#FFD700] text-black shadow-lg' : 'text-slate-400 hover:text-[#FFD700]'}`}
                     >
                         السيناريوهات التلقائية
                     </button>
-                    <button
+                    <button 
                         onClick={() => setProject(s => ({ ...s, mode: 'custom' }))}
                         className={`px-8 py-2 rounded-xl text-sm font-black transition-all ${mode === 'custom' ? 'bg-[#FFD700] text-black shadow-lg' : 'text-slate-400 hover:text-[#FFD700]'}`}
                     >
@@ -251,18 +250,18 @@ const CampaignStudio: React.FC<{
                                 {mode === 'auto' ? 'استوديو الحملات الذكي' : 'استوديو الأفكار الإبداعية'}
                             </h2>
                             <p className="text-sm text-slate-400 font-bold mt-1">
-                                {mode === 'auto'
-                                    ? 'سيقوم المحرك بتوليد 3 منشورات إعلانية فريدة بناءً على استخدامات المنتج في ثوانٍ.'
+                                {mode === 'auto' 
+                                    ? 'سيقوم المحرك بتوليد 3 منشورات إعلانية فريدة بناءً على استخدامات المنتج في ثوانٍ.' 
                                     : 'اكتب أفكارك الخاصة وسيقوم المحرك بتحويلها لصور إعلانية فائقة الدقة.'}
                             </p>
                         </div>
-                        <button
-                            onClick={onGenerate}
-                            disabled={productImages.length === 0 || project.isGenerating}
+                        <button 
+                            onClick={onGenerate} 
+                            disabled={productImages.length === 0 || project.isGenerating} 
                             className="bg-[#FFD700] hover:bg-yellow-400 text-black font-black py-4 px-10 rounded-2xl shadow-xl transition-all active:scale-95 disabled:opacity-30 whitespace-nowrap"
                         >
-                            {project.isGenerating
-                                ? 'جاري الرندرة...'
+                            {project.isGenerating 
+                                ? 'جاري الرندرة...' 
                                 : mode === 'auto' ? 'إطلاق الحملة (30 نقطة)' : 'توليد أفكارك (30 نقطة)'}
                         </button>
                     </div>
@@ -272,10 +271,10 @@ const CampaignStudio: React.FC<{
                         <label className="text-[10px] font-black text-[#FFD700] uppercase tracking-widest flex items-center gap-2">
                             <PaletteIcon /> الطابع الجمالي والروح العامة للتصاميم
                         </label>
-                        <textarea
-                            value={project.customPrompt}
-                            onChange={(e) => setProject(s => ({ ...s, customPrompt: e.target.value }))}
-                            placeholder="حدد السمة الفنية (مثال: أسطح رخامية، إضاءة سينمائية، خلفية مينيماليست...)"
+                        <textarea 
+                            value={project.customPrompt} 
+                            onChange={(e) => setProject(s => ({ ...s, customPrompt: e.target.value }))} 
+                            placeholder="حدد السمة الفنية (مثال: أسطح رخامية، إضاءة سينمائية، خلفية مينيماليست...)" 
                             className="w-full bg-transparent border-none p-0 text-sm font-bold text-white focus:ring-0 placeholder:text-slate-600 resize-none min-h-[60px]"
                         />
                     </div>
@@ -285,13 +284,14 @@ const CampaignStudio: React.FC<{
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">قوالب بصرية جاهزة (Presets)</label>
                             <div className="flex flex-wrap gap-2 flex-row-reverse">
                                 {CAMPAIGN_MOODS.map(mood => (
-                                    <button
-                                        key={mood.label}
-                                        onClick={() => setProject(s => ({ ...s, selectedMood: mood.label }))}
-                                        className={`px-6 py-2 text-xs font-black rounded-xl transition-all border ${project.selectedMood === mood.label
-                                                ? 'bg-[#FFD700] text-black border-[#FFD700] shadow-lg'
-                                                : 'bg-black/40 text-slate-400 border-white/10 hover:border-[#FFD700]/50 hover:text-[#FFD700]'
-                                            }`}
+                                    <button 
+                                        key={mood.label} 
+                                        onClick={() => setProject(s => ({ ...s, selectedMood: mood.label }))} 
+                                        className={`px-6 py-2 text-xs font-black rounded-xl transition-all border ${
+                                            project.selectedMood === mood.label 
+                                            ? 'bg-[#FFD700] text-black border-[#FFD700] shadow-lg' 
+                                            : 'bg-black/40 text-slate-400 border-white/10 hover:border-[#FFD700]/50 hover:text-[#FFD700]'
+                                        }`}
                                     >
                                         {mood.label}
                                     </button>
@@ -303,7 +303,7 @@ const CampaignStudio: React.FC<{
                             {[0, 1, 2].map((idx) => (
                                 <div key={idx} className="flex flex-col gap-2">
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-1">الفكرة المخصصة {idx + 1}</label>
-                                    <textarea
+                                    <textarea 
                                         value={project.customIdeas[idx]}
                                         onChange={(e) => handleCustomIdeaChange(idx, e.target.value)}
                                         placeholder={`مثال: "المنتج في يد موديل ترتدي ملابس عصرية في كافيه..."`}
@@ -326,14 +326,14 @@ const CampaignStudio: React.FC<{
                                     </div>
                                 )}
                             </div>
-
+                            
                             {project.isAnalyzing ? (
                                 <div className="flex items-center gap-3 text-emerald-400/60 animate-pulse py-2 justify-end">
                                     <span className="text-xs font-black uppercase tracking-widest">جاري تحليل منتجك لبناء أفضل حملة...</span>
                                     <div className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin"></div>
                                 </div>
                             ) : (
-                                <textarea
+                                <textarea 
                                     value={project.productAnalysis || ''}
                                     onChange={(e) => setProject(s => ({ ...s, productAnalysis: e.target.value }))}
                                     rows={4}
@@ -353,14 +353,14 @@ const CampaignStudio: React.FC<{
                         <h3 className="text-2xl font-black text-white tracking-tight">معرض نتائج الحملة</h3>
                         <div className="h-px flex-grow bg-white/5"></div>
                     </div>
-                    <BrandingResultsGrid
+                    <BrandingResultsGrid 
                         results={safeGridResults}
                         gridClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10"
                         onEditResult={handleEditResult}
                     />
                 </div>
             )}
-
+            
             {project.error && (
                 <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-6 rounded-2xl text-sm text-center font-bold animate-shake">
                     {project.error}

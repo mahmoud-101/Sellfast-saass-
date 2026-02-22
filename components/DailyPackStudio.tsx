@@ -15,12 +15,12 @@ const DailyPackStudio: React.FC<{
     const handleFileUpload = async (files: File[]) => {
         if (!files.length) return;
         const uploaded = await Promise.all(files.slice(0, 3).map(async f => {
-            const r = await resizeImage(f, 1024, 1024);
-            return new Promise<ImageFile>(res => {
-                const reader = new FileReader();
-                reader.onload = () => res({ base64: (reader.result as string).split(',')[1], mimeType: r.type, name: r.name });
-                reader.readAsDataURL(r);
-            });
+             const r = await resizeImage(f, 1024, 1024);
+             return new Promise<ImageFile>(res => {
+                 const reader = new FileReader();
+                 reader.onload = () => res({ base64: (reader.result as string).split(',')[1], mimeType: r.type, name: r.name });
+                 reader.readAsDataURL(r);
+             });
         }));
         setProject(p => ({ ...p, productImages: [...p.productImages, ...uploaded] }));
     };
@@ -31,60 +31,12 @@ const DailyPackStudio: React.FC<{
         setProject(p => ({ ...p, progress: 10 }));
 
         try {
-            // 1. Marketing Strategy — Arabic-first prompt
+            // 1. Marketing Strategy
             setProject(p => ({ ...p, progress: 20 }));
-            const toneMap: Record<string, string> = {
-                'عفوي وجذاب': 'شخصي وعفوي وجذاب - مثل حديث صديق',
-                'احترافي وفخم': 'احترافي وفخم وموثوق - يوحي بالجودة والتميز',
-                'كوميدي ومرح': 'كوميدي ومرح وخفيف - يُضحك ويُقنع في نفس الوقت',
-                'مثير للجدل': 'مثير للجدل وجريء - يحرك المشاعر ويدفع للتعليق'
-            };
-            const selectedTone = toneMap[project.tone] || 'عفوي وجذاب';
-            const prompt = `أنت خبير تسويق رقمي نخبة متخصص في السوق العربي (Facebook / Instagram / TikTok).
-            هدف اليوم: ${project.description || 'نشر محتوى تسويقي يحقق مبيعات'}
-            نبرة المحتوى: ${selectedTone}
-
-            اصنع حقيبة محتوى يومية متكاملة بـJSON التالي:
-            {
-              "captions": [
-                {
-                  "platform": "Facebook",
-                  "hook": "جملة أولى تستوقف التمرير (بالعامية المصرية أو العربية الطبيعية)",
-                  "body": "نص الكابشن الكامل مع قصة أو قيمة مضافة (3-4 جمل)",
-                  "cta": "نداء اتخاذ إجراء قوي ومباشر",
-                  "tags": "#هاشتاق1 #هاشتاق2 #هاشتاق3 #هاشتاق4 #هاشتاق5"
-                },
-                {
-                  "platform": "Instagram",
-                  "hook": "hook قوي يحسد عليه",
-                  "body": "كابشن Instagram مع إيموجي مناسبة",
-                  "cta": "CTA يشجع على التعليق أو الحفظ",
-                  "tags": "#هاشتاق #هاشتاق #هاشتاق #هاشتاق #هاشتاق #هاشتاق #هاشتاق"
-                },
-                {
-                  "platform": "TikTok",
-                  "hook": "hook TikTok يجذب في أول ثانية",
-                  "body": "كابشن TikTok قصير ومحادثي",
-                  "cta": "CTA للتعليق أو المشاركة",
-                  "tags": "#هاشتاق #trending #viral #هاشتاق"
-                }
-              ],
-              "reel": {
-                "hook_visual": "وصف المشهد الأول الذي يظهر في الكاميرا (3 ثواني أولى)",
-                "script": "سكريبت ريلز كامل بالعامية العربية (30-45 ثانية) مع تعليمات التصوير بين قوسين مثل [أظهر المنتج]",
-                "music_mood": "نوع الموسيقى المناسبة وسببها",
-                "filming_tip": "نصيحة تصوير واحدة تحسّن الجودة البصرية فوراً"
-              },
-              "ugc_prompts": [
-                "وصف تفصيلي لصورة UGC الأولى: الخلفية + الإضاءة + وضع المنتج + الحالة المزاجية (بالإنجليزية للـ AI)",
-                "وصف تفصيلي لصورة UGC الثانية: زاوية مختلفة تماماً + سيناريو مختلف (بالإنجليزية للـ AI)"
-              ],
-              "ad_prompt": "وصف تفصيلي لصورة إعلانية احترافية: المنتج + الخلفية + الإضاءة + الأسلوب البصري + اللون السائد (بالإنجليزية للـ AI)"
-            }
-            أعد JSON فقط.`;
-            const aiText = await askGemini(prompt, 'خبير تسويق رقمي عربي - محتوى يومي متكامل');
+            const prompt = `Create a daily marketing content pack for this product. Context: ${project.description}. 
+            Output JSON: { "captions": [{"hook": "string", "body": "string", "tags": "string"}], "reel": {"script": "string"}, "ugc_prompts": ["string", "string"], "ad_prompt": "string" }`;
+            const aiText = await askGemini(prompt, "Professional E-commerce Strategist");
             const data = JSON.parse(aiText.replace(/```json|```/g, ''));
-
 
             // 2. Parallel Production (Simulation of high-speed)
             setProject(p => ({ ...p, progress: 40 }));
@@ -101,8 +53,8 @@ const DailyPackStudio: React.FC<{
                     analysis: "تم تحليل المنتج وبناء المحتوى بناءً على اهتمامات جمهورك.",
                     ugcImages: [ugc1, ugc2],
                     adCreative: ad,
-                    socialContent: data.captions.map((c: any) => ({ platform: c.platform || 'Instagram', caption: c.body || c.caption || '', hashtags: c.tags || c.hashtags || '', hook: c.hook || '', cta: c.cta || '' })),
-                    reelPlan: { script: data.reel?.script || data.reel || '', musicMood: data.reel?.music_mood || 'Energetic', scenes: [] }
+                    socialContent: data.captions.map((c:any) => ({ platform: 'Instagram', caption: c.body, hashtags: c.tags, hook: c.hook })),
+                    reelPlan: { script: data.reel.script, musicMood: 'Energetic', scenes: [] }
                 }
             }));
         } catch (e) {
@@ -131,26 +83,26 @@ const DailyPackStudio: React.FC<{
                     <div className="lg:col-span-2 space-y-8">
                         <h3 className="text-xl font-black text-[#FFD700] pr-4 border-r-4 border-[#FFD700]">المحتوى البصري (UGC & Ads)</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {project.result.ugcImages.map((img, i) => (
+                             {project.result.ugcImages.map((img, i) => (
                                 <div key={i} className="space-y-3">
-                                    <div className="aspect-[9/16] rounded-[2.5rem] overflow-hidden bg-white/5 border border-white/10 group relative shadow-2xl">
-                                        <img src={`data:${img.mimeType};base64,${img.base64}`} className="w-full h-full object-cover" />
-                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                            <button className="px-6 py-2 bg-white text-black rounded-full font-black text-[10px]">تحميل 📥</button>
-                                        </div>
-                                    </div>
-                                    <p className="text-center text-[10px] font-black text-slate-500 uppercase tracking-widest">UGC Image 0{i + 1}</p>
+                                   <div className="aspect-[9/16] rounded-[2.5rem] overflow-hidden bg-white/5 border border-white/10 group relative shadow-2xl">
+                                      <img src={`data:${img.mimeType};base64,${img.base64}`} className="w-full h-full object-cover" />
+                                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                         <button className="px-6 py-2 bg-white text-black rounded-full font-black text-[10px]">تحميل 📥</button>
+                                      </div>
+                                   </div>
+                                   <p className="text-center text-[10px] font-black text-slate-500 uppercase tracking-widest">UGC Image 0{i+1}</p>
                                 </div>
-                            ))}
-                            <div className="space-y-3">
+                             ))}
+                             <div className="space-y-3">
                                 <div className="aspect-square rounded-[2.5rem] overflow-hidden bg-white/5 border border-white/10 group relative shadow-2xl">
                                     <img src={`data:${project.result.adCreative.mimeType};base64,${project.result.adCreative.base64}`} className="w-full h-full object-cover" />
                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                        <button className="px-6 py-2 bg-white text-black rounded-full font-black text-[10px]">تحميل 📥</button>
+                                         <button className="px-6 py-2 bg-white text-black rounded-full font-black text-[10px]">تحميل 📥</button>
                                     </div>
                                 </div>
                                 <p className="text-center text-[10px] font-black text-[#FFD700] uppercase tracking-widest">Master Ad Post</p>
-                            </div>
+                             </div>
                         </div>
                     </div>
 
@@ -161,12 +113,11 @@ const DailyPackStudio: React.FC<{
                             {project.result.socialContent.map((c, i) => (
                                 <div key={i} className="bg-white/5 p-6 rounded-[2.5rem] border border-white/5 space-y-4 hover:border-[#FFD700]/50 transition-all">
                                     <div className="flex justify-between items-center">
-                                        <span className="text-[10px] font-black bg-[#FFD700] text-black px-3 py-1 rounded-full uppercase">{(c as any).platform || `Caption 0${i + 1}`}</span>
+                                        <span className="text-[10px] font-black bg-[#FFD700] text-black px-3 py-1 rounded-full uppercase">Caption 0{i+1}</span>
                                         <button onClick={() => navigator.clipboard.writeText(c.caption)} className="text-[#FFD700] text-[10px] font-black hover:text-white transition-colors">نسخ 📋</button>
                                     </div>
-                                    <p className="text-sm font-bold text-[#FFD700] leading-relaxed italic">"{c.hook}"</p>
+                                    <p className="text-sm font-bold text-slate-200 leading-relaxed italic">"{c.hook}"</p>
                                     <p className="text-xs text-slate-400 leading-relaxed">{c.caption}</p>
-                                    {(c as any).cta && <p className="text-xs font-black text-white">👉 {(c as any).cta}</p>}
                                     <p className="text-[#FFD700] text-[10px] font-black">{c.hashtags}</p>
                                 </div>
                             ))}
@@ -176,7 +127,6 @@ const DailyPackStudio: React.FC<{
                                 <span className="text-2xl">🎬</span>
                                 <h4 className="text-xs font-black uppercase tracking-widest">خطة الريلز (Reel Script)</h4>
                             </div>
-                            {project.result.reelPlan.musicMood && <p className="text-[10px] font-black text-yellow-400/70">🎵 {project.result.reelPlan.musicMood}</p>}
                             <p className="text-xs text-slate-300 font-bold leading-relaxed italic">"{project.result.reelPlan.script}"</p>
                         </div>
                     </div>
@@ -189,8 +139,8 @@ const DailyPackStudio: React.FC<{
         <main className="w-full py-10 animate-in fade-in duration-700 text-right" dir="rtl">
             <div className="max-w-5xl mx-auto space-y-12">
                 <div className="space-y-4 text-center md:text-right">
-                    <h1 className="text-6xl font-black text-white tracking-tighter">Daily Content Pack 📅</h1>
-                    <p className="text-slate-400 text-xl font-bold">خلص محتوى الأسبوع في 5 دقايق صبّاحي.</p>
+                   <h1 className="text-6xl font-black text-white tracking-tighter">Daily Content Pack 📅</h1>
+                   <p className="text-slate-400 text-xl font-bold">خلص محتوى الأسبوع في 5 دقايق صبّاحي.</p>
                 </div>
 
                 <div className="bg-white/5 rounded-[3.5rem] p-10 md:p-14 border border-white/10 shadow-[0_30px_100px_rgba(0,0,0,0.5)] space-y-12">
@@ -198,12 +148,12 @@ const DailyPackStudio: React.FC<{
                         <div className="space-y-6">
                             <label className="text-sm font-black text-[#FFD700] uppercase tracking-widest pr-4 border-r-4 border-[#FFD700]">1. صور المنتج (2-3 صور)</label>
                             <div className="aspect-square">
-                                <ImageWorkspace
-                                    id="daily-up-v2"
-                                    images={project.productImages}
-                                    onImagesUpload={handleFileUpload}
-                                    onImageRemove={(idx) => setProject(p => ({ ...p, productImages: p.productImages.filter((_, i) => i !== idx) }))}
-                                    isUploading={false}
+                                <ImageWorkspace 
+                                    id="daily-up-v2" 
+                                    images={project.productImages} 
+                                    onImagesUpload={handleFileUpload} 
+                                    onImageRemove={(idx) => setProject(p => ({ ...p, productImages: p.productImages.filter((_, i) => i !== idx) }))} 
+                                    isUploading={false} 
                                     title="اسحب صور المنتج هنا"
                                 />
                             </div>
@@ -211,10 +161,10 @@ const DailyPackStudio: React.FC<{
                         <div className="space-y-10">
                             <div className="space-y-6">
                                 <label className="text-sm font-black text-[#FFD700] uppercase tracking-widest pr-4 border-r-4 border-[#FFD700]">2. وصف سريع لهدفك اليوم</label>
-                                <textarea
+                                <textarea 
                                     value={project.description}
                                     onChange={e => setProject(p => ({ ...p, description: e.target.value }))}
-                                    placeholder="مثلاً: 'إطلاق عطر جديد بخصم 30% لمتابعين تيك توك'..."
+                                    placeholder="مثلاً: 'إطلاق عطر جديد بخصم 30% لمتابعين تيك توك'..." 
                                     className="w-full h-48 bg-black/40 border border-white/10 rounded-[2.5rem] p-8 font-bold text-white outline-none focus:border-[#FFD700] shadow-inner resize-none text-lg leading-relaxed placeholder:text-slate-600"
                                 />
                             </div>
@@ -222,7 +172,7 @@ const DailyPackStudio: React.FC<{
                                 <label className="text-sm font-black text-[#FFD700] uppercase tracking-widest pr-4 border-r-4 border-[#FFD700]">3. نبرة المحتوى</label>
                                 <div className="grid grid-cols-2 gap-3">
                                     {['عفوي وجذاب', 'احترافي وفخم', 'كوميدي ومرح', 'مثير للجدل'].map(t => (
-                                        <button
+                                        <button 
                                             key={t}
                                             onClick={() => setProject(p => ({ ...p, tone: t }))}
                                             className={`py-4 rounded-2xl font-black text-xs border-2 transition-all ${project.tone === t ? 'bg-[#FFD700] border-[#FFD700] text-black shadow-lg' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white'}`}
@@ -235,7 +185,7 @@ const DailyPackStudio: React.FC<{
                         </div>
                     </div>
 
-                    <button
+                    <button 
                         onClick={handleGenerateAll}
                         disabled={isGenerating || !project.productImages.length}
                         className="w-full h-20 md:h-24 bg-[#FFD700] text-black font-black rounded-[2.5rem] text-xl md:text-3xl shadow-[0_20px_60px_rgba(255,215,0,0.4)] transition-all active:scale-95 flex items-center justify-center gap-6"
