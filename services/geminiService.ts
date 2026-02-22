@@ -92,12 +92,70 @@ export async function askGemini(prompt: string, sys?: string): Promise<string> {
     return res.text || "";
 }
 
-export async function generateUGCScript(data: any): Promise<string> { return askGemini(`Generate viral UGC script for ${data.productSelling}`, "Expert Content Creator"); }
+export async function generateUGCScript(data: any): Promise<string> {
+    const dialect = data.dialect || 'عامية مصرية';
+    const market = data.targetMarket || 'مصر';
+    return askGemini(
+        `أنت خبير UGC Content Creator متخصص في السوق العربي.
+        المنتج: ${data.productSelling}
+        السوق: ${market} | اللهجة: ${dialect}
+
+        اكتب سكريبت UGC فيرال بالتنسيق التالي:
+        🎬 الخطاف (Hook) - أول 3 ثواني محرقة لا تُقاوم
+        😤 المشكلة - لمس الوجع الحقيقي
+        ✨ الحل - كيف المنتج غيّر حياتك
+        💥 الإثبات - نتيجة ملموسة
+        ⚡ CTA - نداء فوري للشراء
+
+        قواعد:
+        - اكتب بـ${dialect} طبيعية 100% (مش فصحى)
+        - ادّي المنتج صوت شخصي حقيقي
+        - الطول: 30-45 ثانية كلام مسموع
+        - لازم يحتوي على emotion قوي`,
+        'UGC Performance Creator - Arabic Market Specialist'
+    );
+}
+
 export async function generateShortFormIdeas(data: any): Promise<string[]> {
-    const res = await askGemini(`Generate 30 short-form ideas for ${data.product}. Output as simple list.`, "Content Strategist");
+    const dialect = data.dialect || 'عامية مصرية';
+    const res = await askGemini(
+        `أنت مبدع محتوى رقمي خبير في منصات التواصل الاجتماعي العربية (Facebook, Instagram, TikTok).
+        المنتج/الخدمة: ${data.product || data.productSelling}
+        السوق: ${data.targetMarket || 'مصر والخليج'} | اللهجة: ${dialect}
+
+        ولد 30 فكرة محتوى فيرال بالتنسيق:
+        [نوع المحتوى] - [الفكرة في جملة واحدة لاذعة]
+
+        الأنواع المطلوبة:
+        - 8 أفكار Hook قوية (السطر الأول يوقف التمرير)
+        - 7 أفكار Problem-Solution
+        - 5 أفكار Social Proof
+        - 5 أفكار Trending/Viral Format
+        - 5 أفكار Educational/Value
+
+        اكتب كل فكرة في سطر منفصل بدون ترقيم.`,
+        'Viral Content Strategist - Arabic Social Media Expert'
+    );
     return res.split('\n').filter(l => l.trim().length > 0).slice(0, 30);
 }
-export async function generateFinalContentScript(topic: string, type: string): Promise<string> { return askGemini(`Write a ${type} script for: ${topic}`); }
+
+export async function generateFinalContentScript(topic: string, type: string, dialect: string = 'عامية مصرية'): Promise<string> {
+    return askGemini(
+        `أنت كاتب محتوى إعلاني محترف متخصص في السوق العربي.
+        الموضوع: ${topic}
+        نوع المحتوى: ${type}
+        اللهجة: ${dialect}
+
+        اكتب سكريبت احترافي كامل يشمل:
+        - Hook لا يُقاوم في الثواني الأولى
+        - بناء درامي يحافظ على الاهتمام
+        - CTA واضح ومقنع
+        - تعليمات الصوت والتصوير (بين قوسين)
+
+        اكتب بـ${dialect} طبيعية ومؤثرة.`,
+        'Professional Arabic Scriptwriter & Performance Marketer'
+    );
+}
 
 export async function generateImage(productImages: ImageFile[], prompt: string, styleImages: ImageFile[] | null = null, aspectRatio: string = "1:1"): Promise<ImageFile> {
     const ai = new GoogleGenAI({ apiKey: getApiKey() });
@@ -126,14 +184,50 @@ export async function generateImage(productImages: ImageFile[], prompt: string, 
 }
 
 export async function generateCampaignPlan(productImages: ImageFile[], goal: string, market: string, dialect: string): Promise<any[]> {
-    const res = await askGemini(`Create 9-day content plan for ${goal} in ${market} with ${dialect}. Return JSON array with {id, tov, caption, schedule, scenario}.`);
-    try { return JSON.parse(res.replace(/```json|```/g, '')); } catch { return []; }
+    const dialectNote = dialect.includes('Egyptian') ? 'اكتب بالعامية المصرية الطبيعية الجذابة' :
+        dialect.includes('Gulf') ? 'اكتب بالعامية الخليجية المناسبة' :
+            dialect.includes('English') ? 'Write in professional English' :
+                'اكتب بلغة عربية احترافية مناسبة';
+
+    const res = await askGemini(
+        `أنت خبير استراتيجي في إنتاج المحتوى للسوق العربي.
+        الهدف: ${goal}
+        السوق: ${market} | اللهجة: ${dialect}
+        قاعدة اللغة: ${dialectNote}
+
+        ابنِ خطة محتوى 9 أيام ذكية ومتنوعة تحقق نتائج حقيقية.
+        كل منشور يجب أن يكون مختلف في الزاوية والعاطفة.
+
+        أعد JSON array بالشكل:
+        [
+          {
+            "id": "uuid فريد",
+            "tov": "نوع المنشور (Hook/Social Proof/Problem-Solution/Educational/CTA)",
+            "caption": "النص الكامل للمنشور بما يناسب المنصة - مكتوب بـ${dialect} - مع الإيموجي والتنسيق المناسب",
+            "schedule": "اليوم X - الوقت المثالي (صباح/ظهر/مساء) مع السبب",
+            "scenario": "وصف دقيق لصورة/فيديو الكفر المطلوب: الخلفية، الإضاءة، زاوية الكاميرا، العناصر البصرية"
+          }
+        ]
+
+        التوزيع: 3 منشورات Hook + 2 Social Proof + 2 Educational + 2 CTA قوية.
+        أعد JSON فقط بدون أي نص خارجه.`,
+        'Senior Arabic Content Strategist & Conversion Specialist'
+    );
+    try { return JSON.parse(res.replace(/```json|```/g, '').trim()); } catch { return []; }
 }
 
 export async function analyzeProductForCampaign(images: ImageFile[]): Promise<string> {
     const ai = new GoogleGenAI({ apiKey: getApiKey() });
     const parts: Part[] = images.map(img => ({ inlineData: { data: img.base64, mimeType: img.mimeType } }));
-    parts.push({ text: "Analyze this product for marketing purposes. What is it? What are its strengths?" });
+    parts.push({
+        text: `أنت خبير تسويق رقمي متخصص في السوق العربي.
+    حلّل هذا المنتج وأجب بالعربية على:
+    1. ما هو المنتج تحديداً وفئته التسويقية؟
+    2. من هو الجمهور المستهدف الأدق؟
+    3. ما هي نقطة الألم التي يحلها؟
+    4. ما هي أقوى ميزة تنافسية يمكن استغلالها إعلانياً؟
+    5. ما هو أفضل زاوية إعلانية (Angle) لهذا المنتج في السوق العربي؟
+    اجعل إجابتك موجزة وعملية (5 أسطر كحد أقصى).` });
     const res = await ai.models.generateContent({ model: SMART_MODEL, contents: { parts } });
     return res.text || "";
 }
@@ -185,7 +279,144 @@ export async function runPowerProduction(images: ImageFile[], context: string, m
     };
 }
 
-export async function generateAdScript(p: string, b: string, pr: string, l: string, t: string): Promise<string> { return askGemini(`Write an ad script for ${p}`); }
+export async function generateAdScript(product: string, brand: string, price: string, language: string, tone: string): Promise<string> {
+    const isArabic = !language.toLowerCase().includes('english');
+    return askGemini(
+        `${isArabic ? 'أنت كاتب سكريبت إعلاني نخبة متخصص في السوق العربي.' : 'You are an elite ad scriptwriter.'}
+        المنتج: ${product} | البراند: ${brand} | السعر: ${price}
+        اللغة: ${language} | نبرة البراند: ${tone}
+
+        اكتب سكريبت إعلاني فيديو (30-60 ثانية) بالتنسيق:
+
+        [مشهد افتتاحي - Hook 0-5 ثواني]:
+        ...
+        [بناء المشكلة 5-15 ثانية]:
+        ...
+        [عرض الحل 15-35 ثانية]:
+        ...
+        [Social Proof 35-45 ثانية]:
+        ...
+        [CTA مفاجئ 45-60 ثانية]:
+        ...
+
+        بعد السكريبت، أضف:
+        📌 أفضل 3 هوكس بديلة للاختبار A/B`,
+        isArabic ? 'كاتب سكريبت إعلاني نخبة - السوق العربي - تحويل المشاهد لعميل' : 'Elite Ad Scriptwriter - Performance Marketing'
+    );
+}
+
+// ===== وظائف جديدة لرفع جودة المحتوى العربي =====
+
+export async function generateEliteHooks(productDesc: string, target: string, dialect: string, count: number = 10): Promise<string[]> {
+    const res = await askGemini(
+        `أنت خبير الـ Hook الأول في العالم العربي، متخصص في صنع جمل تُوقف التمرير.
+        المنتج: ${productDesc}
+        الجمهور: ${target} | اللهجة: ${dialect}
+
+        اكتب ${count} هوك مختلف 100% تُوقف التمرير في أقل من 3 ثواني:
+
+        الأنواع المطلوبة:
+        - 3 هوك مبنية على الفضول الحارق ("اكتشفت سر...")
+        - 3 هوك مبنية على الألم المباشر
+        - 2 هوك مبنية على الخوف من الفوات (FOMO)
+        - 2 هوك مبنية على الدهشة والصدمة
+
+        كل هوك في سطر منفصل، بدون ترقيم، بدون شرح.`,
+        'Hook Engineer - Arabic Viral Content Specialist'
+    );
+    return res.split('\n').filter(l => l.trim().length > 5).slice(0, count);
+}
+
+export async function generateViralCaption(productDesc: string, platform: string, dialect: string, tone: string): Promise<string> {
+    const platformGuide = platform === 'instagram' ? 'Instagram (مع hashtags مناسبة، emoticons، سطور قصيرة)' :
+        platform === 'tiktok' ? 'TikTok (محادثي، سريع، يستفز التعليق)' :
+            platform === 'facebook' ? 'Facebook (أطول قليلاً، يُشجع على الشير والتعليق)' :
+                'منصات التواصل العربية';
+    return askGemini(
+        `أنت متخصص في كتابة كابشن يُولّد engagement عالي في السوق العربي.
+        المنتج: ${productDesc}
+        المنصة: ${platformGuide}
+        لهجة: ${dialect} | نبرة: ${tone}
+
+        اكتب كابشن احترافي يشمل:
+        1. سطر أول يوقف التمرير (Hook)
+        2. قصة أو قيمة مضافة
+        3. CTA يُشجع على التفاعل
+        4. Hashtags مناسبة (للمنصات التي تحتاجها)
+
+        اكتب بـ${dialect} طبيعية وإنسانية.`,
+        'Arabic Social Media Copywriter & Engagement Specialist'
+    );
+}
+
+export async function generateCopy(data: {
+    product: string;
+    target: string;
+    goal: string;
+    dialect: string;
+    platform: string;
+    price?: string;
+    usp?: string;
+}): Promise<{ headline: string; subheadline: string; body: string; cta: string; hooks: string[] }> {
+    const res = await askGemini(
+        `أنت كوبي رايتر نخبة متخصص في Direct Response بالسوق العربي.
+        المنتج: ${data.product}
+        الجمهور: ${data.target}
+        الهدف: ${data.goal}
+        المنصة: ${data.platform}
+        السعر: ${data.price || 'غير محدد'}
+        الميزة الفريدة: ${data.usp || 'لم تُحدد'}
+        اللهجة: ${data.dialect}
+
+        اكتب حزمة كوبي كاملة بـJSON:
+        {
+          "headline": "العنوان الرئيسي الذي يوقف التمرير",
+          "subheadline": "جملة تدعم العنوان وتُوضح الفائدة",
+          "body": "نص الإعلان الكامل بـ${data.dialect} (مع الـ hook والمشكلة والحل والسوشيال بروف والـ CTA)",
+          "cta": "نداء الفعل الأقوى",
+          "hooks": ["هوك 1", "هوك 2", "هوك 3"]
+        }
+        أعد JSON فقط.`,
+        'Elite Arabic Direct Response Copywriter'
+    );
+    try {
+        return JSON.parse(res.replace(/```json|```/g, '').trim());
+    } catch {
+        return { headline: '', subheadline: '', body: res, cta: '', hooks: [] };
+    }
+}
+
+export async function generateAdCopyPack(data: {
+    product: string;
+    price: string;
+    market: string;
+    dialect: string;
+    goal: string;
+}): Promise<{ primary: string; hook1: string; hook2: string; hook3: string; ugcOpener: string; closingCta: string }> {
+    const res = await askGemini(
+        `أنت مدير إبداعي وكوبي رايتر في وقت واحد.
+        المنتج: ${data.product} | السعر: ${data.price}
+        السوق: ${data.market} | اللهجة: ${data.dialect}
+        هدف الحملة: ${data.goal}
+
+        ولّد حزمة إعلانية متكاملة بـJSON:
+        {
+          "primary": "النص الإعلاني الرئيسي (مع Hook + Body + CTA)",
+          "hook1": "هوك الألم المباشر",
+          "hook2": "هوك الفضول الحارق",
+          "hook3": "هوك FOMO",
+          "ugcOpener": "جملة بداية UGC طبيعية وغير رسمية",
+          "closingCta": "جملة إغلاق قوية تدفع للشراء الفوري"
+        }
+        اكتب بـ${data.dialect} الطبيعية. أعد JSON فقط.`,
+        'Senior Performance Copywriter - Arabic Market'
+    );
+    try {
+        return JSON.parse(res.replace(/```json|```/g, '').trim());
+    } catch {
+        return { primary: res, hook1: '', hook2: '', hook3: '', ugcOpener: '', closingCta: '' };
+    }
+}
 
 export async function generateDynamicStoryboard(productImages: ImageFile[], referenceImages: ImageFile[], userInstructions: string): Promise<string[]> {
     const ai = new GoogleGenAI({ apiKey: getApiKey() });
