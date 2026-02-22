@@ -453,19 +453,73 @@ export async function generateDynamicStoryboard(productImages: ImageFile[], refe
     return (res.text || "").split('\n').filter(l => l.trim().length > 0).slice(0, 9);
 }
 export async function generateMarketingAnalysis(data: any, language: string): Promise<string> {
+    const isArabic = !language.toLowerCase().includes('english');
+    const brandInfo = data.type === 'new'
+        ? `براند جديد: ${data.name} | التخصص: ${data.specialty} | الوصف: ${data.brief || 'غير متوفر'}`
+        : `براند قائم - رابط: ${data.link}`;
+
     return askGemini(
-        `Perform a comprehensive marketing analysis for: ${JSON.stringify(data)}. Language: ${language}.
-        Include: target audience, key messages, competitive advantages, recommended channels, and content strategy.
-        Be specific and actionable.`,
-        'Senior Marketing Strategist'
+        `${isArabic ? 'أنت مستشار تسويق استراتيجي نخبة متخصص في السوق العربي.' : 'You are an elite marketing strategist.'}
+        ${brandInfo}
+
+        قدّم تحليل تسويقي شامل وعملي يشمل:
+
+        ## 🎯 الجمهور المستهدف الأدق
+        (عمر / جنس / اهتمامات / سلوك شراء / نقاط ألمهم)
+
+        ## 💥 أقوى ثلاث رسائل تسويقية
+        (كل رسالة موجّهة لنقطة ألم حقيقية)
+
+        ## 🏆 الميزة التنافسية الحقيقية
+        (مقارنة سريعة بالمنافسين + نقطة التفوق)
+
+        ## 📱 القنوات الأمثل للنشر
+        (Facebook / Instagram / TikTok / Google - مع سبب كل منصة)
+
+        ## 📆 خطة محتوى 30 يوم
+        (3 أسابيع بمواضيع + أسبوع إطلاق بعروض)
+
+        ## 💰 توصية استراتيجية فورية
+        (الإجراء الأسرع والأكثر ربحاً دلوقتي)
+
+        ${isArabic ? 'اكتب بالعربية الاحترافية الواضحة.' : 'Write in professional English.'}`,
+        isArabic ? 'مستشار تسويق استراتيجي - السوق العربي - نتائج قابلة للتنفيذ' : 'Senior Arabic Market Strategist'
     );
 }
 
 export async function generateStoryboardPlan(images: any, instructions: string): Promise<any[]> {
     const res = await askGemini(
-        `Create a 6-scene professional video storyboard plan. Instructions: ${instructions}.
-        Return valid JSON array: [{"scene":1,"description":"...","shotType":"...","duration":"3s","text":"...","transition":"cut"}]`,
-        'Award-winning Video Director'
+        `أنت مخرج فيديو إعلاني نخبة متخصص في المحتوى الرقمي العربي.
+        التعليمات: ${instructions}
+
+        صمّم خطة storyboard احترافية لفيديو إعلاني مدته 30-60 ثانية في 6 مشاهد.
+        كل مشهد يجب أن يخدم هدفاً تسويقياً محدداً.
+
+        أعد JSON array بالشكل:
+        [
+          {
+            "scene": 1,
+            "title": "عنوان المشهد",
+            "description": "وصف محدد للمشهد: ماذا يحدث بالضبط، ومن يظهر، وكيف",
+            "shotType": "نوع اللقطة (Close-up / Wide / Medium / POV / Overhead)",
+            "cameraMove": "حركة الكاميرا (Static / Pan Right / Zoom In / Tracking)",
+            "duration": "المدة الزمنية (مثال: 5 ثواني)",
+            "text": "النص المنطوق أو المكتوب على الشاشة بالعربية",
+            "visualAction": "ما يتحرك أو يظهر في اللقطة",
+            "emotion": "المشاعر المطلوب إثارتها",
+            "transition": "الانتقال للمشهد التالي (Cut / Fade / Wipe)"
+          }
+        ]
+
+        التوزيع المطلوب:
+        - مشهد 1: Hook (جذب الانتباه - صادم أو مثير فضول)
+        - مشهد 2-3: بناء المشكلة والألم
+        - مشهد 4: تقديم الحل (المنتج)
+        - مشهد 5: الإثبات (Social Proof / نتائج)
+        - مشهد 6: CTA (نداء الشراء)
+
+        أعد JSON فقط.`,
+        'مخرج وكاتب سكريبت إعلاني نخبة - المحتوى العربي الرقمي'
     );
     try { return JSON.parse(res.replace(/```json|```/g, '').trim()); } catch { return []; }
 }
@@ -477,24 +531,111 @@ export async function animateImageToVideo(image: any, prompt: string, aspectRati
 
 export async function fetchCurrentTrends(region: string, niche: string): Promise<TrendItem[]> {
     const res = await askGemini(
-        `You are a trend analyst specializing in Arabic social media markets.
-        Analyze the TOP 8 trending topics RIGHT NOW for: Region=${region}, Niche=${niche}.
-        Return valid JSON array: [{"topic":"...","relevance":"High/Medium/Low","contentIdea":"...","viralHook":"..."}]
-        Focus on topics that drive engagement and sales on Facebook, Instagram, and TikTok.
-        Write content ideas in Arabic if region is Arabic-speaking.`,
-        'Social Media Trend Intelligence Analyst'
+        `أنت محلل ترندز متخصص في السوق العربي لمنصات Facebook و Instagram و TikTok.
+        المنطقة: ${region} | المجال: ${niche}
+
+        حلّل وقدّم 8 ترندز نشطة الآن في هذا المجال والمنطقة.
+        ركّز على مواضيع تولّد engagement حقيقي ومبيعات.
+
+        أعد JSON array بالشكل:
+        [
+          {
+            "topic": "عنوان الترند بالعربية (واضح وجذاب)",
+            "relevance": "عالي / متوسط / منخفض",
+            "why": "لماذا هذا الترند مهم لمجالك الآن؟ (جملتين)",
+            "contentIdea": "فكرة محتوى محددة تستغل هذا الترند (كيف تصنع فيديو أو بوست منه فوراً)",
+            "viralHook": "خطاف فيرال جاهز للاستخدام بالعامية المصرية أو العربية المناسبة للمنطقة",
+            "platforms": "أفضل منصة لنشره (Facebook/TikTok/Instagram)",
+            "urgency": "الترند سخن الآن / هابط / صاعد"
+          }
+        ]
+
+        اجعل الأفكار عملية وقابلة للتنفيذ فوراً.
+        أعد JSON فقط.`,
+        'خبير تحليل ترندز السوق العربي - Facebook / TikTok / Instagram'
     );
     try { return JSON.parse(res.replace(/```json|```/g, '').trim()); } catch { return []; }
 }
-export async function transformScriptToUGC(originalScript: string): Promise<string> { return askGemini(`Transform this to raw UGC script: ${originalScript}`); }
+export async function transformScriptToUGC(originalScript: string, dialect: string = 'عامية مصرية'): Promise<string> {
+    return askGemini(
+        `أنت خبير UGC Script Writer متخصص في تحويل النصوص الإعلانية الرسمية لمحتوى طبيعي وبشري 100%.
+        السكريبت الأصلي:
+        ---
+        ${originalScript}
+        ---
+
+        حوّل هذا النص لـ UGC Script بالتحسينات التالية:
+
+        1️⃣ الخطاف الجديد (Hook): اكتب 3 نسخ بديلة للسطر الأول - كل واحدة بأسلوب مختلف:
+           - نسخة فضول حارق
+           - نسخة ألم مباشر
+           - نسخة مفاجأة وصدمة
+
+        2️⃣ النص المحوّل (UGC Version):
+           - بدّل كل جملة رسمية بجملة طبيعية بـ${dialect}
+           - أضف "تأتأة" ووقفات طبيعية بين الكلام
+           - اجعله يبدو كشخص حقيقي يحكي تجربته
+           - الطول: 30-45 ثانية كلام مسموع
+
+        3️⃣ تعليمات التصوير (Filming Notes):
+           - أفضل وضعية للتصوير
+           - إضاءة مقترحة
+           - نصيحة للمصداقية البصرية`,
+        'UGC Script Transformer - Arabic Market Specialist'
+    );
+}
 
 export async function generateSocialContentPack(script: string): Promise<string[]> {
-    const res = await askGemini(`Based on this strategy script: ${script}, generate 9 unique social media posts (Facebook/Instagram). Each post should have a hook, body, and CTA. Output as a numbered list.`, "Social Media Strategist");
-    return res.split(/\d+\./).filter(l => l.trim().length > 0).slice(0, 9);
+    const res = await askGemini(
+        `أنت متخصص في كتابة المحتوى الاجتماعي للسوق العربي (Facebook / Instagram / TikTok).
+        بناءً على هذه الاستراتيجية:
+        ---
+        ${script}
+        ---
+
+        اكتب 9 منشورات متنوعة جاهزة للنشر بالتوزيع:
+        - 3 منشورات Facebook (أطول - مع قصة + CTA + hashtags)
+        - 3 منشورات Instagram (مع hook قوي + قيمة + hashtags)
+        - 3 منشورات TikTok Caption (قصيرة + جذابة + trending)
+
+        كل منشور يبدأ بـ [Facebook 1] أو [Instagram 2] إلخ.
+        اكتب بالعامية العربية الطبيعية.
+        كل منشور يحتوي: Hook لا يُقاوم + قيمة/قصة + CTA + hashtags مناسبة.`,
+        'Arabic Social Media Content Creator - 9-Post Pack Specialist'
+    );
+    return res.split(/\[(?:Facebook|Instagram|TikTok)/).filter(l => l.trim().length > 0).slice(0, 9);
 }
 
 export async function generateReelsProductionScript(script: string): Promise<string> {
-    return askGemini(`Based on this strategy script: ${script}, write a detailed 30-60 second Reels production script with visual cues and voiceover.`, "Video Creative Director");
+    return askGemini(
+        `أنت مخرج فيديو ريلز محترف متخصص في المحتوى العربي.
+        بناءً على هذه الاستراتيجية:
+        ---
+        ${script}
+        ---
+
+        اكتب سكريبت إنتاج ريلز كامل (30-60 ثانية) يشمل:
+
+        🎬 المشهد الافتتاحي (0-5 ثواني) - Hook:
+        [النص المنطوق + ما يظهر في الكاميرا]
+
+        📖 البناء (5-25 ثانية) - المشكلة والحل:
+        [النص + التوجيهات البصرية]
+
+        💰 الذروة (25-45 ثانية) - الإثبات والقيمة:
+        [النص + الصور أو المقطع المطلوب]
+
+        ⚡ الإغلاق (45-60 ثانية) - CTA قوي:
+        [النص + الـ overlay المطلوب]
+
+        📌 ملاحظات الإنتاج:
+        - نوع الموسيقى المقترحة
+        - الفلتر المناسب
+        - نصيحة للـ Hook البصري
+
+        اكتب بالعامية العربية الطبيعية.`,
+        'Arabic Reels Production Director & Scriptwriter'
+    );
 }
 
 export async function generateImagePromptsFromStrategy(script: string): Promise<string[]> {
