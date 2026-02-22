@@ -196,21 +196,29 @@ export async function generateCampaignPlan(productImages: ImageFile[], goal: str
         قاعدة اللغة: ${dialectNote}
 
         ابنِ خطة محتوى 9 أيام ذكية ومتنوعة تحقق نتائج حقيقية.
-        كل منشور يجب أن يكون مختلف في الزاوية والعاطفة.
+        كل يوم زاوية مختلفة وعاطفة مختلفة.
 
-        أعد JSON array بالشكل:
+        أعد JSON array بالشكل التالي تحديداً:
         [
           {
-            "id": "uuid فريد",
-            "tov": "نوع المنشور (Hook/Social Proof/Problem-Solution/Educational/CTA)",
-            "caption": "النص الكامل للمنشور بما يناسب المنصة - مكتوب بـ${dialect} - مع الإيموجي والتنسيق المناسب",
-            "schedule": "اليوم X - الوقت المثالي (صباح/ظهر/مساء) مع السبب",
-            "scenario": "وصف دقيق لصورة/فيديو الكفر المطلوب: الخلفية، الإضاءة، زاوية الكاميرا، العناصر البصرية"
+            "id": "day1",
+            "tov": "نوع المنشور: Hook | Social Proof | Problem-Solution | Educational | CTA",
+            "hook": "الجملة الأولى التي تجذب الانتباه وتوقف التمرير فوراً (عامية طبيعية جريئة)",
+            "caption": "النص الكامل للمنشور مع الإيموجي - كتابة ${dialectNote}",
+            "platform": "Facebook | Instagram | TikTok",
+            "postTime": "مثال: الأربعاء 7:30 م — وقت ذروة التفاعل",
+            "hashtags": "5-7 هاشتاقات ذات صلة",
+            "scenario": "وصف دقيق لصورة/فيديو مرافق: الخلفية، الإضاءة، الزاوية، العناصر البصرية"
           }
         ]
 
-        التوزيع: 3 منشورات Hook + 2 Social Proof + 2 Educational + 2 CTA قوية.
-        أعد JSON فقط بدون أي نص خارجه.`,
+        التوزيع المطلوب على 9 أيام:
+        يوم 1-3: Hook قوية تجذب الانتباه
+        يوم 4-5: Social Proof (شهادات + نتائج)
+        يوم 6-7: Educational (تعليمي + قيمة)
+        يوم 8-9: CTA مباشر للشراء
+
+        أعد JSON array فقط بدون أي نص خارجه.`,
         'Senior Arabic Content Strategist & Conversion Specialist'
     );
     try { return JSON.parse(res.replace(/```json|```/g, '').trim()); } catch { return []; }
