@@ -73,14 +73,14 @@ const VoiceOverStudio: React.FC<{
                     <h2 className="text-2xl font-black text-white">استوديو التعليق الصوتي AI</h2>
                     <textarea 
                         value={project.text} onChange={e => setProject(s => ({...s, text: e.target.value}))}
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white min-h-[150px] outline-none focus:border-indigo-500 font-tajawal"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white min-h-[150px] outline-none focus:border-[#FFD700] font-tajawal"
                         placeholder="اكتب النص الذي تريد تحويله لصوت..."
                     />
                     <div className="grid grid-cols-2 gap-4">
                         {VOICES.map(v => (
                             <button 
                                 key={v.value} onClick={() => setProject(s => ({...s, selectedVoice: v.value}))}
-                                className={`p-4 rounded-xl border-2 transition-all text-right ${project.selectedVoice === v.value ? 'bg-indigo-500/20 border-indigo-500 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}
+                                className={`p-4 rounded-xl border-2 transition-all text-right ${project.selectedVoice === v.value ? 'bg-[#FFD700]/20 border-[#FFD700] text-white' : 'bg-white/5 border-white/5 text-white/40'}`}
                             >
                                 <p className="font-bold">{v.label}</p>
                                 <p className="text-[10px] opacity-60">{v.desc}</p>
@@ -97,7 +97,7 @@ const VoiceOverStudio: React.FC<{
                     <h3 className="text-xl font-black text-white mb-6">النتائج والأرشيف</h3>
                     {project.generatedAudio ? (
                         <div className="p-6 bg-white/5 rounded-2xl flex items-center justify-between mb-8">
-                            <button onClick={() => project.isPlaying ? audioSourceRef.current?.stop() : playAudio(project.generatedAudio!)} className="w-16 h-16 rounded-full bg-indigo-500 text-white flex items-center justify-center hover:scale-105 transition-all shadow-xl">
+                            <button onClick={() => project.isPlaying ? audioSourceRef.current?.stop() : playAudio(project.generatedAudio!)} className="w-16 h-16 rounded-full bg-[#FFD700] text-black flex items-center justify-center hover:scale-105 transition-all shadow-xl">
                                 {project.isPlaying ? <PauseIcon /> : <PlayIcon />}
                             </button>
                             <div className="text-right">
@@ -109,7 +109,7 @@ const VoiceOverStudio: React.FC<{
                                         const url = URL.createObjectURL(blob);
                                         const a = document.createElement('a'); a.href = url; a.download = 'ebdaa-voice.wav'; a.click();
                                     });
-                                }} className="text-indigo-400 text-xs font-black mt-2 underline">تحميل بصيغة WAV</button>
+                                }} className="text-[#FFD700] text-xs font-black mt-2 underline">تحميل بصيغة WAV</button>
                             </div>
                         </div>
                     ) : (

@@ -1,0 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Tajawal:wght@500;700;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Montserrat", "Tajawal", sans-serif;
+  --font-tajawal: "Tajawal", sans-serif;
+  --font-cairo: "Cairo", sans-serif;
+}
+
+:root {
+  --primary-brand: #FFD700;
+  --secondary-brand: #000000;
+  --accent-glow: rgba(255, 215, 0, 0.15);
+}
+
+body { 
+  background-color: #000000; 
+  color: #ffffff; 
+  font-family: var(--font-sans); 
+  margin: 0;
+  touch-action: manipulation;
+}
+
+.shadow-glow { box-shadow: 0 0 30px rgba(255, 215, 0, 0.3); }
+.shadow-glow-white { box-shadow: 0 0 30px rgba(255, 255, 255, 0.05); }
+
+@keyframes progress-indefinite {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-progress-indefinite {
+  animation: progress-indefinite 2s infinite linear;
+  width: 100%;
+  background: linear-gradient(90deg, transparent, #fff, transparent);
+}

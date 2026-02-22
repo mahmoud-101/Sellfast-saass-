@@ -1,6 +1,6 @@
 
 import React, { useCallback } from 'react';
-import { ImageFile, ShotType, PhotoshootDirectorProject } from '../types';
+import { ImageFile, ShotType, PhotoshootDirectorProject, PhotoshootResult } from '../types';
 import { resizeImage } from '../utils';
 import { generateImage, editImage } from '../services/geminiService';
 import { deductCredits, CREDIT_COSTS } from '../lib/supabase';
@@ -17,9 +17,16 @@ interface PhotoshootDirectorProps {
 
 const PhotoshootDirector: React.FC<PhotoshootDirectorProps> = ({ project, setProject, userId, refreshCredits }) => {
 
+    const handleUpdateResult = (index: number, updated: Partial<PhotoshootResult>) => {
+      setProject(s => ({
+        ...s,
+        results: s.results.map((res, i) => i === index ? { ...res, ...updated } : res)
+      }));
+    };
+
     const onGenerate = useCallback(async () => {
     if (!project || project.productImages.length === 0 || project.selectedShotTypes.length === 0 || !userId) {
-      setProject(s => ({ ...s, error: 'فضلاً ارفع صورة المنتج واختر نوعاً واحداً من اللقطات على الأقل.' }));
+      setProject(s => ({ ...s, error: 'ارفع صورة المنتج واختر نوعاً واحداً من اللقطات على الأقل.' }));
       return;
     }
 
@@ -28,10 +35,11 @@ const PhotoshootDirector: React.FC<PhotoshootDirectorProps> = ({ project, setPro
 
     const deducted = await deductCredits(userId, totalCost);
     if (!deducted) {
-        setProject(s => ({ ...s, isGenerating: false, error: `رصيدك غير كافٍ. تحتاج إلى ${totalCost} نقطة لتوليد هذه اللقطات.` }));
+        setProject(s => ({ ...s, isGenerating: false, error: `رصيد غير كافٍ.` }));
         return;
     }
 
+    // تهيئة النتائج
     setProject(s => ({
       ...s,
       results: s.selectedShotTypes.map(shotType => ({
@@ -39,117 +47,65 @@ const PhotoshootDirector: React.FC<PhotoshootDirectorProps> = ({ project, setPro
         image: null,
         isLoading: true,
         error: null,
-        editPrompt: '',
         isEditing: false,
       })),
     }));
 
-    const generationPromises = project.selectedShotTypes.map(async (shotType) => {
-      const textProtection = "STRICTLY PRESERVE all original text, labels, and branding on the product. DO NOT erase original writing. NO EXTRA generated text in the scene.";
-      let prompt = `A high-resolution, professional photograph of the subject from the provided image. The desired shot is: '${shotType}'. The background should be clean, non-distracting, and complementary to the subject. ${textProtection}`;
-      
-      if (project.customStylePrompt) {
-        prompt += ` Additional style requirements: ${project.customStylePrompt}`;
-      }
+    // تنفيذ التوليد بشكل متوازي للسرعة مع تحديث النتائج تدريجياً
+    const imagePromises = project.selectedShotTypes.map(async (shotType, i) => {
+      const textProtection = "STRICTLY PRESERVE all original branding, logos, and text from the product image. NO EXTRA text.";
+      let prompt = `MASTER PROMPT: Professional product photo of the item in Image 1.
+      SHOT TYPE: ${shotType}.
+      STYLE: High-end commercial photography, photorealistic, 8k, hyperrealistic, sharp focus, detailed texture, studio lighting, editorial quality.
+      ${textProtection}`;
+      if (project.customStylePrompt) prompt += ` ADDITIONAL STYLE: ${project.customStylePrompt}`;
 
       try {
         const image = await generateImage(project.productImages, prompt, null);
-        return { status: 'fulfilled' as const, value: { shotType, image } };
+        setProject(s => ({ 
+          ...s, 
+          results: s.results.map(r => r.shotType === shotType ? { ...r, image, isLoading: false } : r) 
+        }));
       } catch (error: any) {
-        return { status: 'rejected' as const, reason: { shotType, error } };
-      }
-    });
-
-    const settledResults = await Promise.all(generationPromises);
-
-    settledResults.forEach(result => {
-      if (result.status === 'fulfilled') {
-        const { shotType, image } = result.value;
-        setProject(s => ({
-          ...s,
-          results: s.results.map(r => r.shotType === shotType ? { ...r, image, isLoading: false } : r),
-        }));
-      } else {
-        const { shotType, error } = result.reason;
-        setProject(s => ({
-          ...s,
-          results: s.results.map(r => r.shotType === shotType ? { ...r, error: error.message || 'Generation failed', isLoading: false } : r),
+        setProject(s => ({ 
+          ...s, 
+          results: s.results.map(r => r.shotType === shotType ? { ...r, error: 'تجاوزت حد جوجل المجاني، حاول مرة أخرى لاحقاً.', isLoading: false } : r) 
         }));
       }
     });
+
+    await Promise.all(imagePromises);
     
     setProject(s => ({ ...s, isGenerating: false }));
     if (refreshCredits) refreshCredits();
   }, [project, setProject, userId, refreshCredits]);
 
-  const handleEditResult = async (index: number, prompt: string) => {
-      const result = project.results[index];
-      if (!result || !result.image || !userId) return;
-
-      const deducted = await deductCredits(userId, CREDIT_COSTS.IMAGE_BASIC);
-      if (!deducted) return;
-
-      setProject(s => {
-          const newResults = [...s.results];
-          newResults[index] = { ...newResults[index], isEditing: true, error: null };
-          return { ...s, results: newResults };
-      });
-
-      try {
-          const updated = await editImage(result.image, prompt);
-          setProject(s => {
-              const newResults = [...s.results];
-              newResults[index] = { ...newResults[index], image: updated, isEditing: false };
-              return { ...s, results: newResults };
-          });
-          if (refreshCredits) refreshCredits();
-      } catch (err) {
-          setProject(s => {
-              const newResults = [...s.results];
-              newResults[index] = { ...newResults[index], isEditing: false, error: err instanceof Error ? err.message : 'Edit failed' };
-              return { ...s, results: newResults };
-          });
-      }
-  };
-
-  const handleFileUpload = async (files: File[]) => {
-    if (!files || files.length === 0) return;
-    setProject(s => ({ ...s, isUploading: true, error: null }));
-    const results = await Promise.all(files.map(file => {
-      return new Promise<ImageFile | null>(async (resolve) => {
-        try {
-          const resizedFile = await resizeImage(file, 2048, 2048);
-          const reader = new FileReader();
-          reader.onloadend = () => resolve({ base64: (reader.result as string).split(',')[1], mimeType: resizedFile.type, name: resizedFile.name });
-          reader.readAsDataURL(resizedFile);
-        } catch (err) { resolve(null); }
-      });
-    }));
-    const validImages = results.filter((img): img is ImageFile => img !== null);
-    setProject(s => ({ ...s, productImages: [...s.productImages, ...validImages], isUploading: false }));
-  };
-
   return (
-    <main className="w-full flex flex-col gap-4 pt-4 pb-8 text-right">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-grow">
-        <div className="lg:col-span-1 flex flex-col gap-4">
-          <div className="glass-card rounded-2xl p-4">
-            <h3 className="text-lg font-bold text-white mb-4">1. ارفع صور المنتج</h3>
-            <ImageWorkspace id="photoshoot-up" images={project.productImages} onImagesUpload={handleFileUpload} onImageRemove={(i) => setProject(s => ({ ...s, productImages: s.productImages.filter((_, idx) => idx !== i) }))} isUploading={project.isUploading} />
+    <main className="w-full flex flex-col gap-10 pt-4 pb-12 animate-in fade-in duration-500 text-right" dir="rtl">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-1 space-y-6">
+          <div className="bg-white/5 rounded-[2rem] p-8 border border-white/10 shadow-sm">
+            <h3 className="text-lg font-black text-white mb-6">1. ارفع صورة المنتج</h3>
+            <ImageWorkspace id="ps-up" title="ارفع صورة واضحة" images={project.productImages} onImagesUpload={(f) => {
+                const r = new FileReader(); r.onload = () => setProject(s => ({ ...s, productImages: [...s.productImages, { base64: (r.result as string).split(',')[1], mimeType: f[0].type, name: f[0].name }] }));
+                r.readAsDataURL(f[0]);
+            }} onImageRemove={(i) => setProject(s => ({ ...s, productImages: s.productImages.filter((_, idx) => idx !== i) }))} isUploading={false} />
           </div>
+          
           <ShotTypeSelector selected={project.selectedShotTypes} onChange={(selected) => setProject(s => ({ ...s, selectedShotTypes: selected }))} customStylePrompt={project.customStylePrompt} onCustomStylePromptChange={(prompt) => setProject(s => ({...s, customStylePrompt: prompt }))} />
-          <div className="w-full px-4 py-2">
-            <button onClick={onGenerate} disabled={project.isGenerating || project.isUploading || project.productImages.length === 0 || project.selectedShotTypes.length === 0} className="w-full h-16 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl transition-all disabled:opacity-30">
-                {project.isGenerating ? 'جاري التصوير...' : `توليد ${project.selectedShotTypes.length} لقطات (${project.selectedShotTypes.length * 5} نقطة)`}
-            </button>
-            {project.error && <p className="text-red-400 text-center font-bold mt-2 text-xs">{project.error}</p>}
-          </div>
+          
+          <button onClick={onGenerate} disabled={project.isGenerating || project.productImages.length === 0 || project.selectedShotTypes.length === 0} className="w-full h-20 bg-[#FFD700] text-black font-black rounded-2xl shadow-xl transition-all active:scale-95 disabled:opacity-30 hover:bg-yellow-400">
+              {project.isGenerating ? 'جاري الرندرة المتسلسلة...' : `بدء التصوير (${project.selectedShotTypes.length * 5} نقطة)`}
+          </button>
         </div>
 
-        <div className="lg:col-span-2 flex flex-col gap-6">
-          <div className="flex flex-col flex-grow glass-card rounded-2xl p-4">
-              <h3 className="text-lg font-bold text-white mb-4">3. النتائج الاحترافية</h3>
-              <ResultsGrid results={project.results} onEditResult={handleEditResult} />
+        <div className="lg:col-span-2">
+          <div className="bg-white/5 rounded-[2.5rem] p-10 border border-white/10 min-h-[600px] shadow-sm">
+              <div className="flex items-center gap-3 mb-10 flex-row-reverse border-b border-white/5 pb-6">
+                 <div className="w-10 h-10 bg-yellow-500/10 rounded-xl flex items-center justify-center text-[#FFD700]">📸</div>
+                 <h3 className="text-2xl font-black text-white">معرض النتائج الاحترافية</h3>
+              </div>
+              <ResultsGrid results={project.results} onUpdateResult={handleUpdateResult} />
           </div>
         </div>
       </div>

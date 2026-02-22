@@ -1,17 +1,10 @@
 
 import React, { useState } from 'react';
-import { PowerStudioProject, ImageFile } from '../types';
+import { PowerStudioProject } from '../types';
 import { runPowerProduction } from '../services/geminiService';
 import { deductCredits, CREDIT_COSTS } from '../lib/supabase';
+import { resizeImage } from '../utils';
 import ImageWorkspace from './ImageWorkspace';
-
-const SparklesIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-    </svg>
-);
-
-const LOGO_IMAGE_URL = "https://i.ibb.co/MDrpHPzS/Artboard-1.png";
 
 const PowerStudio: React.FC<{
     project: PowerStudioProject;
@@ -19,189 +12,132 @@ const PowerStudio: React.FC<{
     userId?: string;
     refreshCredits?: () => void;
 }> = ({ project, setProject, userId, refreshCredits }) => {
-    const [activeTab, setActiveTab] = useState<'visual' | 'content' | 'strategy'>('visual');
+    const [step, setStep] = useState(1);
+    const [activeTab, setActiveTab] = useState<'ad_pack' | 'visual' | 'targeting'>('ad_pack');
 
-    const handleRunProduction = async () => {
-        if (project.productImages.length === 0 || !project.goal.trim() || !userId) return;
+    const handleRun = async () => {
+        if (!userId) return;
+        setProject((s: any) => ({ ...s, isGenerating: true, error: null, progress: 10, currentStep: 'تحليل استراتيجي فوري...' }));
         
-        setProject((s: any) => ({ ...s, isGenerating: true, error: null, progress: 5, currentStep: 'بدء المحرك وتحميل الأصول...' }));
+        const detailedContext = `Brand: ${project.brandName}, Category: ${project.productCategory}, Goal: ${project.goal}`;
+
         try {
-            const result = await runPowerProduction(
+            // تنفيذ الرندرة والتحليل عبر Gemini مباشرة بدون Amplify AI Route
+            const res = await runPowerProduction(
                 project.productImages, 
-                project.goal, 
+                detailedContext, 
                 project.targetMarket, 
-                project.dialect,
-                (step, prog) => setProject((s: any) => ({ ...s, currentStep: step, progress: prog }))
+                project.dialect, 
+                (s, p) => setProject((prev: any) => ({ ...prev, currentStep: s, progress: p }))
             );
             
             const deducted = await deductCredits(userId, CREDIT_COSTS.POWER_PROD);
-            
-            if (deducted) {
-                setProject((s: any) => ({ ...s, result, isGenerating: false, progress: 100, currentStep: 'اكتملت الحملة بنجاح' }));
-                if (refreshCredits) refreshCredits();
-            } else {
-                setProject((s: any) => ({ ...s, isGenerating: false, error: `رصيدك غير كافٍ. تكلفة الإنتاج الشامل هي ${CREDIT_COSTS.POWER_PROD} نقطة.` }));
+            if (deducted) { 
+                setProject((s: any) => ({ ...s, result: res, isGenerating: false, progress: 100 })); 
+                refreshCredits?.(); 
+            } else { 
+                setProject((s: any) => ({ ...s, isGenerating: false, error: 'رصيد غير كافٍ.' })); 
             }
-        } catch (err) {
-            setProject((s: any) => ({ ...s, isGenerating: false, error: err instanceof Error ? err.message : 'عذراً، حدث خطأ في النظام الذكي' }));
+        } catch (err: any) { 
+            setProject((s: any) => ({ ...s, isGenerating: false, error: "فشل التحليل: " + err.message })); 
         }
     };
 
-    const handleExportFullReport = () => {
-        if (!project.result) return;
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) return;
+    const nextStep = () => setStep(s => Math.min(s + 1, 5));
+    const prevStep = () => setStep(s => Math.max(s - 1, 1));
 
-        const postsHtml = project.result.socialPlan.map((post, i) => `
-            <div style="padding: 20px; border: 1px solid #eef2ff; border-radius: 15px; margin-bottom: 20px; background: #fafbff;">
-                <div style="font-weight: 900; color: #6366f1; margin-bottom: 10px;">المنشور ${i+1}</div>
-                <div style="font-weight: bold; margin-bottom: 8px;">🔥 ${post.hook}</div>
-                <div style="line-height: 1.6; color: #444;">${post.caption}</div>
-                <div style="margin-top:10px; color:#6366f1; font-size:12px;"># ${post.hashtags.join(' ')}</div>
+    if (project.result) {
+        return (
+            <div className="w-full space-y-8 animate-in slide-in-from-bottom-5 duration-700 text-right" dir="rtl">
+                <div className="flex flex-col md:flex-row justify-between items-center bg-white/5 p-8 rounded-[2.5rem] border border-white/5 gap-6">
+                    <div>
+                        <h2 className="text-3xl font-black text-white tracking-tighter">حملة: {project.brandName || "مشروع جديد"}</h2>
+                        <p className="text-[#FFD700] font-bold text-xs mt-1 uppercase tracking-widest flex items-center gap-2">
+                           <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> وضع المعاينة النشط
+                        </p>
+                    </div>
+                    <button onClick={() => setProject((s: any) => ({ ...s, result: null }))} className="px-10 py-4 bg-white/10 hover:bg-white/20 rounded-2xl text-xs font-black transition-all border border-white/5">إنشاء حملة جديدة</button>
+                </div>
+
+                <div className="flex justify-center bg-white/5 p-1.5 rounded-2xl border border-white/5 max-w-fit mx-auto gap-1">
+                    {[{ id: 'ad_pack', label: 'إعلانات FB', icon: '📝' }, { id: 'visual', label: 'التصميم', icon: '🖼️' }, { id: 'targeting', label: 'الاستهداف', icon: '🎯' }].map(tab => (
+                        <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`px-10 py-3 rounded-xl font-black text-xs transition-all flex items-center gap-2 ${activeTab === tab.id ? 'bg-[#FFD700] text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}>
+                            <span>{tab.icon}</span> {tab.label}
+                        </button>
+                    ))}
+                </div>
+
+                <div className="bg-white/5 rounded-[3.5rem] p-10 border border-white/5 min-h-[500px] shadow-2xl relative overflow-hidden">
+                    {activeTab === 'ad_pack' && (
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 animate-in fade-in">
+                            <div className="space-y-10">
+                                <div className="space-y-4">
+                                    <label className="text-[10px] font-black text-[#FFD700] uppercase tracking-widest pr-4 border-r-4 border-[#FFD700]">Facebook Ad Copy</label>
+                                    <div className="p-10 bg-black/40 rounded-[2.5rem] border border-white/5 text-slate-200 font-bold leading-relaxed whitespace-pre-wrap relative group text-lg shadow-inner">
+                                        {project.result.fbAds.primaryText}
+                                        <button onClick={() => navigator.clipboard.writeText(project.result!.fbAds.primaryText)} className="absolute top-6 left-6 p-3 bg-white/10 rounded-xl opacity-0 group-hover:opacity-100 transition-all text-xs hover:bg-[#FFD700] hover:text-black">نسخ 📋</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="aspect-square bg-black/40 rounded-[3rem] overflow-hidden border border-white/10 shadow-2xl">
+                                <img src={`data:${project.result.visual.mimeType};base64,${project.result.visual.base64}`} className="w-full h-full object-cover" alt="Final Ad" />
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
-        `).join('');
-
-        printWindow.document.write(`
-            <html>
-            <head>
-                <title>Ebdaa Pro - Full Campaign Report</title>
-                <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
-                <style>
-                    body { font-family: 'Tajawal', sans-serif; direction: rtl; padding: 40px; color: #1e293b; }
-                    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #6366f1; padding-bottom: 20px; }
-                    .section { margin-top: 40px; }
-                    .visual { width: 100%; max-width: 600px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
-                </style>
-            </head>
-            <body>
-                <div class="header">
-                    <h1>تقرير الحملة الإعلانية المتكاملة</h1>
-                    <img src="${LOGO_IMAGE_URL}" height="50" />
-                </div>
-                <div class="section">
-                    <h2>الرؤية البصرية الرئيسية</h2>
-                    <img src="data:${project.result.visual?.mimeType};base64,${project.result.visual?.base64}" class="visual" />
-                </div>
-                <div class="section"><h2>التحليل الاستراتيجي</h2><p>${project.result.analysis}</p></div>
-                <div class="section"><h2>خطة المحتوى</h2>${postsHtml}</div>
-                <button onclick="window.print()" style="margin-top:40px; padding:15px 30px; background:#6366f1; color:white; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">تحميل PDF</button>
-            </body>
-            </html>
-        `);
-        printWindow.document.close();
-    };
+        );
+    }
 
     return (
-        <div className="w-full flex flex-col gap-8 animate-in fade-in duration-700">
-            {/* Input Section */}
-            <div className="glass-card rounded-[3rem] p-10 shadow-2xl relative overflow-hidden border border-white/5">
-                <div className="flex flex-col lg:flex-row gap-12">
-                    <div className="lg:w-1/3">
-                        <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em] mb-4 text-center">أصول المنتج</h3>
-                        <ImageWorkspace id="power-up" images={project.productImages} onImagesUpload={(f) => {
-                            const r = new FileReader(); r.onload = () => setProject((s: any) => ({ ...s, productImages: [...s.productImages, { base64: (r.result as string).split(',')[1], mimeType: f[0].type, name: f[0].name }] }));
-                            r.readAsDataURL(f[0]);
-                        }} onImageRemove={(idx) => setProject((s: any) => ({ ...s, productImages: s.productImages.filter((_: any, i: any) => i !== idx) }))} isUploading={false} />
-                    </div>
-
-                    <div className="lg:w-2/3 flex flex-col gap-6 text-right">
-                        <h2 className="text-4xl font-black text-white flex items-center justify-end"><SparklesIcon /> الإنتاج السحري الشامل</h2>
-                        <p className="text-white/40 text-sm">أدخل رؤيتك وسيقوم النظام بتوليد: هوية بصرية، خطة محتوى، سيناريوهات ريلز، وتحليل سوق كامل.</p>
-                        
-                        <div className="bg-white/5 p-6 rounded-3xl border border-white/10">
-                            <label className="text-[10px] font-black text-[var(--color-accent)] uppercase mb-2 block tracking-widest">ما هو هدفك من هذه الحملة؟</label>
-                            <textarea value={project.goal} onChange={(e) => setProject((s: any) => ({ ...s, goal: e.target.value }))} className="w-full bg-transparent border-none p-0 text-lg font-bold text-white focus:ring-0 min-h-[120px] resize-none" placeholder="مثال: إطلاق منتج جديد للقهوة المختصة في دبي يستهدف جيل الشباب بأسلوب فاخر..." />
+        <div className="w-full flex flex-col gap-8 text-right" dir="rtl">
+            <div className="flex items-center justify-center gap-4 mb-10 overflow-x-auto no-scrollbar py-4">
+                {[1, 2, 3, 4, 5].map(s => (
+                    <div key={s} className="flex items-center gap-4 shrink-0">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black transition-all border-2 ${step === s ? 'bg-[#FFD700] border-[#FFD700] text-black scale-110 shadow-lg shadow-yellow-500/30' : step > s ? 'bg-yellow-900/50 border-yellow-800 text-[#FFD700]' : 'bg-white/5 border-white/10 text-slate-600'}`}>
+                            {s === 1 ? '🛍️' : s === 2 ? '👥' : s === 3 ? '🎯' : s === 4 ? '🌍' : '🚀'}
                         </div>
-                        
-                        <button onClick={handleRunProduction} disabled={project.isGenerating || project.productImages.length === 0 || !project.goal.trim()} className="w-full h-20 bg-[var(--color-accent)] hover:bg-[var(--color-accent-dark)] text-white font-black rounded-2xl shadow-xl shadow-[var(--color-accent)]/20 transition-all active:scale-95 disabled:opacity-50">
-                            {project.isGenerating ? (
-                                <div className="flex flex-col items-center">
-                                    <span className="text-sm mb-1">{project.currentStep}</span>
-                                    <div className="w-64 h-1 bg-white/20 rounded-full overflow-hidden">
-                                        <div className="h-full bg-white transition-all duration-500" style={{ width: `${project.progress}%` }}></div>
-                                    </div>
-                                </div>
-                            ) : `إطلاق المحرك الذكي (${CREDIT_COSTS.POWER_PROD} نقطة)`}
-                        </button>
-                        {project.error && <p className="text-red-400 text-center font-bold text-xs">{project.error}</p>}
+                        {s < 5 && <div className={`w-8 md:w-16 h-1 rounded-full ${step > s ? 'bg-[#FFD700]' : 'bg-white/5'}`}></div>}
                     </div>
-                </div>
+                ))}
             </div>
 
-            {/* Results Dashboard */}
-            {project.result && (
-                <div className="flex flex-col gap-6 animate-in slide-in-from-bottom-10 duration-1000">
-                    <div className="flex justify-center">
-                        <div className="bg-white/5 p-1.5 rounded-2xl border border-white/10 flex gap-2">
-                            <button onClick={() => setActiveTab('visual')} className={`px-8 py-2.5 rounded-xl text-xs font-black transition-all ${activeTab === 'visual' ? 'bg-[var(--color-accent)] text-white shadow-lg' : 'text-white/40 hover:text-white'}`}>الرؤية البصرية</button>
-                            <button onClick={() => setActiveTab('content')} className={`px-8 py-2.5 rounded-xl text-xs font-black transition-all ${activeTab === 'content' ? 'bg-[var(--color-accent)] text-white shadow-lg' : 'text-white/40 hover:text-white'}`}>خطة المحتوى</button>
-                            <button onClick={() => setActiveTab('strategy')} className={`px-8 py-2.5 rounded-xl text-xs font-black transition-all ${activeTab === 'strategy' ? 'bg-[var(--color-accent)] text-white shadow-lg' : 'text-white/40 hover:text-white'}`}>الاستراتيجية</button>
-                        </div>
-                    </div>
-
-                    {activeTab === 'visual' && (
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                            <div className="glass-card rounded-[3rem] p-8 border border-white/5">
-                                <img src={`data:${project.result.visual?.mimeType};base64,${project.result.visual?.base64}`} className="w-full rounded-[2rem] shadow-2xl" alt="Hero Visual" />
-                                <button onClick={() => {
-                                    const a = document.createElement('a');
-                                    a.href = `data:${project.result!.visual!.mimeType};base64,${project.result!.visual!.base64}`;
-                                    a.download = "Ebdaa-Pro-Hero.png";
-                                    a.click();
-                                }} className="w-full mt-6 py-4 bg-white/5 hover:bg-white/10 text-white font-black rounded-2xl border border-white/10 transition-all">تحميل الصورة 4K</button>
-                            </div>
-                            <div className="glass-card rounded-[3rem] p-8 border border-white/5 text-right space-y-6">
-                                <h3 className="text-2xl font-black text-white">تحليل المشهد الإبداعي</h3>
-                                <div className="p-6 bg-white/5 rounded-3xl text-sm leading-relaxed text-white/70 italic">
-                                    "{project.result.visualPrompt}"
+            <div className="bg-white/5 rounded-[3.5rem] p-10 md:p-14 border border-white/5 shadow-2xl relative overflow-hidden min-h-[650px] flex flex-col">
+                <div className="flex-grow">
+                    {step === 1 && (
+                        <div className="animate-in fade-in slide-in-from-left-8 duration-500 space-y-10">
+                            <h2 className="text-4xl font-black text-white tracking-tighter">المرحلة 1: البيانات الأساسية</h2>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                                <div className="space-y-6">
+                                    <input value={project.brandName} onChange={e => setProject((s: any) => ({ ...s, brandName: e.target.value }))} className="w-full bg-white/5 border border-white/10 rounded-2xl p-6 font-bold text-white outline-none focus:border-[#FFD700] transition-all shadow-inner" placeholder="اسم البراند" />
+                                    <textarea value={project.productDescription} onChange={e => setProject((s: any) => ({ ...s, productDescription: e.target.value }))} className="w-full h-48 bg-white/5 border border-white/10 rounded-[2rem] p-6 font-bold text-white outline-none focus:border-[#FFD700] transition-all resize-none shadow-inner leading-relaxed" placeholder="وصف المنتج لـ AI" />
                                 </div>
-                                <p className="text-white/60 leading-relaxed">{project.result.analysis.split('.')[0]}.</p>
-                                <button onClick={handleExportFullReport} className="w-full py-5 bg-[var(--color-accent)] text-white font-black rounded-2xl shadow-xl">تصدير الملف كاملاً PDF</button>
+                                <ImageWorkspace id="power-up" images={project.productImages} onImagesUpload={async f => {
+                                     const r = await resizeImage(f[0], 1024, 1024);
+                                     const reader = new FileReader();
+                                     reader.onloadend = () => setProject((s: any) => ({ ...s, productImages: [...s.productImages, { base64: (reader.result as string).split(',')[1], mimeType: r.type, name: r.name }] }));
+                                     reader.readAsDataURL(r);
+                                }} onImageRemove={(i) => setProject((s: any) => ({ ...s, productImages: s.productImages.filter((_, idx)=>idx!==i) }))} isUploading={false} />
                             </div>
                         </div>
                     )}
-
-                    {activeTab === 'content' && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {project.result.socialPlan.map((post, i) => (
-                                <div key={i} className="glass-card p-6 rounded-[2rem] border border-white/5 text-right flex flex-col gap-4">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-[10px] font-black text-[var(--color-accent)] bg-[var(--color-accent)]/10 px-3 py-1 rounded-full">{post.schedule}</span>
-                                        <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Post 0{i+1}</span>
-                                    </div>
-                                    <h4 className="font-black text-white">🔥 {post.hook}</h4>
-                                    <p className="text-xs text-white/50 leading-relaxed line-clamp-4">{post.caption}</p>
-                                    <div className="flex flex-wrap gap-1 justify-end">
-                                        {post.hashtags.map((h, idx) => <span key={idx} className="text-[9px] text-[var(--color-accent)] font-bold">#{h}</span>)}
-                                    </div>
-                                    <button onClick={() => navigator.clipboard.writeText(`${post.hook}\n\n${post.caption}\n\n${post.hashtags.map(h=>'#'+h).join(' ')}`)} className="mt-auto py-2 text-[10px] font-black text-white/30 hover:text-white uppercase tracking-widest transition-all">Copy Text</button>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {activeTab === 'strategy' && (
-                        <div className="glass-card rounded-[3rem] p-10 border border-white/5 text-right space-y-10">
-                            <section className="space-y-4">
-                                <h3 className="text-xl font-black text-[var(--color-accent)]">التموضع الاستراتيجي في السوق</h3>
-                                <p className="text-white/70 leading-relaxed whitespace-pre-wrap">{project.result.analysis}</p>
-                            </section>
-                            <section className="space-y-6">
-                                <h3 className="text-xl font-black text-[var(--color-accent)]">سيناريوهات الريلز المقترحة</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {project.result.reelsScripts.map((r, i) => (
-                                        <div key={i} className="p-6 bg-white/5 rounded-3xl border border-white/5 space-y-3">
-                                            <div className="font-black text-white text-sm">المشهد: {r.scene}</div>
-                                            <div className="text-xs text-white/40"><span className="text-[var(--color-accent)] font-bold">بصرياً:</span> {r.visualDesc}</div>
-                                            <div className="text-xs text-emerald-400"><span className="font-bold">الصوت:</span> {r.audioOverlay}</div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </section>
+                    
+                    {step === 5 && (
+                        <div className="flex flex-col items-center justify-center h-full py-16 animate-in zoom-in-95 duration-700">
+                             <div className="w-32 h-32 bg-[#FFD700] rounded-full flex items-center justify-center text-5xl shadow-[0_0_80px_rgba(255,215,0,0.4)] animate-bounce mb-8">🚀</div>
+                             <h2 className="text-5xl font-black text-white tracking-tighter text-center mb-8">جاهز للإطلاق الفوري</h2>
+                             <button onClick={handleRun} disabled={project.isGenerating} className="w-full max-w-md h-24 bg-[#FFD700] text-black font-black rounded-3xl shadow-2xl hover:bg-yellow-400 transition-all text-2xl flex items-center justify-center gap-4">
+                                {project.isGenerating ? 'جاري الرندرة...' : 'إطلاق الحملة المتكاملة'}
+                             </button>
                         </div>
                     )}
                 </div>
-            )}
+
+                <div className="mt-16 flex justify-between items-center border-t border-white/5 pt-10">
+                    <button onClick={prevStep} disabled={step === 1} className="px-12 py-5 rounded-2xl font-black text-sm bg-white/5 text-slate-400 hover:text-white transition-all disabled:opacity-0">السابق</button>
+                    <button onClick={nextStep} disabled={step === 5} className="px-14 py-5 bg-white text-black font-black rounded-2xl hover:scale-105 transition-all shadow-xl">التالي</button>
+                </div>
+            </div>
         </div>
     );
 };

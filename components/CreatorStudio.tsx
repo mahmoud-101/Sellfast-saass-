@@ -1,10 +1,9 @@
 
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import { CreatorStudioProject, ImageFile } from '../types';
-/* Fix: removed non-existent translateText from imports */
-import { analyzeStyleImage, generateImage, editImage } from '../services/geminiService';
+import { generateImage, enhancePrompt } from '../services/geminiService';
 import { resizeImage } from '../utils';
-import { deductCredits, CREDIT_COSTS } from '../lib/supabase';
+import { deductCredits, CREDIT_COSTS, saveGeneratedAsset } from '../lib/supabase';
 import CustomizationPanel from './CustomizationPanel';
 import ImageWorkspace from './ImageWorkspace';
 import PromptEditor from './PromptEditor';
@@ -18,162 +17,130 @@ interface CreatorStudioProps {
   refreshCredits?: () => void;
 }
 
-const CreatorStudio: React.FC<CreatorStudioProps> = ({
-  project,
-  setProject,
-  userId,
-  refreshCredits
-}) => {
-  
-  const translateTimeoutRef = useRef<number | null>(null);
-  const translationRequestCounter = useRef(0);
+const MagicIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+        <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 11-2 0V6H3a1 1 0 110-2h1V3a1 1 0 011-1zm12 10a1 1 0 011 1v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1h-1a1 1 0 110-2h1v-1a1 1 0 011-1zM10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm0 14a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM4.156 5.156a1 1 0 011.414-1.414l.707.707a1 1 0 01-1.414 1.414l-.707-.707zm11.314 11.314a1 1 0 011.414-1.414l.707.707a1 1 0 01-1.414 1.414l-.707-.707zm-8.485 2.122a1 1 0 01-1.414 1.414l-.707-.707a1 1 0 011.414-1.414l.707.707zM15.844 5.156a1 1 0 011.414 1.414l-.707-.707a1 1 0 01-1.414-1.414l.707-.707z" clipRule="evenodd" />
+    </svg>
+);
 
-  const updateActiveProjectState = useCallback((updater: (projectDraft: CreatorStudioProject) => void) => {
-    setProject(currentProject => {
-      const projectToUpdate = { ...currentProject };
-      updater(projectToUpdate);
-      return projectToUpdate;
-    });
-  }, [setProject]);
+const CreatorStudio: React.FC<CreatorStudioProps> = ({ project, setProject, userId, refreshCredits }) => {
+  const [isEnhancing, setIsEnhancing] = useState(false);
 
-  const handleGenerate = useCallback(async () => {
-    if (!project || !project.prompt) {
-      updateActiveProjectState(p => { p.error = 'فضلاً اكتب وصفاً للصورة أو اختر وضعاً معيناً.'; });
-      return;
-    }
-
-    if (!userId) return;
-
-    updateActiveProjectState(p => { p.isLoading = true; p.error = null; p.generatedImage = null; });
-
+  const handleMagicEnhance = async () => {
+    if (!project.prompt) return;
+    setIsEnhancing(true);
     try {
-      const result = await generateImage(project.productImages, project.prompt, project.styleImages);
-      /* Fix: Changed IMAGE_GEN to IMAGE_PRO as per lib/supabase.ts definition */
+        const proPrompt = await enhancePrompt(project.prompt);
+        setProject(p => ({ ...p, prompt: proPrompt }));
+    } catch (err: any) {
+        setProject(p => ({ ...p, error: "فشل تحسين الوصف" }));
+    } finally {
+        setIsEnhancing(false);
+    }
+  };
+  
+  const handleGenerate = useCallback(async () => {
+    if (!project.prompt || !userId) return;
+
+    setProject(p => ({ ...p, isLoading: true, error: null }));
+    try {
       const deducted = await deductCredits(userId, CREDIT_COSTS.IMAGE_PRO);
       
       if (deducted) {
-        updateActiveProjectState(p => {
-            p.generatedImage = result;
-            p.history = [{ image: result, prompt: project.prompt }, ...p.history];
+        const result = await generateImage(project.productImages, project.prompt, project.styleImages);
+        
+        await saveGeneratedAsset(userId, 'CREATOR_IMAGE', { 
+            image: result, 
+            prompt: project.prompt 
+        }, { 
+            lighting: project.options.lightingStyle, 
+            angle: project.options.cameraPerspective 
         });
+
+        setProject(p => ({ 
+            ...p, 
+            generatedImage: result, 
+            history: [{ image: result, prompt: project.prompt }, ...p.history] 
+        }));
+        
         if (refreshCredits) refreshCredits();
       } else {
-        /* Fix: Changed IMAGE_GEN to IMAGE_PRO */
-        updateActiveProjectState(p => { p.error = `رصيدك غير كافٍ. تكلفة توليد هذه الصورة هي ${CREDIT_COSTS.IMAGE_PRO} نقاط.`; });
+        setProject(p => ({ ...p, error: 'عذراً، رصيدك غير كافٍ (تحتاج 10 نقاط).' }));
       }
-    } catch (err) {
-      console.error(err);
-      updateActiveProjectState(p => { p.error = err instanceof Error ? err.message : 'فشلت عملية التوليد.'; });
+    } catch (err: any) {
+        setProject(p => ({ ...p, error: "حدث خطأ أثناء الرندرة: " + err.message }));
     } finally {
-      updateActiveProjectState(p => { p.isLoading = false; });
+      setProject(p => ({ ...p, isLoading: false }));
     }
-  }, [project, userId, updateActiveProjectState, refreshCredits]);
+  }, [project, userId, refreshCredits, setProject]);
 
-  useEffect(() => {
-    if (project?.styleImages?.length > 0 && !project.styleDescription && !project.isAnalyzingStyle && !project.error) {
-      const getStyleDescription = async () => {
-        updateActiveProjectState(p => { 
-          p.isAnalyzingStyle = true;
-          p.error = null;
-        });
-        try {
-          const description = await analyzeStyleImage(project.styleImages);
-          updateActiveProjectState(p => { p.styleDescription = description; });
-        } catch (err) {
-          updateActiveProjectState(p => {
-            p.error = err instanceof Error ? err.message : "Could not analyze the style image.";
-            p.styleDescription = null;
-          });
-        } finally {
-          updateActiveProjectState(p => { p.isAnalyzingStyle = false; });
-        }
-      };
-      getStyleDescription();
-    }
-  }, [project?.styleImages, project?.styleDescription, updateActiveProjectState]);
-
-  useEffect(() => {
-    if (!project || !project.isPromptAutoGenerated) return;
-    const { productImages, options, styleDescription } = project;
-    if (productImages.length === 0) return;
-
-    let newPrompt = `Professional high-end commercial photograph of the product. Lighting: ${options.lightingStyle}. Angle: ${options.cameraPerspective}. ${styleDescription ? `Inspired by: ${styleDescription}` : ''} Render in 8k, photorealistic.`;
-    if(project.prompt === '') updateActiveProjectState(p => { p.prompt = newPrompt; });
-  }, [project?.isPromptAutoGenerated, project?.productImages, project?.options, project?.styleDescription, updateActiveProjectState]);
-
-  const handleFileUpload = (updater: (files: ImageFile[]) => void, target: 'product' | 'style') => async (files: File[]) => {
-      if (!files || files.length === 0) return;
-      updateActiveProjectState(p => { p.uploadingTarget = target; p.error = null; });
+  const handleFileUpload = (target: 'product' | 'style') => async (files: File[]) => {
+      if (!files.length) return;
+      setProject(p => ({ ...p, uploadingTarget: target, error: null }));
       try {
-          const resizedFile = await resizeImage(files[0], 2048, 2048);
+          const resized = await resizeImage(files[0], 1024, 1024);
           const reader = new FileReader();
           reader.onloadend = () => {
-              updater([{ base64: (reader.result as string).split(',')[1], mimeType: resizedFile.type, name: resizedFile.name }]);
+              const base64 = (reader.result as string).split(',')[1];
+              const imgObj = { base64, mimeType: resized.type, name: resized.name };
+              setProject(p => ({ ...p, [target === 'product' ? 'productImages' : 'styleImages']: [imgObj], uploadingTarget: null }));
           };
-          reader.readAsDataURL(resizedFile);
-      } catch (err) { console.error(err); }
-      finally { updateActiveProjectState(p => { p.uploadingTarget = null; }); }
+          reader.readAsDataURL(resized);
+      } catch { 
+          setProject(p => ({ ...p, uploadingTarget: null, error: "فشل رفع الصورة" })); 
+      }
   };
 
   return (
-    <main className="w-full grid grid-cols-1 lg:grid-cols-2 gap-8 pt-4 pb-12 items-start">
-        <div className="flex flex-col gap-6 order-1">
-            <div className="grid grid-cols-2 gap-4">
-                <div className="glass-card p-3 rounded-2xl flex flex-col gap-2 items-center border border-white/5">
-                    <h3 className="text-[10px] font-black text-white/40 uppercase tracking-widest">صورة المنتج</h3>
-                    <ImageWorkspace
-                        id="creator-product-uploader"
-                        images={project.productImages}
-                        onImagesUpload={handleFileUpload(files => updateActiveProjectState(p => { p.productImages = files; }), 'product')}
-                        onImageRemove={(idx) => updateActiveProjectState(p => { p.productImages = []; })}
-                        isUploading={project.uploadingTarget === 'product'}
-                    />
+    <main className="w-full grid grid-cols-1 lg:grid-cols-2 gap-10 pt-4 pb-12 items-start text-right" dir="rtl">
+        <div className="flex flex-col gap-8 animate-in slide-in-from-right-5 duration-500">
+            <div className="grid grid-cols-2 gap-6">
+                <div className="bg-white/5 p-6 rounded-[2.5rem] border border-white/5 shadow-sm">
+                    <h3 className="text-[10px] font-black text-[#FFD700] uppercase text-center mb-4 tracking-[0.2em]">صورة المنتج</h3>
+                    <ImageWorkspace id="cr-prod" images={project.productImages} onImagesUpload={handleFileUpload('product')} onImageRemove={() => setProject(p => ({ ...p, productImages: [] }))} isUploading={project.uploadingTarget === 'product'} />
                 </div>
-                <div className="glass-card p-3 rounded-2xl flex flex-col gap-2 items-center border border-white/5">
-                    <h3 className="text-[10px] font-black text-white/40 uppercase tracking-widest">مرجع التصميم</h3>
-                    <ImageWorkspace 
-                        id="creator-style-uploader"
-                        title="Style Image"
-                        images={project.styleImages}
-                        onImagesUpload={handleFileUpload(files => updateActiveProjectState(p => { p.styleImages = files; p.styleDescription = null; }), 'style')}
-                        onImageRemove={(idx) => updateActiveProjectState(p => { p.styleImages = []; p.styleDescription = null; })}
-                        isUploading={project.uploadingTarget === 'style'}
-                    />
+                <div className="bg-white/5 p-6 rounded-[2.5rem] border border-white/5 shadow-sm">
+                    <h3 className="text-[10px] font-black text-yellow-500 uppercase text-center mb-4 tracking-[0.2em]">النمط المرجعي</h3>
+                    <ImageWorkspace id="cr-style" title="Style" images={project.styleImages} onImagesUpload={handleFileUpload('style')} onImageRemove={() => setProject(p => ({ ...p, styleImages: [] }))} isUploading={project.uploadingTarget === 'style'} />
                 </div>
             </div>
 
-            <CustomizationPanel options={project.options} setOptions={(opt) => updateActiveProjectState(p => { p.options = opt; })} />
+            <CustomizationPanel options={project.options} setOptions={(opt) => setProject(p => ({ ...p, options: opt }))} />
 
-            <PromptEditor
-                prompt={project.prompt}
-                setPrompt={(val) => updateActiveProjectState(p => { p.prompt = val; p.isPromptAutoGenerated = false; })}
-                isAutoGenerated={project.isPromptAutoGenerated}
-                onResetPrompt={() => updateActiveProjectState(p => { p.isPromptAutoGenerated = !p.isPromptAutoGenerated; })}
-                translatedPrompt={null}
-                isTranslating={false}
-                onUseTranslation={() => {}}
-            />
+            <div className="relative">
+                <PromptEditor
+                    prompt={project.prompt}
+                    setPrompt={(val) => setProject(p => ({ ...p, prompt: val, isPromptAutoGenerated: false }))}
+                    isAutoGenerated={project.isPromptAutoGenerated}
+                    onResetPrompt={() => setProject(p => ({ ...p, isPromptAutoGenerated: !p.isPromptAutoGenerated }))}
+                    onApplyVisionMode={() => {}} // المنطق الآن داخلي في PromptEditor
+                />
+                <button 
+                    onClick={handleMagicEnhance}
+                    disabled={isEnhancing || !project.prompt}
+                    className="absolute bottom-6 left-6 flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white text-[10px] font-black rounded-2xl shadow-2xl transition-all active:scale-95 disabled:opacity-50"
+                >
+                    {isEnhancing ? <div className="w-3 h-3 border-2 border-white border-t-transparent animate-spin rounded-full"></div> : <MagicIcon />}
+                    تحسين احترافي
+                </button>
+            </div>
 
-            <button
-                onClick={handleGenerate}
-                disabled={project.isLoading || !project.prompt || !!project.uploadingTarget}
-                className="w-full bg-[var(--color-accent)] hover:bg-[var(--color-accent-dark)] text-white font-black py-5 rounded-2xl text-lg shadow-xl shadow-[var(--color-accent)]/20 transition-all active:scale-95 disabled:opacity-50 uppercase tracking-widest"
-            >
-                {/* Fix: Changed IMAGE_GEN to IMAGE_PRO */}
-                {project.isLoading ? 'جاري توليد التصميم...' : `توليد الصورة (${CREDIT_COSTS.IMAGE_PRO} نقاط)`}
+            <button onClick={handleGenerate} disabled={project.isLoading || !project.prompt} className="w-full h-24 bg-[#FFD700] hover:bg-yellow-400 text-black font-black py-5 rounded-[2.5rem] text-xl shadow-[0_20px_50px_rgba(255,215,0,0.2)] transition-all active:scale-95">
+                {project.isLoading ? 'جاري الرندرة الفائقة...' : `توليد المشهد الإبداعي (10 نقاط)`}
             </button>
-
-            {project.error && <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-xs font-bold text-center uppercase tracking-tight">{project.error}</div>}
+            
+            {project.error && (
+                <div className="p-5 bg-red-500/10 border border-red-500/20 rounded-[1.5rem]">
+                    <p className="text-red-400 text-center font-bold text-xs">{project.error}</p>
+                </div>
+            )}
         </div>
 
-        <div className="flex flex-col gap-6 order-2">
-             <div className="glass-card rounded-3xl p-6 min-h-[400px] border border-white/5 shadow-2xl">
-                <ResultDisplay 
-                    imageFile={project.generatedImage} 
-                    isLoading={project.isLoading}
-                />
+        <div className="flex flex-col gap-10 animate-in slide-in-from-left-5 duration-500">
+             <div className="bg-black/40 rounded-[3rem] p-8 min-h-[500px] border border-white/5 shadow-inner relative overflow-hidden flex items-center justify-center">
+                <ResultDisplay imageFile={project.generatedImage} isLoading={project.isLoading} />
              </div>
-            <HistoryPanel history={project.history} onSelect={(img) => updateActiveProjectState(p => { p.generatedImage = img; })} />
+            <HistoryPanel history={project.history} onSelect={(img) => setProject(p => ({ ...p, generatedImage: img }))} />
         </div>
     </main>
   );

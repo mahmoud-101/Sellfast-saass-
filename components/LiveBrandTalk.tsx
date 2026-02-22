@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenAI, Modality, LiveServerMessage } from '@google/genai';
 import { decodeAudioData } from '../utils';
 
-// Manual Base64 Implementation as per guidelines
+// Manual Base64 Implementation
 function decode(base64: string) {
   const binaryString = atob(base64);
   const len = binaryString.length;
@@ -23,13 +23,12 @@ function encode(bytes: Uint8Array) {
   return btoa(binary);
 }
 
-const MicIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-20a3 3 0 013 3v5a3 3 0 11-6 0V5a3 3 0 013-3z" /></svg>;
+const MicIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-20a3 3 0 013 3v5a3 3 0 11-6 0V5a3 3 0 013-3z" /></svg>;
 
 const LiveBrandTalk: React.FC = () => {
     const [isActive, setIsActive] = useState(false);
-    const [status, setStatus] = useState('ابدأ المحادثة الصوتية مع خبير البراند');
+    const [status, setStatus] = useState('محادثة صوتية سريعة');
     
-    // Audio Contexts
     const inputAudioContextRef = useRef<AudioContext | null>(null);
     const outputAudioContextRef = useRef<AudioContext | null>(null);
     const nextStartTimeRef = useRef<number>(0);
@@ -43,29 +42,22 @@ const LiveBrandTalk: React.FC = () => {
         streamRef.current?.getTracks().forEach(track => track.stop());
         inputAudioContextRef.current?.close();
         outputAudioContextRef.current?.close();
-        
-        for (const source of sourcesRef.current.values()) {
-            source.stop();
-        }
+        for (const source of sourcesRef.current.values()) source.stop();
         sourcesRef.current.clear();
-        
         setIsActive(false);
-        setStatus('ابدأ المحادثة الصوتية مع خبير البراند');
+        setStatus('محادثة صوتية سريعة');
     };
 
     const startSession = async () => {
         try {
             setIsActive(true);
-            setStatus('جاري الاتصال بالخبير...');
-            
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-            
-            // Initialize Contexts
+            setStatus('جاري الاتصال...');
+            const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+            const ai = new GoogleGenAI({ apiKey });
             const inputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
             const outputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
             inputAudioContextRef.current = inputAudioContext;
             outputAudioContextRef.current = outputAudioContext;
-
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             streamRef.current = stream;
 
@@ -73,107 +65,64 @@ const LiveBrandTalk: React.FC = () => {
                 model: 'gemini-2.5-flash-native-audio-preview-12-2025',
                 callbacks: {
                     onopen: () => {
-                        setStatus('الخبير يستمع إليك الآن...');
-                        
-                        // Setup Microphone Stream
+                        setStatus('تحدث الآن، أنا أسمعك');
                         const source = inputAudioContext.createMediaStreamSource(stream);
                         const scriptProcessor = inputAudioContext.createScriptProcessor(4096, 1, 1);
-                        
-                        scriptProcessor.onaudioprocess = (audioProcessingEvent) => {
-                            const inputData = audioProcessingEvent.inputBuffer.getChannelData(0);
-                            
-                            // Create PCM Blob
+                        scriptProcessor.onaudioprocess = (e) => {
+                            const inputData = e.inputBuffer.getChannelData(0);
                             const l = inputData.length;
                             const int16 = new Int16Array(l);
-                            for (let i = 0; i < l; i++) {
-                                int16[i] = inputData[i] * 32768;
-                            }
-                            const pcmBlob = {
-                                data: encode(new Uint8Array(int16.buffer)),
-                                mimeType: 'audio/pcm;rate=16000',
-                            };
-
-                            sessionPromise.then((session) => {
-                                session.sendRealtimeInput({ media: pcmBlob });
-                            });
+                            for (let i = 0; i < l; i++) int16[i] = inputData[i] * 32768;
+                            const pcmBlob = { data: encode(new Uint8Array(int16.buffer)), mimeType: 'audio/pcm;rate=16000' };
+                            sessionPromise.then(s => s.sendRealtimeInput({ media: pcmBlob }));
                         };
-                        
                         source.connect(scriptProcessor);
                         scriptProcessor.connect(inputAudioContext.destination);
                     },
-                    onmessage: async (message: LiveServerMessage) => {
-                        // Process Output Audio
-                        const base64EncodedAudioString = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
-                        if (base64EncodedAudioString) {
-                            nextStartTimeRef.current = Math.max(
-                                nextStartTimeRef.current,
-                                outputAudioContext.currentTime,
-                            );
-                            
-                            const audioBuffer = await decodeAudioData(
-                                decode(base64EncodedAudioString),
-                                outputAudioContext,
-                                24000,
-                                1,
-                            );
-                            
+                    onmessage: async (msg: LiveServerMessage) => {
+                        const base64 = msg.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
+                        if (base64) {
+                            nextStartTimeRef.current = Math.max(nextStartTimeRef.current, outputAudioContext.currentTime);
+                            const audioBuffer = await decodeAudioData(decode(base64), outputAudioContext, 24000, 1);
                             const source = outputAudioContext.createBufferSource();
                             source.buffer = audioBuffer;
                             source.connect(outputAudioContext.destination);
-                            
-                            source.addEventListener('ended', () => {
-                                sourcesRef.current.delete(source);
-                            });
-
+                            source.addEventListener('ended', () => sourcesRef.current.delete(source));
                             source.start(nextStartTimeRef.current);
                             nextStartTimeRef.current += audioBuffer.duration;
                             sourcesRef.current.add(source);
                         }
-
-                        // Handle Interruption
-                        const interrupted = message.serverContent?.interrupted;
-                        if (interrupted) {
-                            for (const source of sourcesRef.current.values()) {
-                                source.stop();
-                            }
+                        if (msg.serverContent?.interrupted) {
+                            for (const source of sourcesRef.current.values()) source.stop();
                             sourcesRef.current.clear();
                             nextStartTimeRef.current = 0;
                         }
                     },
                     onclose: () => setIsActive(false),
-                    onerror: () => {
-                        setIsActive(false);
-                        setStatus('حدث خطأ في الاتصال');
-                    }
+                    onerror: () => { setIsActive(false); setStatus('خطأ في الاتصال'); }
                 },
                 config: {
                     responseModalities: [Modality.AUDIO],
-                    systemInstruction: 'أنت مستشار تسويق خبير في شركة Ebdaa Pro. ساعد المستخدم في تطوير أفكار حملاته الإعلانية وهويته البصرية بأسلوب احترافي وودود.',
+                    systemInstruction: 'أنت مستشار تسويق خبير في Ebdaa Pro. ساعد المستخدم باحترافية وبلهجة مصرية ودودة.',
                     speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } } }
                 }
             });
-            
             sessionPromiseRef.current = sessionPromise;
-            
-        } catch (err) {
-            console.error(err);
-            setIsActive(false);
-            setStatus('تعذر الوصول إلى الميكروفون');
-        }
+        } catch (err) { setIsActive(false); setStatus('عطل بالميكروفون'); }
     };
 
     return (
-        <div className="fixed bottom-8 left-8 z-[100]">
-            <div className={`glass-card rounded-full p-2 flex items-center gap-4 pr-6 transition-all duration-500 shadow-2xl flex-row-reverse ${isActive ? 'bg-[var(--color-accent)] ring-8 ring-[var(--color-accent)]/20' : 'hover:scale-105'}`}>
+        <div className="fixed bottom-6 left-4 sm:bottom-8 sm:left-8 z-[100]">
+            <div className={`glass-card rounded-full p-1.5 flex items-center gap-2 sm:gap-4 pr-4 sm:pr-6 transition-all duration-500 shadow-2xl flex-row-reverse ${isActive ? 'bg-[var(--color-accent)] ring-4 ring-[var(--color-accent)]/20' : 'hover:scale-105 border border-white/10'}`}>
                 <button 
                     onClick={isActive ? stopSession : startSession}
-                    className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${isActive ? 'bg-white text-[var(--color-accent)] animate-pulse' : 'bg-[var(--color-accent)] text-white'}`}
+                    className={`w-11 h-11 sm:w-14 sm:h-14 rounded-full flex items-center justify-center transition-all ${isActive ? 'bg-white text-[var(--color-accent)] animate-pulse' : 'bg-[var(--color-accent)] text-white shadow-lg'}`}
                 >
-                    {isActive ? <div className="w-4 h-4 bg-red-500 rounded-sm"></div> : <MicIcon />}
+                    {isActive ? <div className="w-3 h-3 bg-red-500 rounded-sm"></div> : <MicIcon />}
                 </button>
                 <div className="flex flex-col text-right">
-                    <span className={`text-[10px] font-black uppercase tracking-widest ${isActive ? 'text-white/70' : 'text-[var(--color-accent)]'}`}>Live Strategist</span>
-                    <span className={`text-xs font-bold ${isActive ? 'text-white' : 'text-white/60'}`}>{status}</span>
+                    <span className={`text-[8px] sm:text-[10px] font-black uppercase tracking-widest ${isActive ? 'text-white/70' : 'text-[var(--color-accent)]'}`}>Live Strategist</span>
+                    <span className={`text-[10px] sm:text-xs font-bold whitespace-nowrap ${isActive ? 'text-white' : 'text-white/60'}`}>{status}</span>
                 </div>
             </div>
         </div>

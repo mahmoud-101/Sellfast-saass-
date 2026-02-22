@@ -38,21 +38,20 @@ export const ASPECT_RATIOS: { value: AspectRatio; label: string }[] = [
   { value: '1:1', label: 'مربع (إنستجرام)' },
 ];
 
-/* Fix: Added MAX_SHOT_SELECTION constant and SHOT_TYPES export for compatibility with photoshoot components */
 export const MAX_SHOT_SELECTION = 6;
 
 export const SHOT_TYPES_GROUPS = [
   {
-    category: 'زوايا التصوير',
-    types: ['زووم قريب', 'لقطة متوسطة', 'لقطة كاملة', 'زاوية علوية', 'زاوية منخفضة', 'زاوية مائلة', 'تصوير تفاصيل']
+    category: 'زوايا التصوير الاحترافية',
+    types: ['زووم قريب (ماكرو)', 'لقطة متوسطة', 'لقطة كاملة', 'زاوية علوية (فلات لاي)', 'زاوية منخفضة (هيرو)', 'زاوية مائلة', 'تصوير تفاصيل الخامة']
   },
   {
     category: 'المنتج في وضع الاستخدام',
-    types: ['نمط حياة', 'حركة ديناميكية', 'يد تمسك المنتج', 'على مكتب عمل', 'أثناء نشاط رياضي', 'Unboxing']
+    types: ['نمط حياة (لايف ستايل)', 'حركة ديناميكية', 'يد تمسك المنتج', 'على مكتب عمل مودرن', 'أثناء نشاط رياضي', 'فتح الصندوق (أنبوكسينج)', 'تجربة حقيقية']
   },
   {
-    category: 'البيئة والنمط',
-    types: ['رخام عصري', 'رمال شاطئ', 'غابة خضراء', 'استوديو مينيماليست', 'إضاءة نيون', 'خلفية مخملية']
+    category: 'البيئة والنمط البصري',
+    types: ['رخام عصري فاخر', 'رمال شاطئ ذهبية', 'غابة خضراء كثيفة', 'استوديو مينيماليست', 'إضاءة نيون سايبربانك', 'خلفية مخملية داكنة', 'جو منزلي دافئ']
   }
 ];
 
@@ -64,13 +63,6 @@ export const VOICES = [
   { value: 'Charon', label: 'شارون', desc: 'عميق وفخم (وثائقي)', gender: 'Male' },
   { value: 'Fenrir', label: 'فنرير', desc: 'دافئ وسردي', gender: 'Male' },
   { value: 'Zephyr', label: 'زفير', desc: 'هادئ ومريح للأعصاب', gender: 'Male' },
-];
-
-export const INFLUENCER_PERSONAS = [
-    { id: 'saudi_male', label: 'شاب سعودي مودرن' },
-    { id: 'egy_female', label: 'فتاة مصرية عملية' },
-    { id: 'global_model', label: 'موديل عالمي (فاشن)' },
-    { id: 'family_home', label: 'أم في منزل عصري' }
 ];
 
 export const TARGET_MARKETS = ['مصر', 'السعودية', 'الإمارات', 'الخليج العربي', 'عالمي'];

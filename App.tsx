@@ -1,365 +1,314 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-    AppView,
-    PowerStudioProject,
-    UGCStudioProject,
-    VoiceOverStudioProject,
-    PromptStudioProject,
-    VideoStudioProject,
-    CampaignStudioProject,
-    ControllerStudioProject,
-    BrandingStudioProject,
-    ProjectBase,
-    PlanStudioProject,
-    CreatorStudioProject,
-    InfluencerStudioProject,
-    EditStudioProject,
-    PhotoshootDirectorProject,
-    CopywriterStudioProject
+
+import React, { useState, useEffect } from 'react';
+import { 
+  AppView, 
+  MasterFactoryProject, 
+  BrandKit, 
+  PlanStudioProject, 
+  PhotoshootDirectorProject, 
+  MarketingStudioProject,
+  DailyPackProject,
+  TrendEngineProject,
+  PowerStudioProject,
+  UGCStudioProject,
+  PerformanceStudioProject,
+  EliteScriptProject
 } from './types';
-import { supabase, getUserCredits, saveProject, loadProjects, deleteProject } from './lib/supabase';
-import Auth from './components/Auth';
-import UGCStudio from './components/UGCStudio';
-import VoiceOverStudio from './components/VoiceOverStudio';
-import PromptStudio from './components/PromptStudio';
-import VideoStudio from './components/VideoStudio';
-import PowerStudio from './components/PowerStudio';
-import CampaignStudio from './components/CampaignStudio';
-import ControllerStudio from './components/ControllerStudio';
-import BrandingStudio from './components/BrandingStudio';
-import PlanStudio from './components/PlanStudio';
-import CreatorStudio from './components/CreatorStudio';
-import InfluencerStudio from './components/InfluencerStudio';
-import EditStudio from './components/EditStudio';
-import PhotoshootDirector from './components/PhotoshootDirector';
-import CopywriterStudio from './components/CopywriterStudio';
+import { supabase } from './lib/supabase';
 
-import ThemeSwitcher from './components/ThemeSwitcher';
-import CreditsDisplay from './components/CreditsDisplay';
+// Components
 import LandingPage from './components/LandingPage';
-import TabBar from './components/TabBar';
+import Auth from './components/Auth';
+import BrandKitManager from './components/BrandKitManager';
+import PhotoshootDirector from './components/PhotoshootDirector';
+import VideoStudio from './components/VideoStudio';
+import PlanStudio from './components/PlanStudio';
+import MarketingStudio from './components/MarketingStudio';
+import AdContentFactory from './components/AdContentFactory';
+import PricingModal from './components/PricingModal';
+import ChatWidget from './components/ChatWidget';
+import WhatsAppButton from './components/WhatsAppButton';
+import Footer from './components/Footer';
+import FAQ from './components/FAQ';
+import LegalPages from './components/LegalPages';
+import AdsStudio from './components/AdsStudio';
+import DailyPackStudio from './components/DailyPackStudio';
+import TrendEngine from './components/TrendEngine';
+import PowerStudio from './components/PowerStudio';
+import UGCStudio from './components/UGCStudio';
+import AdminDashboard from './components/AdminDashboard';
 
-// Initial States
-const initialUGC: UGCStudioProject = {
-    id: 'demo-ugc', name: 'UGC Studio', productImages: [], selectedScenarios: [], results: [],
-    isGenerating: false, error: null
-};
+const LOGO_IMAGE_URL = "https://i.ibb.co/MDrpHPzS/Artboard-1.png";
 
-const initialVoice: VoiceOverStudioProject = {
-    id: 'demo-voice', name: 'Voice Studio', text: '', styleInstructions: '', selectedVoice: 'ar-SA-Standard-A',
-    voiceGenderFilter: 'All', generatedAudio: null, history: [], isLoading: false, isPlaying: false,
-    previewLoadingVoice: null, previewPlayingVoice: null, error: null
-};
+export default function App() {
+  const [view, setView] = useState<AppView>('landing');
+  const [isPricingOpen, setIsPricingOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [activeScriptContext, setActiveScriptContext] = useState('');
+  const [session, setSession] = useState<any>(null);
+  const [isGuest, setIsGuest] = useState(false);
 
-const initialPrompt: PromptStudioProject = {
-    id: 'demo-prompt', name: 'Prompt Studio', images: [], instructions: '', generatedPrompt: null,
-    history: [], isLoading: false, isUploading: false, error: null
-};
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
 
-const initialVideo: VideoStudioProject = {
-    id: 'demo-video', name: 'Video Studio', prompt: '', isGenerating: false, videoUrl: null,
-    progress: 0, statusText: '', error: null
-};
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
 
+    return () => subscription.unsubscribe();
+  }, []);
 
+  const userId = session?.user?.id || (isGuest ? 'guest' : null);
+  
+  const [brandKit, setBrandKit] = useState<BrandKit>({
+    logo: null, colors: ['#FFD700', '#000000'], brandName: '', industry: ''
+  });
 
-const initialPower: PowerStudioProject = {
-    id: 'demo-power', name: 'Power Studio', productImages: [], goal: '', targetMarket: '', dialect: 'Gulf',
-    isGenerating: false, currentStep: '', progress: 0, result: null, error: null
-};
+  const [masterFactory, setMasterFactory] = useState<MasterFactoryProject>({
+    id: 'factory-1', name: 'Creative Factory', activeMode: 'guided', messages: [], step: 1, currentTone: 'CLASSIC', productInfo: { product: '', target: '', goals: '' }, topicIdeas: [], rawInput: '', finalScript: null, isGenerating: false, error: null
+  });
 
-const initialCampaign: CampaignStudioProject = {
-    id: 'demo-campaign', name: 'Campaign Studio', productImages: [], productAnalysis: null, isAnalyzing: false,
-    selectedMood: 'Creative', customPrompt: '', customIdeas: [], mode: 'auto', results: [],
-    isGenerating: false, isUploading: false, error: null
-};
+  const [photoshootProject, setPhotoshootProject] = useState<PhotoshootDirectorProject>({
+    id: 'ps-1', name: 'جلسة تصوير', productImages: [], selectedShotTypes: [], customStylePrompt: '', isGenerating: false, error: null, results: []
+  });
 
-const initialController: ControllerStudioProject = {
-    id: 'demo-controller', name: 'Controller Studio', sourceImages: [], generatedImage: null,
-    sliders: [
-        { id: 'smile', label: 'Smile', value: 0, min: -1, max: 1, step: 0.1, category: 'Face' },
-        { id: 'age', label: 'Age', value: 0, min: -1, max: 1, step: 0.1, category: 'Face' },
-        { id: 'head_yaw', label: 'Head Turn', value: 0, min: -1, max: 1, step: 0.1, category: 'Head' },
-        { id: 'head_pitch', label: 'Head Tilt', value: 0, min: -1, max: 1, step: 0.1, category: 'Head' },
-    ],
-    activeCategory: 'Face', isGenerating: false, isUploading: false, history: [], error: null
-};
+  const [marketingProject, setMarketingProject] = useState<MarketingStudioProject>({
+    id: 'mkt-1', name: 'استراتيجية النمو', brandType: 'new', brandName: '', specialty: '', brief: '', websiteLink: '', language: 'ar', isGenerating: false, result: null, error: null
+  });
 
-const initialBranding: BrandingStudioProject = {
-    id: 'demo-branding', name: 'Branding Studio', logos: [], results: [], colors: [],
-    isGenerating: false, isUploading: false, isAnalyzing: false, aspectRatio: '1:1', error: null
-};
+  const [planStudio, setPlanStudio] = useState<PlanStudioProject>({ id: 'plan-v1', name: 'خطة المحتوى', productImages: [], prompt: '', targetMarket: 'السعودية', dialect: 'لهجة سعودية', ideas: [], categoryAnalysis: null, isGeneratingPlan: false, isAnalyzingCategory: false, isUploading: false, error: null });
+  
+  const [ugcProject, setUgcProject] = useState<UGCStudioProject>({
+    id: 'ugc-1', name: 'UGC Content', productImages: [], selectedScenarios: [], isUploading: false, isGenerating: false, results: [], error: null
+  });
 
-const initialPlan: PlanStudioProject = {
-    id: 'demo-plan', name: 'Plan Studio', productImages: [], prompt: '', targetMarket: '', dialect: 'Modern',
-    ideas: [], isGeneratingPlan: false, isUploading: false, categoryAnalysis: null, isAnalyzingCategory: false, error: null
-};
+  const [performanceProject, setPerformanceProject] = useState<PerformanceStudioProject>({
+    id: 'perf-1', 
+    name: 'Performance Pack', 
+    targetMarket: 'Egypt', 
+    campaignGoal: 'Sales', 
+    dialect: 'Egyptian Arabic', 
+    platform: 'Facebook', 
+    productDescription: '', 
+    sellingPrice: '',
+    brandTone: 'Bold',
+    referenceImage: null,
+    isGenerating: false, 
+    isGeneratingFull: false, 
+    result: null, 
+    fullCampaign: null, 
+    error: null
+  });
 
-const initialCreator: CreatorStudioProject = {
-    id: 'demo-creator', name: 'Creator Studio', productImages: [], styleImages: [], generatedImage: null,
-    history: [], options: { lightingStyle: 'Studio Light', cameraPerspective: 'Front View' },
-    prompt: '', isPromptAutoGenerated: false, isLoading: false, error: null, styleDescription: null,
-    isAnalyzingStyle: false, translatedPrompt: null, isTranslating: false, isEditing: false, uploadingTarget: null
-};
+  const [dailyPack, setDailyPack] = useState<DailyPackProject>({
+    id: 'dp-1', name: 'Daily Pack', productImages: [], description: '', tone: 'عفوي وجذاب', isGenerating: false, progress: 0, result: null
+  });
 
-const initialInfluencer: InfluencerStudioProject = {
-    id: 'demo-influencer', name: 'Influencer Studio', productImages: [], selectedPersonas: [], results: [],
-    isGenerating: false, error: null
-};
+  const [trendEngine, setTrendEngine] = useState<TrendEngineProject>({
+    id: 'trend-1', name: 'Trend Engine', region: 'مصر', niche: '', isGenerating: false, error: null, results: []
+  });
 
-const initialEdit: EditStudioProject = {
-    id: 'demo-edit', name: 'Edit Studio', baseImages: [], localTexts: {}, committedTexts: {}, globalLayers: [],
-    adjustments: { sharpness: 0, lut: 'none' }, isUploading: false
-};
+  const [powerStudio, setPowerStudio] = useState<PowerStudioProject>({
+    id: 'power-1', name: 'Power Studio', brandName: '', productCategory: '', productDescription: '', productImages: [], goal: '', targetMarket: 'مصر', dialect: 'لهجة مصرية', isGenerating: false, progress: 0, currentStep: '', result: null, error: null
+  });
 
-const initialPhotoshoot: PhotoshootDirectorProject = {
-    id: 'demo-photoshoot', name: 'Photoshoot Director', productImages: [], selectedShotTypes: [], results: [],
-    isGenerating: false, isUploading: false, customStylePrompt: '', error: null
-};
+  const bridgeToPlan = (context: string) => { setPlanStudio(prev => ({ ...prev, prompt: context })); setView('plan_studio'); };
+  const bridgeToVideo = (script: string) => { setActiveScriptContext(script); setView('video_studio'); };
+  const bridgeToPhotoshoot = (context: string) => { setPhotoshootProject(prev => ({ ...prev, customStylePrompt: context })); setView('photoshoot'); };
 
-const initialCopywriter: CopywriterStudioProject = {
-    id: 'demo-copywriter', name: 'Copywriter Studio', productName: '', features: '', targetAudience: '',
-    results: [], isGenerating: false, error: null
-};
+  const hubs = [
+    { 
+        id: 'hub_generate', 
+        title: 'مصنع المحتوى الإعلاني', 
+        level: '1',
+        desc: 'المصنع المتكامل لصناعة السكريبتات الإبداعية، الحملات البيعية الكاملة، وأفكار الفيديوهات الفيرال.', 
+        icon: '🏭', 
+        color: 'from-yellow-400 to-yellow-600',
+        tools: [
+            { id: 'performance_studio', label: 'مصنع الحملات المتكاملة', icon: '🚀' }
+        ]
+    },
+    { 
+        id: 'hub_visuals', 
+        title: 'صناعة المحتوى البصري', 
+        level: '2',
+        desc: 'تحويل صور الموبايل لجلسات تصوير عالمية ومخططات ريلز واقعية احترافية.', 
+        icon: '📸', 
+        color: 'from-yellow-500 to-yellow-700',
+        tools: [
+            { id: 'photoshoot', label: 'جلسات تصوير احترافية', icon: '📸' },
+            { id: 'video_studio', label: 'استوديو تصميم الفيديوهات', icon: '🎬' }
+        ]
+    },
+    { 
+        id: 'hub_scale', 
+        title: 'توسيع نطاق المحتوى', 
+        level: '3',
+        desc: 'رسم استراتيجية النمو، تحليل المنافسين، وجدولة المحتوى الذكي.', 
+        icon: '🚀', 
+        color: 'from-yellow-600 to-yellow-800',
+        tools: [
+            { id: 'plan_studio', label: 'خطة المحتوى الذكية', icon: '🗓️' },
+            { id: 'strategy_engine', label: 'استراتيجية النمو السريع', icon: '🎯' }
+        ]
+    },
+  ];
 
-const App = () => {
-    const [view, setView] = useState<AppView>('landing');
-    const [user, setUser] = useState<{ id: string; email: string } | null>(null);
-    const [authLoading, setAuthLoading] = useState(true);
-    const [credits, setCredits] = useState(0);
-    const [theme, setTheme] = useState('dark');
+  return (
+    <div className="min-h-screen w-full flex flex-col items-center bg-black text-white font-sans overflow-x-hidden selection:bg-yellow-500/30">
+      <nav className="sticky top-0 z-[100] w-full backdrop-blur-xl bg-black/80 border-b border-white/5">
+          <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+              <div className="flex items-center gap-3 cursor-pointer group" onClick={() => { setView('dashboard'); setIsMenuOpen(false); }}>
+                  <img src={LOGO_IMAGE_URL} alt="Ebdaa Pro" className="h-10 w-auto group-hover:scale-110 transition-transform"/>
+                  <span className="text-xl font-black text-white tracking-tighter uppercase">إبداع <span className="text-[#FFD700]">برو</span></span>
+              </div>
+              
+              {view !== 'landing' && userId && (
+                <>
+                  <div className="hidden md:flex items-center gap-2 bg-white/5 p-1 rounded-2xl border border-white/5">
+                      <button onClick={() => { setView('dashboard'); setActiveScriptContext(''); }} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'dashboard' ? 'bg-[#FFD700] text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}>🏠 الرئيسية</button>
+                      <button onClick={() => setView('brand_kit')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'brand_kit' ? 'bg-[#FFD700] text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}>🎨 هويتي</button>
+                      <button onClick={() => setView('admin')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'admin' ? 'bg-[#FFD700] text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}>⚙️ الإدارة</button>
+                  </div>
+                  
+                  {/* Mobile Menu Toggle */}
+                  <button 
+                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                    className="md:hidden p-2 text-white hover:text-[#FFD700] transition-colors"
+                  >
+                    <span className="text-2xl">{isMenuOpen ? '✕' : '☰'}</span>
+                  </button>
+                </>
+              )}
+              
+              {view !== 'landing' && userId && (
+                <div className="hidden md:flex items-center gap-4">
+                  <button onClick={() => setIsPricingOpen(true)} className="bg-[#FFD700] text-black px-6 py-2.5 rounded-xl text-[11px] font-black shadow-xl hover:scale-105 transition-all">شحن رصيد</button>
+                  <button onClick={() => supabase.auth.signOut()} className="bg-white/5 text-white/40 px-4 py-2.5 rounded-xl text-[11px] font-black hover:bg-red-500/10 hover:text-red-500 transition-all">خروج</button>
+                </div>
+              )}
+          </div>
 
-    // Listen for real Supabase auth changes
-    useEffect(() => {
-        // Get initial session
-        supabase?.auth.getSession().then(({ data: { session } }) => {
-            if (session?.user) {
-                setUser({ id: session.user.id, email: session.user.email ?? '' });
-            }
-            setAuthLoading(false);
-        });
-
-        // Subscribe to auth state changes
-        const { data: { subscription } } = supabase?.auth.onAuthStateChange((_event, session) => {
-            if (session?.user) {
-                setUser({ id: session.user.id, email: session.user.email ?? '' });
-            } else {
-                setUser(null);
-            }
-        }) ?? { data: { subscription: { unsubscribe: () => { } } } };
-
-        return () => subscription.unsubscribe();
-    }, []);
-
-    // Project State
-    const [activeProjectIndex, setActiveProjectIndex] = useState(0);
-    const [projects, setProjects] = useState<ProjectBase[]>([
-        { id: 'p1', name: 'Power Studio' },
-        { id: 'p2', name: 'UGC Studio' },
-        { id: 'p3', name: 'Voice Studio' },
-        { id: 'p4', name: 'Video Studio' },
-        { id: 'p5', name: 'Campaign Studio' },
-        { id: 'p6', name: 'Branding Studio' },
-        { id: 'p7', name: 'Prompt Studio' },
-        { id: 'p8', name: 'Controller Studio' },
-        { id: 'p9', name: 'Plan Studio' },
-        { id: 'p10', name: 'Creator Studio' },
-        { id: 'p11', name: 'Influencer Studio' },
-        { id: 'p12', name: 'Edit Studio' },
-        { id: 'p13', name: 'Photoshoot Director' },
-        { id: 'p14', name: 'Copywriter Studio' }
-    ]);
-
-    // Detailed Project States
-    const [ugcProject, setUGCProject] = useState<UGCStudioProject>(initialUGC);
-    const [voiceProject, setVoiceProject] = useState<VoiceOverStudioProject>(initialVoice);
-    const [promptProject, setPromptProject] = useState<PromptStudioProject>(initialPrompt);
-    const [videoProject, setVideoProject] = useState<VideoStudioProject>(initialVideo);
-    const [powerProject, setPowerProject] = useState<PowerStudioProject>(initialPower);
-    const [campaignProject, setCampaignProject] = useState<CampaignStudioProject>(initialCampaign);
-    const [controllerProject, setControllerProject] = useState<ControllerStudioProject>(initialController);
-    const [brandingProject, setBrandingProject] = useState<BrandingStudioProject>(initialBranding);
-    const [planProject, setPlanProject] = useState<PlanStudioProject>(initialPlan);
-    const [creatorProject, setCreatorProject] = useState<CreatorStudioProject>(initialCreator);
-    const [influencerProject, setInfluencerProject] = useState<InfluencerStudioProject>(initialInfluencer);
-    const [editProject, setEditProject] = useState<EditStudioProject>(initialEdit);
-    const [photoshootProject, setPhotoshootProject] = useState<PhotoshootDirectorProject>(initialPhotoshoot);
-    const [copywriterProject, setCopywriterProject] = useState<CopywriterStudioProject>(initialCopywriter);
-
-    const refreshCredits = useCallback(async () => {
-        if (user?.id) {
-            const c = await getUserCredits(user.id);
-            if (c !== null) setCredits(c);
-        }
-    }, [user?.id]);
-
-    useEffect(() => {
-        refreshCredits();
-        const interval = setInterval(refreshCredits, 30000);
-        return () => clearInterval(interval);
-    }, [refreshCredits]);
-
-    // Load projects on startup
-    useEffect(() => {
-        if (user?.id) {
-            loadProjects(user.id).then(savedProjects => {
-                if (savedProjects && savedProjects.length > 0) {
-                    console.log("Loaded projects:", savedProjects);
-                }
-            });
-        }
-    }, [user?.id]);
-
-    // Auto-save active project on change (debounced 2s)
-    useEffect(() => {
-        if (!user?.id) return;
-
-        const activeProject = projects[activeProjectIndex];
-        let projectData: Record<string, unknown> | null = null;
-
-        switch (activeProject.name) {
-            case 'UGC Studio': projectData = ugcProject as unknown as Record<string, unknown>; break;
-            case 'Voice Studio': projectData = voiceProject as unknown as Record<string, unknown>; break;
-            case 'Prompt Studio': projectData = promptProject as unknown as Record<string, unknown>; break;
-            case 'Video Studio': projectData = videoProject as unknown as Record<string, unknown>; break;
-            case 'Power Studio': projectData = powerProject as unknown as Record<string, unknown>; break;
-            case 'Campaign Studio': projectData = campaignProject as unknown as Record<string, unknown>; break;
-            case 'Controller Studio': projectData = controllerProject as unknown as Record<string, unknown>; break;
-            case 'Branding Studio': projectData = brandingProject as unknown as Record<string, unknown>; break;
-            case 'Plan Studio': projectData = planProject as unknown as Record<string, unknown>; break;
-            case 'Creator Studio': projectData = creatorProject as unknown as Record<string, unknown>; break;
-            case 'Influencer Studio': projectData = influencerProject as unknown as Record<string, unknown>; break;
-            case 'Edit Studio': projectData = editProject as unknown as Record<string, unknown>; break;
-            case 'Photoshoot Director': projectData = photoshootProject as unknown as Record<string, unknown>; break;
-            case 'Copywriter Studio': projectData = copywriterProject as unknown as Record<string, unknown>; break;
-        }
-
-        if (projectData) {
-            const saveTimer = setTimeout(() => {
-                saveProject(user.id, activeProject.name, projectData!, activeProject.name);
-            }, 2000);
-            return () => clearTimeout(saveTimer);
-        }
-    }, [ugcProject, voiceProject, promptProject, videoProject, powerProject, campaignProject, controllerProject, brandingProject, planProject, creatorProject, influencerProject, editProject, photoshootProject, copywriterProject, activeProjectIndex, user?.id]);
-
-    const renderActiveStudio = () => {
-        const activeProject = projects[activeProjectIndex];
-        const userId = user!.id; // user is always non-null here (guarded above)
-
-        switch (activeProject.name) {
-            case 'Power Studio':
-                return <PowerStudio project={powerProject} setProject={setPowerProject} userId={userId} refreshCredits={refreshCredits} />;
-            case 'UGC Studio':
-                return <UGCStudio project={ugcProject} setProject={setUGCProject} userId={userId} refreshCredits={refreshCredits} />;
-            case 'Voice Studio':
-                return <VoiceOverStudio project={voiceProject} setProject={setVoiceProject} userId={userId} refreshCredits={refreshCredits} />;
-            case 'Video Studio':
-                return <VideoStudio userId={userId} refreshCredits={refreshCredits} />;
-            case 'Campaign Studio':
-                return <CampaignStudio project={campaignProject} setProject={setCampaignProject} userId={userId} refreshCredits={refreshCredits} />;
-            case 'Branding Studio':
-                return <BrandingStudio project={brandingProject} setProject={setBrandingProject} userId={userId} refreshCredits={refreshCredits} />;
-            case 'Prompt Studio':
-                return <PromptStudio project={promptProject} setProject={setPromptProject} />;
-            case 'Controller Studio':
-                return <ControllerStudio project={controllerProject} setProject={setControllerProject} />;
-            case 'Plan Studio':
-                return <PlanStudio project={planProject} setProject={setPlanProject} userId={userId} refreshCredits={refreshCredits} />;
-            case 'Creator Studio':
-                return <CreatorStudio project={creatorProject} setProject={setCreatorProject} userId={userId} refreshCredits={refreshCredits} />;
-            case 'Influencer Studio':
-                return <InfluencerStudio project={influencerProject} setProject={setInfluencerProject} userId={userId} refreshCredits={refreshCredits} />;
-            case 'Edit Studio':
-                return <EditStudio project={editProject} setProject={setEditProject} />;
-            case 'Photoshoot Director':
-                return <PhotoshootDirector project={photoshootProject} setProject={setPhotoshootProject} userId={userId} refreshCredits={refreshCredits} />;
-            case 'Copywriter Studio':
-                return <CopywriterStudio project={copywriterProject} setProject={setCopywriterProject} userId={userId} refreshCredits={refreshCredits} />;
-            default:
-                return <div className="text-white text-center p-20">Select a studio to begin</div>;
-        }
-    };
-
-    const handleAddTab = () => {
-        // Logic to add new tabs could go here
-        alert("New project creation would go here in full version");
-    };
-
-    const handleCloseTab = (index: number) => {
-        if (projects.length <= 1) return;
-        const newProjects = projects.filter((_, i) => i !== index);
-        setProjects(newProjects);
-        if (activeProjectIndex >= index && activeProjectIndex > 0) {
-            setActiveProjectIndex(activeProjectIndex - 1);
-        }
-    };
-
-    const handleGetStarted = () => {
-        setView('suite_view');
-    };
-
-    const handleSignOut = async () => {
-        await supabase?.auth.signOut();
-        setUser(null);
-        setView('landing');
-    };
-
-    // Show loading spinner while checking auth
-    if (authLoading) {
-        return (
-            <div className="min-h-screen bg-[#08080e] flex items-center justify-center">
-                <div className="w-10 h-10 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
+          {/* Mobile Menu Overlay */}
+          {isMenuOpen && view !== 'landing' && userId && (
+            <div className="md:hidden bg-black/95 border-b border-white/5 p-6 animate-in slide-in-from-top duration-300">
+              <div className="flex flex-col gap-4">
+                <button 
+                  onClick={() => { setView('dashboard'); setIsMenuOpen(false); setActiveScriptContext(''); }} 
+                  className={`w-full p-4 rounded-2xl text-right font-black ${view === 'dashboard' ? 'bg-[#FFD700] text-black' : 'bg-white/5 text-white'}`}
+                >
+                  🏠 الرئيسية
+                </button>
+                <button 
+                  onClick={() => { setView('brand_kit'); setIsMenuOpen(false); }} 
+                  className={`w-full p-4 rounded-2xl text-right font-black ${view === 'brand_kit' ? 'bg-[#FFD700] text-black' : 'bg-white/5 text-white'}`}
+                >
+                  🎨 هويتي
+                </button>
+                <button 
+                  onClick={() => { setView('admin'); setIsMenuOpen(false); }} 
+                  className={`w-full p-4 rounded-2xl text-right font-black ${view === 'admin' ? 'bg-[#FFD700] text-black' : 'bg-white/5 text-white'}`}
+                >
+                  ⚙️ الإدارة
+                </button>
+                <button 
+                  onClick={() => { setIsPricingOpen(true); setIsMenuOpen(false); }} 
+                  className="w-full p-4 bg-[#FFD700] text-black rounded-2xl text-right font-black"
+                >
+                  💰 شحن رصيد
+                </button>
+                <button 
+                  onClick={() => { supabase.auth.signOut(); setIsMenuOpen(false); }} 
+                  className="w-full p-4 bg-red-500/10 text-red-500 rounded-2xl text-right font-black"
+                >
+                  🚪 تسجيل الخروج
+                </button>
+              </div>
             </div>
-        );
-    }
+          )}
+      </nav>
 
-    // Show auth screen if not logged in
-    if (!user) {
-        return <Auth />;
-    }
+      <div className="w-full max-w-7xl flex-grow p-6 z-10">
+          {view === 'landing' && <LandingPage onGetStarted={() => setView('dashboard')} />}
+          
+          {view !== 'landing' && !userId && <Auth onGuestLogin={() => setIsGuest(true)} />}
 
-    if (view === 'landing') {
-        return <LandingPage onGetStarted={handleGetStarted} />;
-    }
-
-    return (
-        <div className={`min-h-screen bg-[rgb(var(--color-background-base-rgb))] text-[var(--color-text-base)] ${theme} font-tajawal`}>
-            {/* Header */}
-            <header className="fixed top-0 left-0 right-0 z-50 glass-card border-b border-white/5 px-6 py-4 flex items-center justify-between">
-                <div className="flex items-center gap-4 cursor-pointer" onClick={() => setView('landing')}>
-                    <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center font-black text-white shadow-lg shadow-indigo-500/20">EB</div>
-                    <h1 className="text-xl font-bold tracking-tight text-white hidden sm:block">Ebdaa Pro <span className="opacity-50 font-normal">Intelligence</span></h1>
+          {view === 'dashboard' && userId && (
+            <div className="py-12 md:py-20 space-y-16 animate-in fade-in duration-700 text-right" dir="rtl">
+                <div className="space-y-4">
+                    <h1 className="text-4xl md:text-8xl font-black text-white tracking-tighter leading-tight italic">لوحة التحكّم <span className="text-[#FFD700]">.</span></h1>
+                    <p className="text-slate-500 text-lg md:text-2xl font-bold">مرحباً بك في مستقبل الإنتاج. اختر المستوى المطلوب لتبدأ.</p>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <CreditsDisplay credits={credits} />
-                    <ThemeSwitcher currentTheme={theme} onThemeChange={setTheme} />
-                    <button
-                        onClick={handleSignOut}
-                        title={user.email}
-                        className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 border-2 border-white/10 shadow-xl hover:opacity-80 transition-opacity flex items-center justify-center text-white text-xs font-black"
-                    >
-                        {user.email.charAt(0).toUpperCase()}
-                    </button>
-                </div>
-            </header>
-
-            {/* Main Content */}
-            <div className="pt-24 px-4 pb-20 max-w-7xl mx-auto flex flex-col items-center">
-                <TabBar
-                    projects={projects}
-                    activeProjectIndex={activeProjectIndex}
-                    onSelectTab={setActiveProjectIndex}
-                    onAddTab={handleAddTab}
-                    onCloseTab={handleCloseTab}
-                />
-
-                <div className="w-full mt-6 animate-in slide-in-from-bottom-5 duration-500">
-                    {renderActiveStudio()}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {hubs.map((hub) => (
+                        <div key={hub.id} className="group relative flex flex-col bg-white/5 border border-white/10 rounded-[3.5rem] overflow-hidden transition-all hover:border-white/20 hover:-translate-y-2 shadow-2xl">
+                            <div className={`h-40 bg-gradient-to-br ${hub.color} p-10 flex items-center justify-between`}>
+                                <div className="text-7xl opacity-40 group-hover:scale-110 transition-transform">{hub.icon}</div>
+                                <div className="text-right">
+                                    <span className="text-white/40 font-black text-xs uppercase tracking-widest block mb-1">Level {hub.level}</span>
+                                    <h2 className="text-3xl font-black text-white">{hub.title}</h2>
+                                </div>
+                            </div>
+                            
+                            <div className="p-10 flex-grow flex flex-col justify-between space-y-8">
+                                <p className="text-slate-400 font-bold leading-relaxed">{hub.desc}</p>
+                                
+                                <div className="space-y-3">
+                                    {hub.tools.map(tool => (
+                                        <button 
+                                            key={tool.id} 
+                                            onClick={() => setView(tool.id as AppView)}
+                                            className="w-full group/btn flex items-center justify-between p-5 bg-white/5 border border-white/5 rounded-2xl hover:bg-white hover:text-black transition-all font-black text-sm"
+                                        >
+                                            <span className="group-hover/btn:-translate-x-1 transition-transform">←</span>
+                                            <div className="flex items-center gap-3">
+                                                <span>{tool.label}</span>
+                                                <span className="text-xl">{tool.icon}</span>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             </div>
-        </div>
-    );
-};
+          )}
 
-export default App;
+          {view === 'performance_studio' && userId && (
+            <AdContentFactory 
+                performanceProject={performanceProject} 
+                setPerformanceProject={setPerformanceProject} 
+                masterProject={masterFactory}
+                setMasterProject={setMasterFactory}
+                userId={userId} 
+                refreshCredits={() => {}} 
+                onBridgeToVideo={bridgeToVideo} 
+            />
+          )}
+          {view === 'photoshoot' && userId && <PhotoshootDirector project={photoshootProject} setProject={setPhotoshootProject} userId={userId} />}
+          {view === 'strategy_engine' && userId && <MarketingStudio project={marketingProject} setProject={setMarketingProject} onBridgeToPlan={bridgeToPlan} />}
+          {view === 'video_studio' && userId && <VideoStudio userId={userId} refreshCredits={() => {}} initialScript={activeScriptContext} />}
+          {view === 'plan_studio' && userId && <PlanStudio project={planStudio} setProject={setPlanStudio} onBridgeToPhotoshoot={bridgeToPhotoshoot} />}
+          {view === 'brand_kit' && userId && <BrandKitManager userId={userId} onBack={() => setView('dashboard')} />}
+          {view === 'faq' && userId && <FAQ onBack={() => setView('dashboard')} />}
+          {view === 'privacy_policy' && userId && <LegalPages type="privacy" onBack={() => setView('dashboard')} />}
+          {view === 'terms_of_service' && userId && <LegalPages type="terms" onBack={() => setView('dashboard')} />}
+          {view === 'ads_studio' && userId && <AdsStudio userId={userId} refreshCredits={() => {}} />}
+          {view === 'daily_pack' && userId && <DailyPackStudio project={dailyPack} setProject={setDailyPack} userId={userId} />}
+          {view === 'trend_engine' && userId && <TrendEngine project={trendEngine} setProject={setTrendEngine} userId={userId} refreshCredits={() => {}} />}
+          {view === 'power' && userId && <PowerStudio project={powerStudio} setProject={setPowerStudio} userId={userId} refreshCredits={() => {}} />}
+          {view === 'ugc_studio' && userId && <UGCStudio project={ugcProject} setProject={setUgcProject} userId={userId} refreshCredits={() => {}} />}
+          {view === 'admin' && userId && <AdminDashboard />}
+      </div>
+
+      <Footer onNavigate={setView} onOpenPricing={() => setIsPricingOpen(true)} />
+      <ChatWidget />
+      <WhatsAppButton />
+      {isPricingOpen && userId && <PricingModal userId={userId} onClose={() => setIsPricingOpen(false)} />}
+    </div>
+  );
+}

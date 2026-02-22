@@ -30,3 +30,16 @@ export const TermsOfService: React.FC = () => (
         </div>
     </div>
 );
+
+const LegalPages: React.FC<{ type: 'privacy' | 'terms', onBack: () => void }> = ({ type, onBack }) => {
+    return (
+        <div className="py-20">
+            <div className="max-w-4xl mx-auto mb-8 flex justify-end">
+                <button onClick={onBack} className="px-6 py-2 bg-white/5 text-slate-400 rounded-xl font-bold hover:text-white transition-all">رجوع</button>
+            </div>
+            {type === 'privacy' ? <PrivacyPolicy /> : <TermsOfService />}
+        </div>
+    );
+};
+
+export default LegalPages;

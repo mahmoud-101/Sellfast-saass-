@@ -1,13 +1,7 @@
+
 import React from 'react';
 import { SHOT_TYPES, MAX_SHOT_SELECTION } from '../constants';
 import { ShotType } from '../types';
-
-interface ShotTypeSelectorProps {
-  selected: ShotType[];
-  onChange: (selected: ShotType[]) => void;
-  customStylePrompt: string;
-  onCustomStylePromptChange: (prompt: string) => void;
-}
 
 const ShotTypeButton: React.FC<{
   type: ShotType,
@@ -17,10 +11,10 @@ const ShotTypeButton: React.FC<{
   return (
     <button
       onClick={onClick}
-      className={`w-full text-center text-sm px-2 py-2.5 rounded-lg transition-all duration-200 border ${
+      className={`w-full text-center text-[11px] font-black px-2 py-3.5 rounded-xl transition-all duration-300 border-2 ${
         isSelected
-          ? 'bg-[var(--color-accent)] text-white border-[var(--color-accent)] shadow-md shadow-[var(--color-accent)]/20'
-          : 'bg-black/20 border-transparent hover:border-[var(--color-accent)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-base)]'
+          ? 'bg-[#FFD700] text-black border-[#FFD700] shadow-lg shadow-[#FFD700]/20'
+          : 'bg-black/40 border-white/10 text-slate-400 hover:border-[#FFD700]/50 hover:text-[#FFD700]'
       }`}
     >
       {type}
@@ -28,6 +22,13 @@ const ShotTypeButton: React.FC<{
   );
 };
 
+// Define the missing props interface for ShotTypeSelector
+interface ShotTypeSelectorProps {
+  selected: ShotType[];
+  onChange: (selected: ShotType[]) => void;
+  customStylePrompt: string;
+  onCustomStylePromptChange: (prompt: string) => void;
+}
 
 const ShotTypeSelector: React.FC<ShotTypeSelectorProps> = ({ selected, onChange, customStylePrompt, onCustomStylePromptChange }) => {
 
@@ -43,17 +44,19 @@ const ShotTypeSelector: React.FC<ShotTypeSelectorProps> = ({ selected, onChange,
   };
 
   return (
-    <div className="glass-card rounded-2xl p-4">
-      <h3 className="text-lg font-bold text-[var(--color-text-base)] mb-1">2. Select Shot Types</h3>
-      <p className="text-sm text-[var(--color-text-secondary)] mb-3">
-        Choose up to {MAX_SHOT_SELECTION} types. ({selected.length}/{MAX_SHOT_SELECTION})
-      </p>
+    <div className="bg-white/5 rounded-[2rem] p-6 border border-white/5 shadow-sm">
+      <div className="flex justify-between items-center mb-6 flex-row-reverse">
+        <h3 className="text-lg font-black text-white tracking-tight">2. اختار زوايا التصوير</h3>
+        <span className={`text-[10px] font-black px-3 py-1 rounded-full ${selected.length === MAX_SHOT_SELECTION ? 'bg-orange-500/20 text-orange-400' : 'bg-[#FFD700]/20 text-[#FFD700]'}`}>
+           ({selected.length}/{MAX_SHOT_SELECTION}) لقطات
+        </span>
+      </div>
 
-      <div className="flex flex-col gap-4">
+      <div className="space-y-8">
         {SHOT_TYPES.map(section => (
-            <div key={section.category}>
-                <h4 className="text-sm font-semibold text-[var(--color-text-medium)] mb-2">{section.category}</h4>
-                <div className="grid grid-cols-2 gap-2">
+            <div key={section.category} className="text-right">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 pr-2 border-r-2 border-[#FFD700]">{section.category}</h4>
+                <div className="grid grid-cols-2 gap-2.5">
                     {section.types.map(type => (
                         <ShotTypeButton
                             key={type}
@@ -67,14 +70,14 @@ const ShotTypeSelector: React.FC<ShotTypeSelectorProps> = ({ selected, onChange,
         ))}
       </div>
 
-      <div className="mt-4 pt-4 border-t border-[rgba(var(--color-text-base-rgb),0.1)]">
-        <h4 className="text-sm font-semibold text-[var(--color-text-medium)] mb-2">Custom Style Prompt (Optional)</h4>
+      <div className="mt-8 pt-6 border-t border-white/5">
+        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 pr-2 border-r-2 border-[#FFD700] text-right">وصف إضافي (اختياري)</h4>
         <textarea
             value={customStylePrompt}
             onChange={(e) => onCustomStylePromptChange(e.target.value)}
             rows={3}
-            className="w-full glass-input rounded-md p-3 text-sm leading-relaxed transition-all"
-            placeholder="e.g., 'Minimalist aesthetic, with a soft pastel color palette and dramatic long shadows.'"
+            className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-xs font-bold text-white focus:border-[#FFD700] outline-none resize-none text-right shadow-inner"
+            placeholder="مثال: إضاءة نهارية ناعمة، ألوان دافئة، تفاصيل واضحة..."
         />
       </div>
     </div>
