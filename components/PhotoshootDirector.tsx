@@ -51,8 +51,9 @@ const PhotoshootDirector: React.FC<PhotoshootDirectorProps> = ({ project, setPro
       })),
     }));
 
-    // تنفيذ التوليد بشكل متوازي للسرعة مع تحديث النتائج تدريجياً
-    const imagePromises = project.selectedShotTypes.map(async (shotType, i) => {
+    // تنفيذ التوليد بشكل متسلسل لتجنب تجاوز حدود المعدل (Rate Limits)
+    for (let i = 0; i < project.selectedShotTypes.length; i++) {
+      const shotType = project.selectedShotTypes[i];
       const textProtection = "STRICTLY PRESERVE all original branding, logos, and text from the product image. NO EXTRA text.";
       let prompt = `MASTER PROMPT: Professional product photo of the item in Image 1.
       SHOT TYPE: ${shotType}.
@@ -61,6 +62,9 @@ const PhotoshootDirector: React.FC<PhotoshootDirectorProps> = ({ project, setPro
       if (project.customStylePrompt) prompt += ` ADDITIONAL STYLE: ${project.customStylePrompt}`;
 
       try {
+        // إضافة تأخير بسيط بين الطلبات (1.5 ثانية)
+        if (i > 0) await new Promise(resolve => setTimeout(resolve, 1500));
+        
         const image = await generateImage(project.productImages, prompt, null);
         setProject(s => ({ 
           ...s, 
@@ -72,9 +76,7 @@ const PhotoshootDirector: React.FC<PhotoshootDirectorProps> = ({ project, setPro
           results: s.results.map(r => r.shotType === shotType ? { ...r, error: 'تجاوزت حد جوجل المجاني، حاول مرة أخرى لاحقاً.', isLoading: false } : r) 
         }));
       }
-    });
-
-    await Promise.all(imagePromises);
+    }
     
     setProject(s => ({ ...s, isGenerating: false }));
     if (refreshCredits) refreshCredits();

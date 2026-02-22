@@ -83,8 +83,8 @@ const VideoStudio: React.FC<VideoStudioProps> = ({ userId, refreshCredits, initi
             // Step 3: Generate Images in Parallel with a small staggered delay to avoid burst rate limits
             const inputImages = [...productImages, ...referenceImages];
             const imagePromises = dynamicShots.map(async (shotDescription, i) => {
-                // Add a small staggered delay (e.g., 500ms per image)
-                await new Promise(resolve => setTimeout(resolve, i * 500));
+                // Add a small staggered delay (e.g., 1500ms per image)
+                await new Promise(resolve => setTimeout(resolve, i * 1500));
 
                 const finalPrompt = `
                     VIRTUAL TRY-ON & PRODUCT SWAP:

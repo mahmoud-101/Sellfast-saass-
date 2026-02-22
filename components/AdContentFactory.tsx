@@ -77,8 +77,12 @@ const AdContentFactory: React.FC<AdContentFactoryProps> = ({
                 }));
                 setActiveTab('full_campaign');
 
-                const imagePromises = campaignData.adSets.map(async (set: any, i: number) => {
+                // Generate images sequentially with delay to avoid rate limits
+                for (let i = 0; i < campaignData.adSets.length; i++) {
+                    const set = campaignData.adSets[i];
                     try {
+                        if (i > 0) await new Promise(resolve => setTimeout(resolve, 1500));
+                        
                         const img = await generateImage(performanceProject.referenceImage ? [performanceProject.referenceImage] : [], set.visualPrompt, null, "1:1");
                         const imageUrl = `data:${img.mimeType};base64,${img.base64}`;
                         
@@ -91,9 +95,7 @@ const AdContentFactory: React.FC<AdContentFactoryProps> = ({
                     } catch (err) {
                         console.error("Image generation failed for set", i, err);
                     }
-                });
-
-                await Promise.all(imagePromises);
+                }
 
                 if (refreshCredits) refreshCredits();
             } else {
