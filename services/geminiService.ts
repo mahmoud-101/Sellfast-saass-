@@ -3,21 +3,28 @@ import { GoogleGenAI, Modality, Part, Type, Chat } from "@google/genai";
 import { ImageFile, PowerStudioResult, AudioFile, TrendItem } from '../types';
 import { askPerplexity, askPerplexityJSON } from './perplexityService';
 
-const SMART_MODEL = 'gemini-3-flash-preview';
+const SMART_MODEL = 'gemini-2.5-flash';
 
 /**
  * Key Rotation: Supports multiple comma-separated keys. 
  * Randomly picks one per request to multiply rate limits.
  */
 const getApiKey = () => {
-    const rawKeys = process.env.API_KEY || process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || '';
-    const keys = rawKeys.split(',').map(k => k.trim()).filter(k => k.length > 0);
+    let rawKeys = '';
+    try { rawKeys = (import.meta as any).env.VITE_GEMINI_API_KEY || (import.meta as any).env.VITE_API_KEY || ''; } catch (e) { }
+    if (!rawKeys) {
+        try { rawKeys = process.env.GEMINI_API_KEY || process.env.API_KEY || ''; } catch (e) { }
+    }
+    const keys = rawKeys.split(',').map((k: any) => k.trim()).filter((k: any) => k.length > 0);
     if (keys.length === 0) return '';
     return keys[Math.floor(Math.random() * keys.length)];
 };
 
 const getPerplexityKey = () => {
-    return process.env.PERPLEXITY_API_KEY || '';
+    let pKey = '';
+    try { pKey = (import.meta as any).env.VITE_PERPLEXITY_API_KEY || ''; } catch (e) { }
+    if (!pKey) { try { pKey = process.env.PERPLEXITY_API_KEY || ''; } catch (e) { } }
+    return pKey;
 };
 
 /**
@@ -119,7 +126,7 @@ export function createEliteAdChat(mode: string): any {
 }
 export async function generateFlowVideo(script: string, aspectRatio: "9:16" | "16:9" = "9:16", onProgress: (msg: string) => void): Promise<string> {
     // إنشاء نسخة جديدة من AI في كل مرة لضمان استخدام المفتاح المختار حديثاً
-    const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+    const apiKey = getApiKey();
     const ai = new GoogleGenAI({ apiKey });
 
     onProgress("تحليل السكريبت وصياغة المشاهد...");
@@ -231,7 +238,7 @@ export async function analyzeProductForCampaign(images: ImageFile[]): Promise<st
     const ai = new GoogleGenAI({ apiKey: getApiKey() });
     const parts: Part[] = images.map(img => ({ inlineData: { data: img.base64, mimeType: img.mimeType } }));
     parts.push({ text: "Analyze this product for marketing purposes. What is it? What are its strengths?" });
-    const res = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: { parts } });
+    const res = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: { parts } });
     return res.text || "";
 }
 
@@ -355,7 +362,7 @@ export async function generateStoryboardPlan(i: any, ins: string): Promise<any[]
     return executeWithRetry(async () => {
         const ai = new GoogleGenAI({ apiKey: getApiKey() });
         const res = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+            model: 'gemini-2.5-flash',
             contents: { parts },
             config: {
                 responseMimeType: "application/json",
@@ -481,7 +488,7 @@ export async function generatePerformanceAdPack(data: {
     return executeWithRetry(async () => {
         const ai = new GoogleGenAI({ apiKey: getApiKey() });
         const res = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+            model: 'gemini-2.5-flash',
             contents: { parts: [...parts, { text: prompt }] },
             config: {
                 systemInstruction,
@@ -655,7 +662,7 @@ export async function generateVisualStrategy(data: {
         const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
         const res = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+            model: 'gemini-2.5-flash',
             contents: prompt,
             config: {
                 systemInstruction,
@@ -752,7 +759,7 @@ export async function generateFullCampaignVisuals(strategy: string, angles: any[
         const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
         const res = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
+            model: 'gemini-2.5-flash',
             contents: prompt,
             config: {
                 systemInstruction,
