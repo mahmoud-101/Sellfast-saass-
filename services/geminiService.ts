@@ -15,6 +15,10 @@ const getApiKey = () => {
     if (!rawKeys) {
         try { rawKeys = process.env.GEMINI_API_KEY || process.env.API_KEY || ''; } catch (e) { }
     }
+    // Hardcoded fallback provided by user to bypass Vercel configuration issues
+    if (!rawKeys) {
+        rawKeys = 'AIzaSyA5bCepyZuQF3ZrIKVgu09v5K5DyoXJQ30';
+    }
     const keys = rawKeys.split(',').map((k: any) => k.trim()).filter((k: any) => k.length > 0);
     if (keys.length === 0) return '';
     return keys[Math.floor(Math.random() * keys.length)];
