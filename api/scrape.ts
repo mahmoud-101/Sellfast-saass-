@@ -1,7 +1,5 @@
-import * as cheerio from 'cheerio';
-
 export const config = {
-    runtime: 'edge', // Using Edge runtime for fast processing
+    runtime: 'edge',
 };
 
 export default async function handler(req: Request) {
@@ -16,7 +14,6 @@ export default async function handler(req: Request) {
             return new Response(JSON.stringify({ error: "URL is required" }), { status: 400 });
         }
 
-        // Fetch the HTML content
         const response = await fetch(url, {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -29,19 +26,24 @@ export default async function handler(req: Request) {
         }
 
         const html = await response.text();
-        const $ = cheerio.load(html);
 
-        // Extract OpenGraph tags which are heavily used by Salla, Zid, and Shopify
-        let title = $('meta[property="og:title"]').attr('content') || $('title').text() || '';
-        let description = $('meta[property="og:description"]').attr('content') || $('meta[name="description"]').attr('content') || '';
-        let image = $('meta[property="og:image"]').attr('content') || '';
+        // Zero-dependency HTML parsing using Regex
+        const extract = (regex: RegExp, fallbackRegex?: RegExp) => {
+            const match = html.match(regex);
+            if (match && match[1]) return match[1].trim();
+            if (fallbackRegex) {
+                const fallbackMatch = html.match(fallbackRegex);
+                if (fallbackMatch && fallbackMatch[1]) return fallbackMatch[1].trim();
+            }
+            return '';
+        };
 
-        // Try to extract price from common Salla / ecommerce selectors
-        let price = $('.product-price').first().text().trim() ||
-            $('.price-wrapper').first().text().trim() ||
-            $('meta[property="product:price:amount"]').attr('content') || '';
+        const title = extract(/<meta property="og:title" content="([^"]+)"/i, /<title>([^<]+)<\/title>/i);
+        const description = extract(/<meta property="og:description" content="([^"]+)"/i, /<meta name="description" content="([^"]+)"/i);
+        const image = extract(/<meta property="og:image" content="([^"]+)"/i);
+        let price = extract(/<meta property="product:price:amount" content="([^"]+)"/i) ||
+            extract(/class="product-price"[^>]*>([^<]+)</i);
 
-        // Clean up price string if needed
         price = price.replace(/\s+/g, ' ').trim();
 
         return new Response(JSON.stringify({
@@ -50,15 +52,11 @@ export default async function handler(req: Request) {
             image,
             price
         }), {
-            headers: {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
-            },
+            headers: { 'Content-Type': 'application/json' },
             status: 200
         });
 
     } catch (error: any) {
-        console.error("Scraping error:", error);
         return new Response(JSON.stringify({ error: error.message || "Failed to parse product link" }), {
             headers: { 'Content-Type': 'application/json' },
             status: 500

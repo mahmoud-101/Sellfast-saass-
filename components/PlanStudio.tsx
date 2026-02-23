@@ -17,6 +17,50 @@ interface Props {
 }
 
 const PlanStudio: React.FC<Props> = ({ project, setProject, onBridgeToPhotoshoot, userId }) => {
+    const [sallaUrl, setSallaUrl] = useState('');
+    const [isScraping, setIsScraping] = useState(false);
+
+    const handleScrapeSalla = async () => {
+        if (!sallaUrl.trim()) return;
+        setIsScraping(true);
+        try {
+            const res = await fetch('/api/scrape', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: sallaUrl })
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                // Prepare injected prompt text
+                const injectedText = `[Product Name]: ${data.title}\n[Description]: ${data.description}\n[Price]: ${data.price}`;
+                setProject(s => ({ ...s, prompt: injectedText + '\n\n' + s.prompt }));
+
+                // Bring in the image if available and convert it to ImageFile
+                if (data.image) {
+                    try {
+                        const imgRes = await fetch(data.image);
+                        const blob = await imgRes.blob();
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            const b64 = (reader.result as string).split(',')[1];
+                            setProject(s => ({ ...s, productImages: [...s.productImages, { base64: b64, mimeType: blob.type, name: 'scraped.jpg' }] }));
+                        };
+                        reader.readAsDataURL(blob);
+                    } catch (e) {
+                        console.error("Failed to fetch image cross-origin", e);
+                    }
+                }
+            } else {
+                alert("Failed to extract product: " + data.error);
+            }
+        } catch (e: any) {
+            alert("Error linking product: " + e.message);
+        } finally {
+            setIsScraping(false);
+            setSallaUrl('');
+        }
+    };
 
     const handleFileUpload = async (files: File[]) => {
         if (!files.length) return;
@@ -70,6 +114,25 @@ const PlanStudio: React.FC<Props> = ({ project, setProject, onBridgeToPhotoshoot
                             <ImageWorkspace id="plan-up" images={project.productImages} onImagesUpload={handleFileUpload} onImageRemove={(i) => setProject(s => ({ ...s, productImages: s.productImages.filter((_, idx) => idx !== i) }))} isUploading={project.isUploading} />
                         </div>
                         <div className="lg:col-span-8 flex flex-col gap-6">
+                            {/* Auto-Importer Bar */}
+                            <div className="flex flex-col sm:flex-row gap-3 bg-white/5 border border-[#FFD700]/20 rounded-3xl p-4 shadow-inner">
+                                <input
+                                    type="text"
+                                    value={sallaUrl}
+                                    onChange={(e) => setSallaUrl(e.target.value)}
+                                    placeholder="🔗 أدخل رابط منتج متجرك (سلة، زد، الخ...)"
+                                    className="flex-1 bg-black/60 border border-white/10 rounded-2xl p-4 text-sm font-bold text-white outline-none focus:border-[#FFD700] transition-colors"
+                                />
+                                <button
+                                    onClick={handleScrapeSalla}
+                                    disabled={isScraping || !sallaUrl.trim()}
+                                    className="bg-[#FFD700]/20 text-[#FFD700] hover:bg-[#FFD700] hover:text-black px-6 py-4 rounded-2xl font-black text-sm transition-all whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isScraping ? 'جاري السحب...' : '🎯 استيراد سحري'}
+                                </button>
+                            </div>
+
+
                             <textarea value={project.prompt} onChange={(e) => setProject(s => ({ ...s, prompt: e.target.value }))} placeholder="هدف الحملة..." className="w-full bg-black/40 border border-white/10 rounded-3xl p-8 text-xl font-bold text-white outline-none focus:border-[#FFD700] min-h-[150px] resize-none shadow-inner" />
                             <div className="grid grid-cols-2 gap-4">
                                 <select value={project.targetMarket} onChange={(e) => setProject(s => ({ ...s, targetMarket: e.target.value }))} className="bg-white/5 border border-white/10 rounded-2xl p-4 text-sm font-bold text-white outline-none">{TARGET_MARKETS.map(m => <option key={m} value={m}>{m}</option>)}</select>
