@@ -109,15 +109,25 @@ export const logAction = async (userId: string, type: string, description: strin
     await supabase.from('logs').insert([{ user_id: userId, action_type: type, description }]);
 };
 
+import { uploadBase64ToS3 } from './aws';
+
 /**
  * حفظ المخرجات المولدة (صور/فيديوهات) في سجل المستخدم
  */
 export const saveGeneratedAsset = async (userId: string, type: string, result: any, config: any) => {
     if (!isSupabaseConfigured()) return;
+
+    let finalUrl = result.image?.base64 || result.video_url || result.plan_content;
+
+    // Use AWS S3 for direct uploads if it's base64 imagery to prevent massive DB logs
+    if (result.image?.base64) {
+        finalUrl = await uploadBase64ToS3(result.image.base64, result.image.mimeType || 'image/png');
+    }
+
     await supabase.from('assets').insert([{
         user_id: userId,
         asset_type: type,
-        url: result.image?.base64 || result.video_url || result.plan_content,
+        url: finalUrl,
         config: config
     }]);
 };

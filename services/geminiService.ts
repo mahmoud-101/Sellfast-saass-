@@ -137,7 +137,16 @@ export async function askGemini(prompt: string, sys?: string): Promise<string> {
     }
 
     const ai = new GoogleGenAI({ apiKey: getApiKey() });
-    const res = await ai.models.generateContent({ model: SMART_MODEL, contents: prompt, config: { systemInstruction: sys } });
+    const res = await ai.models.generateContent({
+        model: SMART_MODEL,
+        contents: prompt,
+        config: {
+            systemInstruction: sys,
+            temperature: 0.7,
+            maxOutputTokens: 2048,
+            topK: 40
+        }
+    });
     return res.text || "";
 }
 
@@ -433,6 +442,8 @@ export async function generatePerformanceAdPack(data: {
         config: {
             systemInstruction,
             responseMimeType: "application/json",
+            temperature: 0.5,
+            topK: 40,
             responseSchema: {
                 type: Type.OBJECT,
                 properties: {
