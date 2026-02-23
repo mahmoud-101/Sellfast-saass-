@@ -5,13 +5,46 @@ import { askPerplexity, askPerplexityJSON } from './perplexityService';
 
 const SMART_MODEL = 'gemini-3-flash-preview';
 
+/**
+ * Key Rotation: Supports multiple comma-separated keys. 
+ * Randomly picks one per request to multiply rate limits.
+ */
 const getApiKey = () => {
-    return process.env.API_KEY || process.env.GEMINI_API_KEY || '';
+    const rawKeys = process.env.API_KEY || process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || '';
+    const keys = rawKeys.split(',').map(k => k.trim()).filter(k => k.length > 0);
+    if (keys.length === 0) return '';
+    return keys[Math.floor(Math.random() * keys.length)];
 };
 
 const getPerplexityKey = () => {
     return process.env.PERPLEXITY_API_KEY || '';
 };
+
+/**
+ * Anti-Rate Limit & Timeout Wrapper
+ * Automatically retries failed Gemini requests with exponential backoff to ensure "infinite" feeling
+ */
+async function executeWithRetry<T>(operation: () => Promise<T>, maxRetries = 4): Promise<T> {
+    let attempt = 0;
+    while (attempt < maxRetries) {
+        try {
+            return await operation();
+        } catch (error: any) {
+            attempt++;
+            const msg = error?.message?.toLowerCase() || "";
+            // 429: Rate Limit, 503: Timeout, fetch failed: network drop
+            if (msg.includes("429") || msg.includes("503") || msg.includes("500") || msg.includes("timeout") || msg.includes("fetch failed") || msg.includes("quota") || msg.includes("overloaded")) {
+                if (attempt >= maxRetries) throw error;
+                const delayMs = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
+                console.warn(`[AI Engine] Server busy (Attempt ${attempt}/${maxRetries}). Retrying in ${Math.round(delayMs)}ms...`);
+                await new Promise(resolve => setTimeout(resolve, delayMs));
+            } else {
+                throw error;
+            }
+        }
+    }
+    throw new Error("Failed after maximum auto-retries.");
+}
 
 export function createEliteAdChat(mode: string): any {
     const pKey = getPerplexityKey();
@@ -136,18 +169,21 @@ export async function askGemini(prompt: string, sys?: string): Promise<string> {
         }
     }
 
-    const ai = new GoogleGenAI({ apiKey: getApiKey() });
-    const res = await ai.models.generateContent({
-        model: SMART_MODEL,
-        contents: prompt,
-        config: {
-            systemInstruction: sys,
-            temperature: 0.7,
-            maxOutputTokens: 2048,
-            topK: 40
-        }
+    return executeWithRetry(async () => {
+        // Get fresh key on every retry
+        const ai = new GoogleGenAI({ apiKey: getApiKey() });
+        const res = await ai.models.generateContent({
+            model: SMART_MODEL,
+            contents: prompt,
+            config: {
+                systemInstruction: sys,
+                temperature: 0.7,
+                maxOutputTokens: 2048,
+                topK: 40
+            }
+        });
+        return res.text || "";
     });
-    return res.text || "";
 }
 
 export async function generateUGCScript(data: any): Promise<string> { return askGemini(`Generate viral UGC script for ${data.productSelling}`, "Expert Content Creator"); }
@@ -158,7 +194,6 @@ export async function generateShortFormIdeas(data: any): Promise<string[]> {
 export async function generateFinalContentScript(topic: string, type: string): Promise<string> { return askGemini(`Write a ${type} script for: ${topic}`); }
 
 export async function generateImage(productImages: ImageFile[], prompt: string, styleImages: ImageFile[] | null = null, aspectRatio: string = "1:1"): Promise<ImageFile> {
-    const ai = new GoogleGenAI({ apiKey: getApiKey() });
     const parts: Part[] = productImages.map(img => ({ inlineData: { data: img.base64, mimeType: img.mimeType } }));
 
     // Apply "Master Prompt" spices and structure
@@ -170,17 +205,21 @@ export async function generateImage(productImages: ImageFile[], prompt: string, 
   `.trim();
 
     parts.push({ text: enhancedPrompt });
-    const res = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: { parts },
-        config: {
-            imageConfig: {
-                aspectRatio: aspectRatio as any
+
+    return executeWithRetry(async () => {
+        const ai = new GoogleGenAI({ apiKey: getApiKey() });
+        const res = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-image',
+            contents: { parts },
+            config: {
+                imageConfig: {
+                    aspectRatio: aspectRatio as any
+                }
             }
-        }
+        });
+        for (const part of res.candidates?.[0]?.content?.parts || []) { if (part.inlineData) return { base64: part.inlineData.data, mimeType: part.inlineData.mimeType, name: 'img.png' }; }
+        throw new Error('Fail');
     });
-    for (const part of res.candidates?.[0]?.content?.parts || []) { if (part.inlineData) return { base64: part.inlineData.data, mimeType: part.inlineData.mimeType, name: 'img.png' }; }
-    throw new Error('Fail');
 }
 
 export async function generateCampaignPlan(productImages: ImageFile[], goal: string, market: string, dialect: string): Promise<any[]> {
@@ -202,16 +241,18 @@ export async function enhancePrompt(prompt: string): Promise<string> { return as
 export async function analyzeLogoForBranding(logos: ImageFile[]): Promise<{ colors: string[] }> { return { colors: ['#4f46e5', '#0f172a', '#f8fafc'] }; }
 
 export async function generateSpeech(text: string, style: string, voice: string): Promise<AudioFile> {
-    const ai = new GoogleGenAI({ apiKey: getApiKey() });
-    const res = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-preview-tts',
-        contents: [{ parts: [{ text }] }],
-        config: {
-            responseModalities: [Modality.AUDIO],
-            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } }
-        }
+    return executeWithRetry(async () => {
+        const ai = new GoogleGenAI({ apiKey: getApiKey() });
+        const res = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-preview-tts',
+            contents: [{ parts: [{ text }] }],
+            config: {
+                responseModalities: [Modality.AUDIO],
+                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } }
+            }
+        });
+        return { base64: res.candidates?.[0]?.content?.parts[0]?.inlineData?.data || '', name: 'v.pcm' };
     });
-    return { base64: res.candidates?.[0]?.content?.parts[0]?.inlineData?.data || '', name: 'v.pcm' };
 }
 
 export async function runPowerProduction(images: ImageFile[], context: string, m: string, d: string, cb: any): Promise<PowerStudioResult> {
@@ -311,32 +352,35 @@ export async function generateStoryboardPlan(i: any, ins: string): Promise<any[]
 
     parts.push({ text: promptText });
 
-    const res = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: { parts },
-        config: {
-            responseMimeType: "application/json",
-            responseSchema: {
-                type: Type.ARRAY,
-                items: {
-                    type: Type.OBJECT,
-                    properties: {
-                        id: { type: Type.STRING },
-                        description: { type: Type.STRING },
-                        visualPrompt: { type: Type.STRING },
-                        cameraAngle: { type: Type.STRING },
-                        dialogue: { type: Type.STRING }
+    return executeWithRetry(async () => {
+        const ai = new GoogleGenAI({ apiKey: getApiKey() });
+        const res = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: { parts },
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.ARRAY,
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            id: { type: Type.STRING },
+                            description: { type: Type.STRING },
+                            visualPrompt: { type: Type.STRING },
+                            cameraAngle: { type: Type.STRING },
+                            dialogue: { type: Type.STRING }
+                        }
                     }
                 }
             }
+        });
+
+        try {
+            return JSON.parse(res.text || "[]");
+        } catch {
+            return [];
         }
     });
-
-    try {
-        return JSON.parse(res.text || "[]");
-    } catch {
-        return [];
-    }
 }
 export async function animateImageToVideo(i: any, p: string, a: string, cb: any): Promise<string> { return ""; }
 export async function fetchCurrentTrends(r: string, n: string): Promise<TrendItem[]> { return []; }
@@ -429,133 +473,134 @@ export async function generatePerformanceAdPack(data: {
         }
     }
 
-    const ai = new GoogleGenAI({ apiKey: getApiKey() });
-
     const parts: Part[] = [];
     if (data.referenceImage) {
         parts.push({ inlineData: { data: data.referenceImage.base64, mimeType: data.referenceImage.mimeType } });
     }
 
-    const res = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: { parts: [...parts, { text: prompt }] },
-        config: {
-            systemInstruction,
-            responseMimeType: "application/json",
-            temperature: 0.5,
-            topK: 40,
-            responseSchema: {
-                type: Type.OBJECT,
-                properties: {
-                    strategicIntelligence: {
-                        type: Type.OBJECT,
-                        properties: {
-                            productType: { type: Type.STRING, description: "Impulse / Considered / Premium / Routine" },
-                            riskLevel: { type: Type.STRING },
-                            emotionalDriver: { type: Type.STRING, description: "Pain / Desire / Status / Fear / Convenience" },
-                            archetype: { type: Type.STRING },
-                            psychologicalTrigger: { type: Type.STRING },
-                            biggestObjection: { type: Type.STRING }
-                        }
-                    },
-                    creativeStrategyMatrix: {
-                        type: Type.OBJECT,
-                        properties: {
-                            angles: {
-                                type: Type.ARRAY,
-                                items: {
-                                    type: Type.OBJECT,
-                                    properties: {
-                                        title: { type: Type.STRING },
-                                        trigger: { type: Type.STRING },
-                                        principle: { type: Type.STRING },
-                                        marketReason: { type: Type.STRING },
-                                        objectionNeutralizer: { type: Type.STRING },
-                                        rank: { type: Type.INTEGER },
-                                        isRecommended: { type: Type.BOOLEAN }
+    return executeWithRetry(async () => {
+        const ai = new GoogleGenAI({ apiKey: getApiKey() });
+        const res = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: { parts: [...parts, { text: prompt }] },
+            config: {
+                systemInstruction,
+                responseMimeType: "application/json",
+                temperature: 0.5,
+                topK: 40,
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        strategicIntelligence: {
+                            type: Type.OBJECT,
+                            properties: {
+                                productType: { type: Type.STRING, description: "Impulse / Considered / Premium / Routine" },
+                                riskLevel: { type: Type.STRING },
+                                emotionalDriver: { type: Type.STRING, description: "Pain / Desire / Status / Fear / Convenience" },
+                                archetype: { type: Type.STRING },
+                                psychologicalTrigger: { type: Type.STRING },
+                                biggestObjection: { type: Type.STRING }
+                            }
+                        },
+                        creativeStrategyMatrix: {
+                            type: Type.OBJECT,
+                            properties: {
+                                angles: {
+                                    type: Type.ARRAY,
+                                    items: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            title: { type: Type.STRING },
+                                            trigger: { type: Type.STRING },
+                                            principle: { type: Type.STRING },
+                                            marketReason: { type: Type.STRING },
+                                            objectionNeutralizer: { type: Type.STRING },
+                                            rank: { type: Type.INTEGER },
+                                            isRecommended: { type: Type.BOOLEAN }
+                                        }
                                     }
-                                }
-                            },
-                            recommendationReason: { type: Type.STRING, description: "Max 3 lines why this angle was chosen" }
-                        }
-                    },
-                    launchPack: {
-                        type: Type.OBJECT,
-                        properties: {
-                            hooks: { type: Type.ARRAY, items: { type: Type.STRING }, description: "5 Scroll-Stopping Hooks" },
-                            adCopy: { type: Type.STRING, description: "High-Converting Direct Response Ad" },
-                            ugcScript: { type: Type.STRING, description: "Hook -> Problem -> Demo -> Emotion -> CTA" },
-                            offerStructure: { type: Type.STRING },
-                            upsellSuggestion: { type: Type.STRING },
-                            cta: { type: Type.STRING },
-                            testingHooks: { type: Type.ARRAY, items: { type: Type.STRING }, description: "3 Hook Variations for Testing" }
-                        }
-                    },
-                    visualMatchingEngine: {
-                        type: Type.OBJECT,
-                        properties: {
-                            imageConcepts: {
-                                type: Type.ARRAY,
-                                items: {
-                                    type: Type.OBJECT,
-                                    properties: {
-                                        description: { type: Type.STRING },
-                                        angle: { type: Type.STRING },
-                                        emotion: { type: Type.STRING },
-                                        lighting: { type: Type.STRING },
-                                        why: { type: Type.STRING }
+                                },
+                                recommendationReason: { type: Type.STRING, description: "Max 3 lines why this angle was chosen" }
+                            }
+                        },
+                        launchPack: {
+                            type: Type.OBJECT,
+                            properties: {
+                                hooks: { type: Type.ARRAY, items: { type: Type.STRING }, description: "5 Scroll-Stopping Hooks" },
+                                adCopy: { type: Type.STRING, description: "High-Converting Direct Response Ad" },
+                                ugcScript: { type: Type.STRING, description: "Hook -> Problem -> Demo -> Emotion -> CTA" },
+                                offerStructure: { type: Type.STRING },
+                                upsellSuggestion: { type: Type.STRING },
+                                cta: { type: Type.STRING },
+                                testingHooks: { type: Type.ARRAY, items: { type: Type.STRING }, description: "3 Hook Variations for Testing" }
+                            }
+                        },
+                        visualMatchingEngine: {
+                            type: Type.OBJECT,
+                            properties: {
+                                imageConcepts: {
+                                    type: Type.ARRAY,
+                                    items: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            description: { type: Type.STRING },
+                                            angle: { type: Type.STRING },
+                                            emotion: { type: Type.STRING },
+                                            lighting: { type: Type.STRING },
+                                            why: { type: Type.STRING }
+                                        }
                                     }
-                                }
-                            },
-                            thumbnailConcept: { type: Type.STRING },
-                            storyboard: {
-                                type: Type.ARRAY,
-                                items: {
-                                    type: Type.OBJECT,
-                                    properties: {
-                                        frame: { type: Type.INTEGER },
-                                        scene: { type: Type.STRING },
-                                        shot: { type: Type.STRING },
-                                        movement: { type: Type.STRING },
-                                        text: { type: Type.STRING },
-                                        purpose: { type: Type.STRING }
+                                },
+                                thumbnailConcept: { type: Type.STRING },
+                                storyboard: {
+                                    type: Type.ARRAY,
+                                    items: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            frame: { type: Type.INTEGER },
+                                            scene: { type: Type.STRING },
+                                            shot: { type: Type.STRING },
+                                            movement: { type: Type.STRING },
+                                            text: { type: Type.STRING },
+                                            purpose: { type: Type.STRING }
+                                        }
                                     }
                                 }
                             }
+                        },
+                        profitBrain: {
+                            type: Type.OBJECT,
+                            properties: {
+                                valueStacking: { type: Type.STRING },
+                                aovIncrease: { type: Type.STRING },
+                                scarcityUrgency: { type: Type.STRING },
+                                riskReversal: { type: Type.STRING }
+                            }
+                        },
+                        performanceSimulation: {
+                            type: Type.OBJECT,
+                            properties: {
+                                hookStrength: { type: Type.STRING, enum: ["Low", "Medium", "High"] },
+                                conversionConfidence: { type: Type.INTEGER, description: "1-10" },
+                                riskLevel: { type: Type.STRING },
+                                testingStructure: { type: Type.STRING }
+                            }
                         }
                     },
-                    profitBrain: {
-                        type: Type.OBJECT,
-                        properties: {
-                            valueStacking: { type: Type.STRING },
-                            aovIncrease: { type: Type.STRING },
-                            scarcityUrgency: { type: Type.STRING },
-                            riskReversal: { type: Type.STRING }
-                        }
-                    },
-                    performanceSimulation: {
-                        type: Type.OBJECT,
-                        properties: {
-                            hookStrength: { type: Type.STRING, enum: ["Low", "Medium", "High"] },
-                            conversionConfidence: { type: Type.INTEGER, description: "1-10" },
-                            riskLevel: { type: Type.STRING },
-                            testingStructure: { type: Type.STRING }
-                        }
-                    }
-                },
-                required: [
-                    "strategicIntelligence", "creativeStrategyMatrix", "launchPack",
-                    "visualMatchingEngine", "profitBrain", "performanceSimulation"
-                ]
+                    required: [
+                        "strategicIntelligence", "creativeStrategyMatrix", "launchPack",
+                        "visualMatchingEngine", "profitBrain", "performanceSimulation"
+                    ]
+                }
             }
+        });
+
+        try {
+            return JSON.parse(res.text || "{}");
+        } catch {
+            throw new Error("فشل تحليل استجابة المحرك النخبة");
         }
     });
-
-    try {
-        return JSON.parse(res.text || "{}");
-    } catch {
-        throw new Error("فشل تحليل استجابة المحرك النخبة");
-    }
 }
 
 export async function generateVisualStrategy(data: {
@@ -606,59 +651,61 @@ export async function generateVisualStrategy(data: {
         }
     }
 
-    const ai = new GoogleGenAI({ apiKey: getApiKey() });
+    return executeWithRetry(async () => {
+        const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
-    const res = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: prompt,
-        config: {
-            systemInstruction,
-            responseMimeType: "application/json",
-            responseSchema: {
-                type: Type.OBJECT,
-                properties: {
-                    intent: { type: Type.STRING },
-                    concepts: {
-                        type: Type.ARRAY,
-                        items: {
-                            type: Type.OBJECT,
-                            properties: {
-                                description: { type: Type.STRING },
-                                angle: { type: Type.STRING },
-                                framing: { type: Type.STRING },
-                                expression: { type: Type.STRING },
-                                lighting: { type: Type.STRING },
-                                why: { type: Type.STRING },
-                                solves: { type: Type.STRING }
+        const res = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: prompt,
+            config: {
+                systemInstruction,
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        intent: { type: Type.STRING },
+                        concepts: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    description: { type: Type.STRING },
+                                    angle: { type: Type.STRING },
+                                    framing: { type: Type.STRING },
+                                    expression: { type: Type.STRING },
+                                    lighting: { type: Type.STRING },
+                                    why: { type: Type.STRING },
+                                    solves: { type: Type.STRING }
+                                }
                             }
-                        }
-                    },
-                    storyboard: {
-                        type: Type.ARRAY,
-                        items: {
-                            type: Type.OBJECT,
-                            properties: {
-                                frame: { type: Type.INTEGER },
-                                scene: { type: Type.STRING },
-                                shot: { type: Type.STRING },
-                                movement: { type: Type.STRING },
-                                text: { type: Type.STRING },
-                                purpose: { type: Type.STRING }
+                        },
+                        storyboard: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    frame: { type: Type.INTEGER },
+                                    scene: { type: Type.STRING },
+                                    shot: { type: Type.STRING },
+                                    movement: { type: Type.STRING },
+                                    text: { type: Type.STRING },
+                                    purpose: { type: Type.STRING }
+                                }
                             }
-                        }
+                        },
+                        guardrails: { type: Type.ARRAY, items: { type: Type.STRING } }
                     },
-                    guardrails: { type: Type.ARRAY, items: { type: Type.STRING } }
-                },
-                required: ["intent", "concepts", "storyboard", "guardrails"]
+                    required: ["intent", "concepts", "storyboard", "guardrails"]
+                }
             }
+        });
+
+        try {
+            return JSON.parse(res.text || "{}");
+        } catch {
+            throw new Error("فشل تحليل استجابة المحرك البصري");
         }
     });
-
-    try {
-        return JSON.parse(res.text || "{}");
-    } catch {
-        throw new Error("فشل تحليل استجابة المحرك البصري");
-    }
 }
 
 export async function generateFullCampaignVisuals(strategy: string, angles: any[]): Promise<any> {
@@ -701,49 +748,51 @@ export async function generateFullCampaignVisuals(strategy: string, angles: any[
         }
     }
 
-    const ai = new GoogleGenAI({ apiKey: getApiKey() });
+    return executeWithRetry(async () => {
+        const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
-    const res = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: prompt,
-        config: {
-            systemInstruction,
-            responseMimeType: "application/json",
-            responseSchema: {
-                type: Type.OBJECT,
-                properties: {
-                    adSets: {
-                        type: Type.ARRAY,
-                        items: {
-                            type: Type.OBJECT,
-                            properties: {
-                                angle: { type: Type.STRING },
-                                visualPrompt: { type: Type.STRING },
-                                storyboard: {
-                                    type: Type.ARRAY,
-                                    items: {
-                                        type: Type.OBJECT,
-                                        properties: {
-                                            frame: { type: Type.INTEGER },
-                                            scene: { type: Type.STRING },
-                                            text: { type: Type.STRING }
+        const res = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: prompt,
+            config: {
+                systemInstruction,
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        adSets: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    angle: { type: Type.STRING },
+                                    visualPrompt: { type: Type.STRING },
+                                    storyboard: {
+                                        type: Type.ARRAY,
+                                        items: {
+                                            type: Type.OBJECT,
+                                            properties: {
+                                                frame: { type: Type.INTEGER },
+                                                scene: { type: Type.STRING },
+                                                text: { type: Type.STRING }
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
-                    }
-                },
-                required: ["adSets"]
+                    },
+                    required: ["adSets"]
+                }
             }
+        });
+
+        try {
+            return JSON.parse(res.text || "{}");
+        } catch {
+            throw new Error("فشل توليد الحملة البصرية");
         }
     });
-
-    try {
-        return JSON.parse(res.text || "{}");
-    } catch {
-        throw new Error("فشل توليد الحملة البصرية");
-    }
 }
 
 export async function generatePromptFromText(instructions: string): Promise<string> {
