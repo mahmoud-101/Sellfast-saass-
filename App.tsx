@@ -266,43 +266,79 @@ export default function App() {
 
         {view === 'dashboard' && userId && (
           <div className="py-12 md:py-20 space-y-16 animate-in fade-in duration-700 text-right" dir="rtl">
-            <div className="space-y-4">
-              <h1 className="text-4xl md:text-8xl font-black text-white tracking-tighter leading-tight italic">مصنع المحتوى <span className="text-[#FFD700]">المتكامل</span></h1>
-              <p className="text-slate-500 text-lg md:text-2xl font-bold">رحلة عمل من 4 خطوات تأخذك من مجرد فكرة إلى إعلان فيرال يكسر مبيعاتك.</p>
+            <div className="space-y-6 text-center max-w-4xl mx-auto mb-20 relative z-10">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 rounded-full text-sm font-black tracking-widest uppercase mb-4 shadow-lg shadow-yellow-500/5">
+                رحلة الإنتاج المتكاملة
+              </div>
+              <h1 className="text-5xl md:text-7xl font-black text-white tracking-tighter leading-tight italic">
+                مصنع المحتوى <span className="text-transparent bg-clip-text bg-gradient-to-l from-yellow-300 to-yellow-600">الذكي</span>
+              </h1>
+              <p className="text-slate-400 text-lg md:text-xl font-bold leading-relaxed max-w-2xl mx-auto">
+                مسار عمل من 4 خطوات دقيقة، يأخذك من مجرد فكرة غامضة إلى منظومة إعلانية فيرال تكتسح المبيعات.
+              </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 relative">
-              {hubs.map((hub) => (
-                <div key={hub.id} className="group relative flex flex-col bg-white/5 border border-white/10 rounded-[3.5rem] overflow-hidden transition-all hover:border-white/20 hover:-translate-y-2 shadow-2xl">
-                  <div className={`h-40 bg-gradient-to-br ${hub.color} p-10 flex items-center justify-between`}>
-                    <div className="text-7xl opacity-40 group-hover:scale-110 transition-transform">{hub.icon}</div>
-                    <div className="text-right">
-                      <span className="text-white font-black text-sm uppercase tracking-widest block mb-1 bg-black/30 w-fit px-3 py-1 rounded-full">{hub.level}</span>
-                      <h2 className="text-3xl font-black text-white mt-3">{hub.title}</h2>
+            <div className="relative max-w-5xl mx-auto mt-20 mb-32" dir="rtl">
+              {/* Central Timeline Line */}
+              <div className="hidden lg:block absolute top-[5%] bottom-[5%] left-1/2 w-[2px] bg-gradient-to-b from-blue-600 via-purple-600 to-amber-500 transform -translate-x-1/2 z-0 opacity-40"></div>
+              <div className="hidden lg:block absolute top-[5%] bottom-[5%] left-1/2 w-[12px] bg-gradient-to-b from-blue-600 via-purple-600 to-amber-500 transform -translate-x-1/2 z-0 blur-xl opacity-20"></div>
+
+              <div className="space-y-12 lg:space-y-16 relative z-10">
+                {hubs.map((hub, index) => (
+                  <div key={hub.id} className={`flex flex-col lg:flex-row items-center justify-between ${index % 2 !== 0 ? 'lg:flex-row-reverse' : ''} relative`}>
+
+                    {/* Timeline Node */}
+                    <div className="hidden lg:flex absolute left-1/2 transform -translate-x-1/2 w-20 h-20 rounded-2xl bg-black border border-white/10 z-20 items-center justify-center shadow-2xl group-hover:scale-110 transition-all duration-500 rotate-45 overflow-hidden">
+                      <div className={`w-full h-full bg-gradient-to-br ${hub.color} opacity-20 absolute`}></div>
+                      <div className="-rotate-45 text-3xl drop-shadow-lg">{hub.icon}</div>
                     </div>
-                  </div>
 
-                  <div className="p-10 flex-grow flex flex-col justify-between space-y-8">
-                    <p className="text-slate-400 font-bold leading-relaxed">{hub.desc}</p>
+                    {/* Empty Space for the other side */}
+                    <div className="hidden lg:block w-[45%]"></div>
 
-                    <div className="space-y-3">
-                      {hub.tools.map(tool => (
-                        <button
-                          key={tool.id}
-                          onClick={() => setView(tool.id as AppView)}
-                          className="w-full group/btn flex items-center justify-between p-5 bg-white/5 border border-white/5 rounded-2xl hover:bg-white hover:text-black transition-all font-black text-sm"
-                        >
-                          <span className="group-hover/btn:-translate-x-1 transition-transform">←</span>
-                          <div className="flex items-center gap-3">
-                            <span>{tool.label}</span>
-                            <span className="text-xl">{tool.icon}</span>
+                    {/* Card Content */}
+                    <div className="w-full lg:w-[45%] group relative bg-[#131313]/90 backdrop-blur-xl border border-white/5 hover:border-white/10 rounded-[2.5rem] overflow-hidden transition-all duration-500 hover:shadow-[0_0_50px_rgba(255,255,255,0.03)] hover:-translate-y-2">
+                      {/* Large Watermark Number */}
+                      <div className="absolute -left-6 -top-12 text-[180px] font-black text-white/[0.015] select-none pointer-events-none group-hover:text-white/[0.03] transition-colors duration-700">{index + 1}</div>
+
+                      {/* Gradient Top Line */}
+                      <div className={`h-2 w-full bg-gradient-to-r ${hub.color}`}></div>
+
+                      <div className="p-8 md:p-10 relative z-10">
+                        <div className="flex items-center gap-5 mb-6">
+                          <div className="lg:hidden w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-3xl border border-white/10 shrink-0 shadow-inner">
+                            {hub.icon}
                           </div>
-                        </button>
-                      ))}
+                          <div>
+                            <span className={`bg-clip-text text-transparent bg-gradient-to-l ${hub.color} font-black text-xs md:text-sm uppercase tracking-[0.2em] block mb-2 drop-shadow-sm`}>{hub.level}</span>
+                            <h2 className="text-2xl md:text-3xl font-black text-white leading-tight">{hub.title}</h2>
+                          </div>
+                        </div>
+
+                        <p className="text-slate-400/90 font-medium leading-relaxed mb-10 text-sm md:text-base">{hub.desc}</p>
+
+                        <div className="space-y-3">
+                          {hub.tools.map(tool => (
+                            <button
+                              key={tool.id}
+                              onClick={() => setView(tool.id as AppView)}
+                              className="w-full group/btn flex items-center justify-between p-4 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-white hover:text-black transition-all duration-500 font-black text-sm md:text-base overflow-hidden relative shadow-sm"
+                            >
+                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-[200%] group-hover/btn:translate-x-[200%] transition-transform duration-1000"></div>
+                              <span className="group-hover/btn:-translate-x-2 transition-transform opacity-30 group-hover/btn:opacity-100">←</span>
+                              <div className="flex items-center gap-3 relative z-10">
+                                <span>{tool.label}</span>
+                                <span className="text-xl bg-white/5 w-10 h-10 flex items-center justify-center rounded-xl group-hover/btn:bg-black/10 transition-colors drop-shadow-sm">{tool.icon}</span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     </div>
+
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         )}
