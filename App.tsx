@@ -127,46 +127,55 @@ export default function App() {
 
   const hubs = [
     {
-      id: 'hub_generate',
-      title: 'مصنع المبيعات والمحتوى',
-      level: '1',
-      desc: 'المصنع المتكامل لصناعة الحملات، السكريبتات، والمحتوى اليومي لتحقيق مبيعات أسرع.',
-      icon: '🏭',
-      color: 'from-yellow-400 to-yellow-600',
+      id: 'step_1',
+      title: 'التأسيس والتحليل',
+      level: 'الخطوة 1',
+      desc: 'دراسة السوق، تحليل المنافسين، ورصد التريندات لبناء أساس صلب.',
+      icon: '🔍',
+      color: 'from-blue-600 to-blue-900',
       tools: [
-        { id: 'performance_studio', label: 'مصنع الحملات المتكاملة', icon: '🚀' },
-        { id: 'daily_pack', label: 'باقة المحتوى اليومي', icon: '📅' },
-        { id: 'power', label: 'مُولّد الإعلانات السريعة', icon: '⚡' },
-        { id: 'ads_studio', label: 'استوديو الإعلانات', icon: '📢' }
+        { id: 'strategy_engine', label: 'استراتيجية النمو السريع', icon: '🎯' },
+        { id: 'trend_engine', label: 'محرك التريندات', icon: '🔥' }
       ]
     },
     {
-      id: 'hub_visuals',
-      title: 'صناعة المحتوى البصري',
-      level: '2',
-      desc: 'تحويل الأفكار لجلسات تصوير، ومقاطع، ومحتوى يظهر بشكل احترافي.',
-      icon: '📸',
-      color: 'from-yellow-500 to-yellow-700',
+      id: 'step_2',
+      title: 'التخطيط الاستراتيجي',
+      level: 'الخطوة 2',
+      desc: 'بناء خطة محتوى متكاملة وموزعة لـ 30 يوماً تغطي جميع المنصات.',
+      icon: '🗓️',
+      color: 'from-purple-600 to-purple-900',
       tools: [
-        { id: 'photoshoot', label: 'جلسات تصوير احترافية', icon: '📸' },
-        { id: 'storyboard_studio', label: 'مخرج الريلز والإعلانات', icon: '🎬' },
-        { id: 'video_studio', label: 'استوديو تصميم الفيديوهات', icon: '🎥' },
+        { id: 'plan_studio', label: 'خطة المحتوى الذكية', icon: '📝' }
+      ]
+    },
+    {
+      id: 'step_3',
+      title: 'مصنع الإنتاج النصي',
+      level: 'الخطوة 3',
+      desc: 'كتابة الإعلانات والسكريبتات القوية (Hooks & Copy) التي تبيع فعلاً.',
+      icon: '✍️',
+      color: 'from-orange-500 to-red-800',
+      tools: [
+        { id: 'performance_studio', label: 'مصنع الحملات المتكاملة', icon: '🚀' },
+        { id: 'power', label: 'مُولّد الإعلانات السريعة', icon: '⚡' },
+        { id: 'daily_pack', label: 'باقة المحتوى اليومي', icon: '📅' },
         { id: 'ugc_studio', label: 'صناعة محتوى الـ UGC', icon: '🤩' }
       ]
     },
     {
-      id: 'hub_scale',
-      title: 'استراتيجيات النمو المستمر',
-      level: '3',
-      desc: 'رسم استراتيجية النمو، تحليل المنافسين، وركوب التريندات لزيادة الأرباح.',
-      icon: '🚀',
-      color: 'from-yellow-600 to-yellow-800',
+      id: 'step_4',
+      title: 'الإخراج البصري',
+      level: 'الخطوة 4',
+      desc: 'تحويل السكريبتات إلى صور إعلانية وفيديوهات جاهزة للنشر مباشرة.',
+      icon: '🎬',
+      color: 'from-yellow-400 to-amber-600',
       tools: [
-        { id: 'strategy_engine', label: 'استراتيجية النمو السريع', icon: '🎯' },
-        { id: 'plan_studio', label: 'خطة المحتوى الذكية', icon: '🗓️' },
-        { id: 'trend_engine', label: 'محرك التريندات', icon: '🔥' }
+        { id: 'photoshoot', label: 'جلسات تصوير احترافية', icon: '📸' },
+        { id: 'storyboard_studio', label: 'مخرج الريلز والإعلانات', icon: '🎬' },
+        { id: 'video_studio', label: 'استوديو تصميم الفيديوهات', icon: '🎥' }
       ]
-    },
+    }
   ];
 
   return (
@@ -258,18 +267,18 @@ export default function App() {
         {view === 'dashboard' && userId && (
           <div className="py-12 md:py-20 space-y-16 animate-in fade-in duration-700 text-right" dir="rtl">
             <div className="space-y-4">
-              <h1 className="text-4xl md:text-8xl font-black text-white tracking-tighter leading-tight italic">لوحة التحكّم <span className="text-[#FFD700]">.</span></h1>
-              <p className="text-slate-500 text-lg md:text-2xl font-bold">مرحباً بك في مستقبل الإنتاج. اختر المستوى المطلوب لتبدأ.</p>
+              <h1 className="text-4xl md:text-8xl font-black text-white tracking-tighter leading-tight italic">مصنع المحتوى <span className="text-[#FFD700]">المتكامل</span></h1>
+              <p className="text-slate-500 text-lg md:text-2xl font-bold">رحلة عمل من 4 خطوات تأخذك من مجرد فكرة إلى إعلان فيرال يكسر مبيعاتك.</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 relative">
               {hubs.map((hub) => (
                 <div key={hub.id} className="group relative flex flex-col bg-white/5 border border-white/10 rounded-[3.5rem] overflow-hidden transition-all hover:border-white/20 hover:-translate-y-2 shadow-2xl">
                   <div className={`h-40 bg-gradient-to-br ${hub.color} p-10 flex items-center justify-between`}>
                     <div className="text-7xl opacity-40 group-hover:scale-110 transition-transform">{hub.icon}</div>
                     <div className="text-right">
-                      <span className="text-white/40 font-black text-xs uppercase tracking-widest block mb-1">Level {hub.level}</span>
-                      <h2 className="text-3xl font-black text-white">{hub.title}</h2>
+                      <span className="text-white font-black text-sm uppercase tracking-widest block mb-1 bg-black/30 w-fit px-3 py-1 rounded-full">{hub.level}</span>
+                      <h2 className="text-3xl font-black text-white mt-3">{hub.title}</h2>
                     </div>
                   </div>
 
