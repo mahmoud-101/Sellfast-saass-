@@ -1,393 +1,297 @@
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Upload, ChevronRight, Wand2, X, Plus, AlertCircle, RefreshCw, Smartphone, Film, Info } from 'lucide-react';
+import { StoryboardStudioProject, StoryboardScene, ImageFile } from '../types';
+import { generateStoryboardPlan } from '../services/geminiService';
+import { saveGeneratedAsset } from '../lib/supabase';
 
-import React, { useCallback, useState, useEffect } from 'react';
-import { StoryboardStudioProject, ImageFile, StoryboardScene } from '../types';
-import { resizeImage } from '../utils';
-import { generateStoryboardPlan, generateImage, animateImageToVideo } from '../services/geminiService';
-import { getCinematicMotionPrompt } from '../services/xaiService';
-import { deductCredits, CREDIT_COSTS } from '../lib/supabase';
-import ImageWorkspace from './ImageWorkspace';
-
-const DirectorIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-    </svg>
-);
-
-const VideoIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-    </svg>
-);
-
-const DownloadIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-    </svg>
-);
-
-const KeyIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-    </svg>
-);
-
-const StoryboardStudio: React.FC<{
+interface Props {
     project: StoryboardStudioProject;
     setProject: React.Dispatch<React.SetStateAction<StoryboardStudioProject>>;
-    userId?: string;
-    refreshCredits?: () => void;
-}> = ({ project, setProject, userId, refreshCredits }) => {
-    const [hasApiKey, setHasApiKey] = useState(false);
-    const [isReelModalOpen, setIsReelModalOpen] = useState(false);
-    const [currentReelIndex, setCurrentReelIndex] = useState(0);
+    onAutoGenerateVideo: (sceneId: string, customPrompt?: string) => void;
+    userId: string;
+}
 
-    // التحقق من مفتاح الـ API عند التحميل
-    useEffect(() => {
-        const checkKey = async () => {
-            const selected = await (window as any).aistudio?.hasSelectedApiKey?.() || false;
-            setHasApiKey(selected);
-        };
-        checkKey();
-    }, []);
+const StoryboardStudio: React.FC<Props> = ({ project, setProject, onAutoGenerateVideo, userId }) => {
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files) return;
 
-    const handleSelectKey = async () => {
-        if ((window as any).aistudio?.openSelectKey) {
-            await (window as any).aistudio.openSelectKey();
-            setHasApiKey(true);
-        }
+        const newImages: ImageFile[] = [];
+        Array.from(files).forEach(file => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                if (typeof reader.result === 'string') {
+                    newImages.push({
+                        base64: reader.result.split(',')[1],
+                        mimeType: file.type,
+                        name: file.name
+                    });
+                    if (newImages.length === files.length) {
+                        setProject(s => ({
+                            ...s,
+                            subjectImages: [...s.subjectImages, ...newImages].slice(0, 5) // Max 5 images
+                        }));
+                    }
+                }
+            };
+            reader.readAsDataURL(file);
+        });
     };
 
-    const handleFileUpload = async (files: File[]) => {
-        if (!files || files.length === 0) return;
-        setProject(s => ({ ...s, isUploading: true, error: null }));
+    const removeImage = (index: number) => {
+        setProject(s => ({
+            ...s,
+            subjectImages: s.subjectImages.filter((_, i) => i !== index)
+        }));
+    };
+
+    const onGeneratePlan = async () => {
+        if (project.subjectImages.length === 0 && !project.customInstructions) return;
+
+        setProject(s => ({ ...s, isGeneratingPlan: true, error: null }));
         try {
-            const uploaded = await Promise.all(files.map(async file => {
-                const resized = await resizeImage(file, 2048, 2048);
-                const reader = new FileReader();
-                return new Promise<ImageFile>(res => {
-                    reader.onloadend = () => res({ base64: (reader.result as string).split(',')[1], mimeType: resized.type, name: resized.name });
-                    reader.readAsDataURL(resized);
-                });
-            }));
-            setProject(s => ({
-                ...s,
-                subjectImages: [...s.subjectImages, ...uploaded],
-                isUploading: false,
-                gridImage: null,
-                scenes: []
-            }));
-        } catch (err) {
-            setProject(s => ({ ...s, isUploading: false, error: "Upload failed" }));
-        }
-    };
+            const plans = await generateStoryboardPlan(
+                project.subjectImages,
+                project.customInstructions
+            );
 
-    const handleRemoveSubject = (idx: number) => {
-        setProject(s => ({ ...s, subjectImages: s.subjectImages.filter((_, i) => i !== idx), scenes: [], gridImage: null }));
-    };
-
-    const onCreatePlan = async () => {
-        setProject(s => ({ ...s, isGeneratingPlan: true, error: null, scenes: [], gridImage: null }));
-        try {
-            const plan = await generateStoryboardPlan(project.subjectImages, project.customInstructions);
-            const scenes: StoryboardScene[] = plan.map(p => ({
-                ...p,
-                id: Math.random().toString(36).substr(2, 9),
+            const generatedScenes: StoryboardScene[] = plans.map(p => ({
+                id: p.id || Math.random().toString(36).substr(2, 9),
+                description: p.description,
+                visualPrompt: p.visualPrompt,
+                cameraAngle: p.cameraAngle,
+                dialogue: p.dialogue,
                 image: null,
                 videoUrl: null,
                 isLoading: false,
                 isVideoLoading: false,
                 error: null
             }));
-            setProject(s => ({ ...s, scenes, isGeneratingPlan: false }));
-        } catch (err) {
-            setProject(s => ({ ...s, isGeneratingPlan: false, error: "فشل في بناء المخطط" }));
-        }
-    };
 
-    const onGenerateSceneImage = async (sceneId: string) => {
-        const sceneIdx = project.scenes.findIndex(s => s.id === sceneId);
-        if (sceneIdx === -1) return;
+            // Automatically save to Content Library
+            await saveGeneratedAsset(userId, 'STORYBOARD_PLAN',
+                { plan_content: generatedScenes, instructions: project.customInstructions },
+                { type: 'AI_STORYBOARD' }
+            );
 
-        setProject(s => {
-            const next = [...s.scenes];
-            next[sceneIdx] = { ...next[sceneIdx], isLoading: true, error: null };
-            return { ...s, scenes: next };
-        });
-
-        try {
-            const scene = project.scenes[sceneIdx];
-            const textConstraint = "STRICTLY PRESERVE all original branding. NO EXTRA text.";
-            const finalPrompt = `Professional Cinema Shot. ${scene.cameraAngle}. ${scene.visualPrompt}. Photorealistic. ${textConstraint}`;
-            const image = await generateImage(project.subjectImages, finalPrompt, null, project.aspectRatio);
-            
-            setProject(s => {
-                const next = [...s.scenes];
-                next[sceneIdx] = { ...next[sceneIdx], image, isLoading: false };
-                return { ...s, scenes: next };
-            });
-        } catch (err) {
-            setProject(s => {
-                const next = [...s.scenes];
-                next[sceneIdx] = { ...next[sceneIdx], isLoading: false, error: "فشل الرندرة" };
-                return { ...s, scenes: next };
-            });
-        }
-    };
-
-    const onAnimateScene = async (sceneId: string) => {
-        // التحقق من مفتاح الـ API قبل البدء
-        if (!hasApiKey && !process.env.API_KEY) {
-            await handleSelectKey();
-            return;
-        }
-
-        const sceneIdx = project.scenes.findIndex(s => s.id === sceneId);
-        if (sceneIdx === -1 || !project.scenes[sceneIdx].image || !userId) return;
-
-        setProject(s => {
-            const next = [...s.scenes];
-            next[sceneIdx] = { ...next[sceneIdx], isVideoLoading: true, error: null };
-            return { ...s, scenes: next };
-        });
-
-        try {
-            const deducted = await deductCredits(userId, 10); 
-            if (!deducted) throw new Error("رصيد غير كافٍ");
-
-            const scene = project.scenes[sceneIdx];
-            const motionPrompt = await getCinematicMotionPrompt(scene.description, scene.cameraAngle);
-            
-            const videoUrl = await animateImageToVideo(scene.image!, motionPrompt, project.aspectRatio, (status) => {
-                console.log(`Video status: ${status}`);
-            });
-
-            setProject(s => {
-                const next = [...s.scenes];
-                next[sceneIdx] = { ...next[sceneIdx], videoUrl, isVideoLoading: false };
-                return { ...s, scenes: next };
-            });
-            refreshCredits?.();
+            setProject(s => ({
+                ...s,
+                scenes: generatedScenes,
+                isGeneratingPlan: false,
+                error: generatedScenes.length > 0 ? null : "Could not generate storyboard. Please try again."
+            }));
         } catch (err: any) {
-            if (err.message?.includes('Requested entity was not found')) {
-                setHasApiKey(false); // إعادة ضبط حالة المفتاح
-                setProject(s => ({ ...s, error: "يرجى اختيار مفتاح API صالح لديه اشتراك مفعل." }));
-            }
-            setProject(s => {
-                const next = [...s.scenes];
-                next[sceneIdx] = { ...next[sceneIdx], isVideoLoading: false, error: err.message || "فشل التحريك" };
-                return { ...s, scenes: next };
-            });
+            setProject(s => ({
+                ...s,
+                isGeneratingPlan: false,
+                error: "حدث خطأ أثناء إنشاء الستوري بورد: " + err.message
+            }));
         }
     };
-
-    const handleDownload = (uri: string, label: string) => {
-        const link = document.createElement('a');
-        link.href = uri;
-        link.download = `Ebdaa-Pro-${label}-${Date.now()}.mp4`;
-        link.click();
-    };
-
-    const animatedScenes = project.scenes.filter(s => !!s.videoUrl);
 
     return (
-        <main className="w-full flex flex-col gap-10 pt-4 pb-12 animate-in fade-in duration-700 text-right" dir="rtl">
-            {/* API Key Banner */}
-            {!hasApiKey && !process.env.API_KEY && (
-                <div className="bg-[#FFD700]/10 border border-[#FFD700]/20 p-6 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-4 animate-in slide-in-from-top-2">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-[#FFD700] rounded-2xl flex items-center justify-center text-black shadow-lg">⚡</div>
-                        <div>
-                            <h4 className="text-sm font-black text-white">تفعيل محرك الحركة (Veo Engine)</h4>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">مطلوب مفتاح API من مشروع Google Cloud مدفوع</p>
-                        </div>
-                    </div>
-                    <button onClick={handleSelectKey} className="px-8 py-3 bg-[#FFD700] text-black rounded-xl text-xs font-black shadow-xl hover:bg-yellow-400 transition-all flex items-center gap-2">
-                        <KeyIcon /> اختيار مفتاح التشغيل
-                    </button>
-                </div>
-            )}
+        <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-8 animate-fade-in relative z-10">
 
-            {/* Control Section */}
-            <div className="bg-white/5 rounded-[3rem] p-8 md:p-12 shadow-2xl border border-white/5 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-full h-1.5 bg-gradient-to-l from-[#FFD700] to-transparent opacity-20"></div>
-                
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
-                    <h2 className="text-3xl font-black text-white tracking-tighter flex items-center">
-                        <DirectorIcon /> مخطط القصص السينمائي (Storyboard)
-                    </h2>
-                    <div className="flex items-center gap-4">
-                        {animatedScenes.length > 0 && (
-                            <button 
-                                onClick={() => { setIsReelModalOpen(true); setCurrentReelIndex(0); }}
-                                className="px-6 py-2.5 bg-[#FFD700] text-black rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-yellow-400 transition-all"
-                            >
-                                🎬 مشاهدة الفيلم الكامل
-                            </button>
-                        )}
-                        <div className="flex bg-black/40 rounded-2xl p-1 border border-white/10">
-                            <button 
-                                onClick={() => setProject(s => ({ ...s, aspectRatio: '16:9' }))}
-                                className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${project.aspectRatio === '16:9' ? 'bg-[#FFD700] text-black shadow-lg' : 'text-slate-400 hover:text-[#FFD700]'}`}
-                            >
-                                16:9
-                            </button>
-                            <button 
-                                onClick={() => setProject(s => ({ ...s, aspectRatio: '9:16' }))}
-                                className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${project.aspectRatio === '9:16' ? 'bg-[#FFD700] text-black shadow-lg' : 'text-slate-400 hover:text-[#FFD700]'}`}
-                            >
-                                9:16
-                            </button>
-                        </div>
-                    </div>
-                </div>
+            {/* Header Area */}
+            <div className="bg-gradient-to-r from-gray-900 to-black p-8 rounded-3xl border border-yellow-500/20 shadow-2xl relative overflow-hidden">
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10 mix-blend-overlay"></div>
+                <div className="absolute top-0 right-0 w-64 h-64 bg-yellow-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                    <div className="lg:col-span-4">
-                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 text-center">صور المنتج المرجعية</h3>
-                        <div className="bg-black/40 p-4 rounded-3xl border border-white/10 shadow-inner">
-                            <ImageWorkspace
-                                id="storyboard-up"
-                                images={project.subjectImages}
-                                onImagesUpload={handleFileUpload}
-                                onImageRemove={handleRemoveSubject}
-                                isUploading={project.isUploading}
-                            />
-                        </div>
+                <div className="relative z-10">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-yellow-500/10 text-yellow-400 rounded-full text-sm font-medium mb-4 border border-yellow-500/20">
+                        <Film className="w-4 h-4" />
+                        استوديو الإخراج الفني
                     </div>
-
-                    <div className="lg:col-span-8 flex flex-col gap-6">
-                        <div className="flex flex-col gap-3 bg-black/40 p-8 rounded-[2rem] border border-white/10 shadow-inner">
-                            <label className="text-xs font-black text-[#FFD700] uppercase tracking-widest">قصة الإعلان أو السيناريو</label>
-                            <textarea
-                                value={project.customInstructions}
-                                onChange={(e) => setProject(s => ({ ...s, customInstructions: e.target.value }))}
-                                placeholder="صف مشاهد إعلانك هنا.. مثال: رائد فضاء يكتشف زجاجة عطر وسط غابة نيون مع إضاءة درامية."
-                                className="w-full bg-transparent border-none p-0 text-xl font-bold text-white focus:ring-0 placeholder:text-slate-600 min-h-[150px] resize-none leading-relaxed"
-                            />
-                        </div>
-
-                        <button
-                            onClick={onCreatePlan}
-                            disabled={project.isGeneratingPlan || !project.customInstructions.trim() || project.subjectImages.length === 0}
-                            className="w-full bg-[#FFD700] hover:bg-yellow-400 text-black font-black py-5 rounded-2xl shadow-xl transition-all active:scale-95 disabled:opacity-30"
-                        >
-                            {project.isGeneratingPlan ? 'جاري رسم المخطط...' : 'توليد مخطط الـ 9 مشاهد (30 نقطة)'}
-                        </button>
-                    </div>
+                    <h1 className="text-4xl md:text-5xl font-black text-white mb-4 tracking-tight">
+                        مُخرج الستوري بورد <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-600">الذكي</span>
+                    </h1>
+                    <p className="text-xl text-gray-400 max-w-2xl leading-relaxed">
+                        وداعاً للحيرة والتفكير المعقد... ارفع صور منتجك، واشرح فكرتك باختصار، وسيقوم المخرج الذكي بكتابة ورسم سلسلة من 6 مشاهد إعلانية (9:16) جاهزة للإنتاج وتحقيق المبيعات.
+                    </p>
                 </div>
             </div>
 
-            {/* Detailed Scenes List */}
-            {project.scenes.length > 0 && (
-                <div className="space-y-8 animate-in slide-in-from-bottom-10 duration-1000">
-                    <div className="flex items-center gap-4 flex-row-reverse">
-                        <h3 className="text-2xl font-black text-white tracking-tight">الإخراج التفصيلي والتحريك</h3>
-                        <div className="h-px flex-grow bg-white/5"></div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {project.scenes.map((scene, idx) => (
-                            <div key={scene.id} className="bg-white/5 rounded-[2.5rem] overflow-hidden border border-white/5 flex flex-col group hover:border-[#FFD700]/30 transition-all shadow-xl">
-                                <div className={`relative bg-black/40 flex items-center justify-center overflow-hidden ${project.aspectRatio === '9:16' ? 'aspect-[9/16]' : 'aspect-video'}`}>
-                                    {scene.isVideoLoading ? (
-                                        <div className="flex flex-col items-center gap-3">
-                                            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-[#FFD700]"></div>
-                                            <span className="text-[10px] font-black text-[#FFD700] animate-pulse uppercase">إخراج الحركة عبر Grok & Veo...</span>
-                                        </div>
-                                    ) : scene.videoUrl ? (
-                                        <div className="w-full h-full relative">
-                                            <video src={scene.videoUrl} className="w-full h-full object-cover" autoPlay loop muted playsInline />
-                                            <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                                                <button onClick={() => handleDownload(scene.videoUrl!, `Scene-${idx+1}`)} className="p-4 bg-emerald-500 text-white rounded-full hover:scale-110 shadow-xl transition-all">
-                                                    <DownloadIcon />
-                                                </button>
-                                                <button onClick={() => onAnimateScene(scene.id)} className="p-4 bg-white text-slate-900 rounded-full hover:scale-110 shadow-xl transition-all">
-                                                    <VideoIcon />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                {/* Left Column - Inputs */}
+                <div className="lg:col-span-1 space-y-6">
+                    <div className="bg-[#1A1A1A] p-6 rounded-2xl border border-white/5 shadow-xl glass-panel relative overflow-hidden">
+                        <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-yellow-500/10 flex items-center justify-center text-yellow-500">
+                                1
+                            </div>
+                            مُدخلات العقل المدبر
+                        </h2>
+
+                        {/* Images Upload */}
+                        <div className="mb-6">
+                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                                صور المنتج (اختياري، بحد أقصى 5)
+                            </label>
+                            <div className="space-y-4">
+                                {project.subjectImages.length < 5 && (
+                                    <label className="block w-full border-2 border-dashed border-white/10 rounded-xl p-6 text-center cursor-pointer hover:border-yellow-500/50 hover:bg-yellow-500/5 transition-all">
+                                        <input type="file" multiple accept="image/*" onChange={handleImageUpload} className="hidden" />
+                                        <Upload className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
+                                        <p className="text-sm text-gray-400">اسحب الصور هنا أو اضغط للاختيار</p>
+                                    </label>
+                                )}
+                                {project.subjectImages.length > 0 && (
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {project.subjectImages.map((img, i) => (
+                                            <div key={i} className="relative aspect-square rounded-lg overflow-hidden group border border-white/10">
+                                                <img src={"data:" + img.mimeType + ";base64," + img.base64} alt="Target" className="w-full h-full object-cover" />
+                                                <button
+                                                    onClick={() => removeImage(i)}
+                                                    className="absolute top-1 right-1 p-1 bg-red-500/80 text-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-md"
+                                                >
+                                                    <X className="w-3 h-3" />
                                                 </button>
                                             </div>
-                                        </div>
-                                    ) : scene.isLoading ? (
-                                        <div className="flex flex-col items-center gap-3">
-                                            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-[#FFD700]"></div>
-                                            <span className="text-[10px] font-black text-[#FFD700] animate-pulse uppercase">رندرة المشهد...</span>
-                                        </div>
-                                    ) : scene.image ? (
-                                        <div className="w-full h-full relative group/img">
-                                            <img src={`data:${scene.image.mimeType};base64,${scene.image.base64}`} className="w-full h-full object-cover" />
-                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                                                <button onClick={() => onAnimateScene(scene.id)} className="px-6 py-3 bg-[#FFD700] text-black rounded-full font-black text-xs hover:scale-110 transition-all shadow-xl flex items-center gap-2">
-                                                    <VideoIcon /> تحريك المشهد (10 نقاط)
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <button 
-                                            onClick={() => onGenerateSceneImage(scene.id)}
-                                            className="px-8 py-3 bg-white/5 border border-white/10 text-white text-[10px] font-black rounded-xl hover:bg-[#FFD700] hover:text-black transition-all shadow-sm"
-                                        >
-                                            رندرة هذا المشهد (5 نقاط)
-                                        </button>
-                                    )}
-                                    <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-4 py-1.5 rounded-full text-[10px] font-black text-white">
-                                        المشهد 0{idx + 1}
+                                        ))}
                                     </div>
-                                </div>
-
-                                <div className="p-8 space-y-4">
-                                    <div className="space-y-1">
-                                        <label className="text-[9px] font-black text-[#FFD700] uppercase tracking-widest">خطة الكاميرا (Grok Director)</label>
-                                        <p className="text-xs font-bold text-white leading-tight">{scene.cameraAngle}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">الوصف الفني</label>
-                                        <p className="text-xs text-slate-400 font-bold leading-relaxed">{scene.description}</p>
-                                    </div>
-                                    {scene.error && <p className="text-[9px] font-black text-red-500 uppercase">{scene.error}</p>}
-                                </div>
+                                )}
                             </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* Reel Modal Preview */}
-            {isReelModalOpen && animatedScenes.length > 0 && (
-                <div className="fixed inset-0 z-[1000] bg-black flex items-center justify-center animate-in fade-in duration-500">
-                    <div className={`relative max-w-full max-h-full ${project.aspectRatio === '9:16' ? 'aspect-[9/16] h-[90vh]' : 'aspect-video w-[90vw]'}`}>
-                        <video 
-                            key={animatedScenes[currentReelIndex].videoUrl}
-                            src={animatedScenes[currentReelIndex].videoUrl!} 
-                            autoPlay 
-                            className="w-full h-full object-cover rounded-3xl shadow-2xl border border-white/10"
-                            onEnded={() => {
-                                if (currentReelIndex < animatedScenes.length - 1) {
-                                    setCurrentReelIndex(currentReelIndex + 1);
-                                } else {
-                                    setCurrentReelIndex(0);
-                                }
-                            }}
-                        />
-                        <div className="absolute top-10 right-10 flex items-center gap-6">
-                            <div className="bg-black/60 backdrop-blur-md px-6 py-2 rounded-full text-white font-black text-xs">
-                                المشهد {currentReelIndex + 1} من {animatedScenes.length}
-                            </div>
-                            <button onClick={() => setIsReelModalOpen(false)} className="w-12 h-12 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center font-bold backdrop-blur-md transition-all">✕</button>
                         </div>
-                        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-2">
-                            {animatedScenes.map((_, i) => (
-                                <div key={i} className={`h-1.5 rounded-full transition-all ${i === currentReelIndex ? 'bg-[#FFD700] w-8' : 'bg-white/30 w-2'}`}></div>
-                            ))}
+
+                        {/* Instructions */}
+                        <div className="mb-8">
+                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                                تعليماتك للمخرج (بكل التفاصيل)
+                            </label>
+                            <textarea
+                                value={project.customInstructions}
+                                onChange={(e) => setProject(s => ({ ...s, customInstructions: e.target.value }))}
+                                placeholder="مثال: الهدف هو بيع عطر رجالي جديد (اسم العطر: ليالي). العطر فخم جداً ومناسب للمناسبات الرسمية. أريد التركيز على إحساس الثقة والتميز. شخصية البطل شاب طموح ورجل أعمال. ركز على إظهار فخامة زجاجة العطر وتأثيره على من حوله."
+                                rows={8}
+                                className="w-full bg-black/50 border border-white/10 rounded-xl p-4 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 resize-none"
+                                dir="auto"
+                            />
+                        </div>
+
+                        {/* Generate Button */}
+                        <button
+                            onClick={onGeneratePlan}
+                            disabled={project.isGeneratingPlan || (!project.customInstructions && project.subjectImages.length === 0)}
+                            className="w-full relative group overflow-hidden rounded-xl p-[1px]"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-amber-600 rounded-xl opacity-70 group-hover:opacity-100 transition-opacity"></div>
+                            <div className="relative bg-black/80 backdrop-blur-xl px-6 py-4 rounded-xl flex items-center justify-center gap-3">
+                                {project.isGeneratingPlan ? (
+                                    <>
+                                        <RefreshCw className="w-5 h-5 text-yellow-500 animate-spin" />
+                                        <span className="text-white font-medium">جاري تحليل الإخراج...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Wand2 className="w-5 h-5 text-yellow-500" />
+                                        <span className="text-white font-medium group-hover:text-yellow-400 transition-colors">ابني الستوري بورد</span>
+                                        <ChevronRight className="w-5 h-5 text-white/50" />
+                                    </>
+                                )}
+                            </div>
+                        </button>
+                        {project.error && (
+                            <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-sm flex items-start gap-2">
+                                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                                <p>{project.error}</p>
+                            </div>
+                        )}
+
+                        <div className="mt-6 p-4 bg-blue-500/5 border border-blue-500/20 rounded-xl text-blue-400 text-xs flex items-start gap-3">
+                            <Info className="w-5 h-5 shrink-0" />
+                            <p className="leading-relaxed">يعمل هذا النظام باستخدام خوارزمية ذكية تحلل طلبك وتبني 6 مشاهد متتالية مبنية على نفسيات الشراء (Hook, Demo, Proof, CTA) لتحويل المشاهد المباشر إلى مشتري.</p>
                         </div>
                     </div>
                 </div>
-            )}
 
-            {project.error && (
-                <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-6 rounded-2xl text-sm text-center font-bold">
-                    {project.error}
+                {/* Right Column - Results */}
+                <div className="lg:col-span-2">
+                    {!project.scenes || project.scenes.length === 0 ? (
+                        <div className="bg-[#1A1A1A] p-12 rounded-2xl border border-white/5 h-[800px] flex flex-col items-center justify-center text-center glass-panel">
+                            <div className="w-24 h-24 bg-gradient-to-br from-gray-800 to-black border border-white/5 space-y-2 rounded-2xl flex items-center justify-center mb-6 shadow-2xl">
+                                <Smartphone className="w-10 h-10 text-gray-600" />
+                            </div>
+                            <h3 className="text-2xl font-bold text-white mb-2">لوحة الإخراج فارغة</h3>
+                            <p className="text-gray-500 max-w-md">
+                                قم بإدخال تعليمات المخرج في اللوحة الجانبية واضغط على "ابني الستوري بورد" لتوليد مشاهد إعلانك الاحترافي (Vertical 9:16).
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="bg-black/40 rounded-2xl p-6 border border-white/5">
+                            <div className="flex items-center justify-between mb-8">
+                                <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                                    <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-500/20 to-amber-600/20 border border-yellow-500/20 flex items-center justify-center text-yellow-500">
+                                        🎬
+                                    </span>
+                                    مشاهد الإعلان (الستوري بورد)
+                                </h2>
+                                <span className="px-4 py-2 bg-green-500/10 text-green-400 border border-green-500/20 rounded-lg text-sm font-semibold">
+                                    حفظ تلقائي ✓
+                                </span>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {project.scenes.map((scene, index) => (
+                                    <div key={scene.id} className="bg-[#1A1A1A] border border-white/10 rounded-2xl overflow-hidden hover:border-yellow-500/30 transition-all group">
+                                        <div className="p-4 bg-gradient-to-r from-gray-900 to-black border-b border-white/5 flex items-center justify-between">
+                                            <h4 className="font-bold text-white flex items-center gap-2">
+                                                <span className="text-yellow-500 font-black">M{index + 1}</span>
+                                                {/* You can parse out the angle or focus from the description if you want a title here, or just keep it minimal */}
+                                                تفاصيل المشهد
+                                            </h4>
+                                            <CameraAngleBadge angle={scene.cameraAngle} />
+                                        </div>
+                                        <div className="p-6 space-y-4">
+                                            <div>
+                                                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">الوصف البصري والعملي</span>
+                                                <p className="text-gray-300 text-sm leading-relaxed" dir="auto">{scene.description}</p>
+                                            </div>
+                                            <div>
+                                                <span className="text-xs font-bold text-yellow-500/70 uppercase tracking-wider mb-1 block">زاوية الكاميرا والمؤثرات</span>
+                                                <p className="text-yellow-500/90 text-sm leading-relaxed" dir="auto">{scene.visualPrompt}</p>
+                                            </div>
+                                            {scene.dialogue && (
+                                                <div className="bg-black/50 p-4 border border-white/5 rounded-xl relative">
+                                                    <div className="absolute top-0 right-4 w-4 h-4 bg-[#1A1A1A] border-l border-b border-white/5 transform rotate-45 -translate-y-[9px]"></div>
+                                                    <span className="text-xs font-bold text-blue-400 mb-1 flex items-center gap-1">
+                                                        <span>التعليق الصوتي / النص</span>
+                                                    </span>
+                                                    <p className="text-white font-medium text-sm leading-relaxed" dir="auto">"{scene.dialogue}"</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="p-4 bg-black/40 border-t border-white/5">
+                                            <button
+                                                onClick={() => onAutoGenerateVideo(scene.id, scene.visualPrompt)}
+                                                disabled={scene.isLoading || scene.isVideoLoading}
+                                                className="w-full py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                                            >
+                                                <Film className="w-4 h-4" />
+                                                توليد هذا المشهد كفيديو AI
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                        </div>
+                    )}
                 </div>
-            )}
-        </main>
+            </div>
+        </div>
     );
 };
 
-export default StoryboardStudio;
+// Helper Component for Visual Polish
+const CameraAngleBadge = ({ angle }: { angle?: string }) => {
+    if (!angle) return null;
+    return (
+        <span className="px-2 py-1 bg-white/5 border border-white/10 rounded-md text-[10px] text-gray-400 font-semibold tracking-wider uppercase">
+            {angle.substring(0, 20)}
+        </span>
+    );
+};
+
+export default StoryboardStudio; 

@@ -3,7 +3,7 @@ import { GoogleGenAI, Modality, Part, Type, Chat } from "@google/genai";
 import { ImageFile, PowerStudioResult, AudioFile, TrendItem } from '../types';
 import { askPerplexity, askPerplexityJSON } from './perplexityService';
 
-const SMART_MODEL = 'gemini-3-flash-preview'; 
+const SMART_MODEL = 'gemini-3-flash-preview';
 
 const getApiKey = () => {
     return process.env.API_KEY || process.env.GEMINI_API_KEY || '';
@@ -41,12 +41,12 @@ export function createEliteAdChat(mode: string): any {
                 
                 في كل رسالة، اطلب من المستخدم معلومة واحدة فقط بوضوح.
                 بعد انتهاء المرحلة الثامنة، قم بصياغة السكريبت النهائي كاملاً في المرحلة التاسعة.`;
-                
+
                 history.push({ role: 'user', content: req.message });
                 const prompt = history.map(m => `${m.role}: ${m.content}`).join('\n');
                 const text = await askPerplexity(prompt, sys);
                 history.push({ role: 'assistant', content: text });
-                
+
                 return { text };
             }
         };
@@ -88,9 +88,9 @@ export async function generateFlowVideo(script: string, aspectRatio: "9:16" | "1
     // إنشاء نسخة جديدة من AI في كل مرة لضمان استخدام المفتاح المختار حديثاً
     const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
     const ai = new GoogleGenAI({ apiKey });
-    
+
     onProgress("تحليل السكريبت وصياغة المشاهد...");
-    
+
     try {
         let operation = await ai.models.generateVideos({
             model: 'veo-3.1-fast-generate-preview',
@@ -103,7 +103,7 @@ export async function generateFlowVideo(script: string, aspectRatio: "9:16" | "1
         });
 
         onProgress("بدأت الرندرة السحابية (دقيقة تقريباً)...");
-        
+
         while (!operation.done) {
             await new Promise(resolve => setTimeout(resolve, 10000));
             operation = await ai.operations.getVideosOperation({ operation: operation });
@@ -115,7 +115,7 @@ export async function generateFlowVideo(script: string, aspectRatio: "9:16" | "1
 
         const response = await fetch(`${downloadLink}&key=${apiKey}`);
         if (!response.ok) throw new Error("فشل تحميل ملف الفيديو النهائي");
-        
+
         const blob = await response.blob();
         return URL.createObjectURL(blob);
     } catch (error: any) {
@@ -142,36 +142,36 @@ export async function askGemini(prompt: string, sys?: string): Promise<string> {
 }
 
 export async function generateUGCScript(data: any): Promise<string> { return askGemini(`Generate viral UGC script for ${data.productSelling}`, "Expert Content Creator"); }
-export async function generateShortFormIdeas(data: any): Promise<string[]> { 
+export async function generateShortFormIdeas(data: any): Promise<string[]> {
     const res = await askGemini(`Generate 30 short-form ideas for ${data.product}. Output as simple list.`, "Content Strategist");
     return res.split('\n').filter(l => l.trim().length > 0).slice(0, 30);
 }
 export async function generateFinalContentScript(topic: string, type: string): Promise<string> { return askGemini(`Write a ${type} script for: ${topic}`); }
 
 export async function generateImage(productImages: ImageFile[], prompt: string, styleImages: ImageFile[] | null = null, aspectRatio: string = "1:1"): Promise<ImageFile> {
-  const ai = new GoogleGenAI({ apiKey: getApiKey() });
-  const parts: Part[] = productImages.map(img => ({ inlineData: { data: img.base64, mimeType: img.mimeType } }));
-  
-  // Apply "Master Prompt" spices and structure
-  const enhancedPrompt = `
+    const ai = new GoogleGenAI({ apiKey: getApiKey() });
+    const parts: Part[] = productImages.map(img => ({ inlineData: { data: img.base64, mimeType: img.mimeType } }));
+
+    // Apply "Master Prompt" spices and structure
+    const enhancedPrompt = `
     ${prompt}
     
     TECHNICAL SPECS: photorealistic, hyperrealistic, 8k resolution, sharp focus, detailed texture, cinematic lighting, DSLR photo, editorial photography, high detail, commercial quality.
     STRICT: PRESERVE all original logos, text, and branding from the product images.
   `.trim();
 
-  parts.push({ text: enhancedPrompt });
-  const res = await ai.models.generateContent({ 
-    model: 'gemini-2.5-flash-image', 
-    contents: { parts }, 
-    config: { 
-        imageConfig: { 
-            aspectRatio: aspectRatio as any 
-        } 
-    } 
-  });
-  for (const part of res.candidates?.[0]?.content?.parts || []) { if (part.inlineData) return { base64: part.inlineData.data, mimeType: part.inlineData.mimeType, name: 'img.png' }; }
-  throw new Error('Fail');
+    parts.push({ text: enhancedPrompt });
+    const res = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
+        contents: { parts },
+        config: {
+            imageConfig: {
+                aspectRatio: aspectRatio as any
+            }
+        }
+    });
+    for (const part of res.candidates?.[0]?.content?.parts || []) { if (part.inlineData) return { base64: part.inlineData.data, mimeType: part.inlineData.mimeType, name: 'img.png' }; }
+    throw new Error('Fail');
 }
 
 export async function generateCampaignPlan(productImages: ImageFile[], goal: string, market: string, dialect: string): Promise<any[]> {
@@ -194,13 +194,13 @@ export async function analyzeLogoForBranding(logos: ImageFile[]): Promise<{ colo
 
 export async function generateSpeech(text: string, style: string, voice: string): Promise<AudioFile> {
     const ai = new GoogleGenAI({ apiKey: getApiKey() });
-    const res = await ai.models.generateContent({ 
-        model: 'gemini-2.5-flash-preview-tts', 
-        contents: [{ parts: [{ text }] }], 
-        config: { 
-            responseModalities: [Modality.AUDIO], 
-            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } } 
-        } 
+    const res = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-preview-tts',
+        contents: [{ parts: [{ text }] }],
+        config: {
+            responseModalities: [Modality.AUDIO],
+            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } }
+        }
     });
     return { base64: res.candidates?.[0]?.content?.parts[0]?.inlineData?.data || '', name: 'v.pcm' };
 }
@@ -215,11 +215,12 @@ export async function generateAdScript(p: string, b: string, pr: string, l: stri
 export async function generateDynamicStoryboard(productImages: ImageFile[], referenceImages: ImageFile[], userInstructions: string): Promise<string[]> {
     const ai = new GoogleGenAI({ apiKey: getApiKey() });
     const parts: Part[] = [];
-    
+
     productImages.forEach(img => parts.push({ inlineData: { data: img.base64, mimeType: img.mimeType } }));
     referenceImages.forEach(img => parts.push({ inlineData: { data: img.base64, mimeType: img.mimeType } }));
-    
-    parts.push({ text: `
+
+    parts.push({
+        text: `
         Analyze the PRODUCT in Image 1 and the STYLE/MODEL in Image 2.
         User Instructions: ${userInstructions}
         
@@ -246,7 +247,88 @@ export async function generateDynamicStoryboard(productImages: ImageFile[], refe
     return (res.text || "").split('\n').filter(l => l.trim().length > 0).slice(0, 9);
 }
 export async function generateMarketingAnalysis(d: any, l: string): Promise<string> { return "Market Analysis Result"; }
-export async function generateStoryboardPlan(i: any, ins: string): Promise<any[]> { return []; }
+export async function generateStoryboardPlan(i: any, ins: string): Promise<any[]> {
+    const ai = new GoogleGenAI({ apiKey: getApiKey() });
+
+    const parts: Part[] = [];
+    if (i && i.length > 0) {
+        i.forEach((img: any) => parts.push({ inlineData: { data: img.base64, mimeType: img.mimeType } }));
+    }
+
+    const promptText = `
+    You are an Elite Performance Creative Director specialized in short-form vertical ads (9:16) for Arabic markets.
+
+    Your mission is NOT to generate a generic storyboard.
+    Your mission is to create a conversion-oriented video execution plan designed to sell.
+
+    USER INSTRUCTIONS / PRODUCT CONTEXT:
+    ${ins}
+
+    Before generating the storyboard, you MUST internally define:
+    1) Product Type (Impulse / Considered / Premium / Utility)
+    2) Emotional Driver (Pain / Desire / Status / Fear / Convenience)
+    3) Primary Audience Archetype (e.g., Busy Mom, Young Trend Seeker, Skeptical Buyer, Status Buyer)
+    4) Funnel Stage (Cold / Warm / Hot)
+    5) Strongest Objection
+
+    Then generate a structured output containing:
+
+    PERSONA:
+    Create a realistic persona aligned with the audience archetype.
+    Include name, age, personality, speaking style, and filming location.
+    Persona must feel culturally authentic to the selected dialect.
+
+    VIDEO STRUCTURE (Exactly 6 shots):
+
+    Shot 1–2: High-impact scroll-stopping hook. Use pattern interrupt or strong emotional trigger. Must match funnel stage.
+    Shot 3–4: Demonstrate product in action. Show transformation, usage, or result. Visually reinforce benefits instead of listing features.
+    Shot 5: Social proof or credibility reinforcement. Could be testimonial-style delivery, comparison, or before/after logic.
+    Shot 6: Strong call-to-action aligned with funnel stage. Include urgency or incentive if appropriate.
+
+    DIALOGUE RULES:
+    - Must sound natural in the selected dialect (Arabic).
+    - Avoid robotic tone.
+    - Avoid corporate language.
+    - Keep sentences short and spoken-friendly.
+    - Designed for 9:16 vertical consumption.
+
+    VISUAL RULES:
+    - Cinematic but realistic.
+    - Designed for mobile-first viewing.
+    - Emotionally aligned with the chosen angle.
+
+    IMPORTANT: This is a sales video, not a film school project. Every shot must serve conversion.
+    `;
+
+    parts.push({ text: promptText });
+
+    const res = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: { parts },
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: Type.ARRAY,
+                items: {
+                    type: Type.OBJECT,
+                    properties: {
+                        id: { type: Type.STRING },
+                        description: { type: Type.STRING },
+                        visualPrompt: { type: Type.STRING },
+                        cameraAngle: { type: Type.STRING },
+                        dialogue: { type: Type.STRING }
+                    }
+                }
+            }
+        }
+    });
+
+    try {
+        return JSON.parse(res.text || "[]");
+    } catch {
+        return [];
+    }
+}
 export async function animateImageToVideo(i: any, p: string, a: string, cb: any): Promise<string> { return ""; }
 export async function fetchCurrentTrends(r: string, n: string): Promise<TrendItem[]> { return []; }
 export async function transformScriptToUGC(originalScript: string): Promise<string> { return askGemini(`Transform this to raw UGC script: ${originalScript}`); }
@@ -284,7 +366,7 @@ export async function generatePerformanceAdPack(data: {
     referenceImage?: ImageFile | null;
 }): Promise<any> {
     const pKey = getPerplexityKey();
-    
+
     const prompt = `
     Product Description: ${data.productDescription}
     Selling Price: ${data.sellingPrice}
@@ -339,7 +421,7 @@ export async function generatePerformanceAdPack(data: {
     }
 
     const ai = new GoogleGenAI({ apiKey: getApiKey() });
-    
+
     const parts: Part[] = [];
     if (data.referenceImage) {
         parts.push({ inlineData: { data: data.referenceImage.base64, mimeType: data.referenceImage.mimeType } });
@@ -451,7 +533,7 @@ export async function generatePerformanceAdPack(data: {
                     }
                 },
                 required: [
-                    "strategicIntelligence", "creativeStrategyMatrix", "launchPack", 
+                    "strategicIntelligence", "creativeStrategyMatrix", "launchPack",
                     "visualMatchingEngine", "profitBrain", "performanceSimulation"
                 ]
             }

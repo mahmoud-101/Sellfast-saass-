@@ -12,7 +12,8 @@ import {
   PowerStudioProject,
   UGCStudioProject,
   PerformanceStudioProject,
-  EliteScriptProject
+  EliteScriptProject,
+  StoryboardStudioProject
 } from './types';
 import { supabase } from './lib/supabase';
 
@@ -38,6 +39,7 @@ import PowerStudio from './components/PowerStudio';
 import UGCStudio from './components/UGCStudio';
 import AdminDashboard from './components/AdminDashboard';
 import { ContentLibrary } from './components/ContentLibrary';
+import StoryboardStudio from './components/StoryboardStudio';
 
 const LOGO_IMAGE_URL = "https://i.ibb.co/MDrpHPzS/Artboard-1.png";
 
@@ -115,6 +117,10 @@ export default function App() {
     id: 'power-1', name: 'Power Studio', brandName: '', productCategory: '', productDescription: '', productImages: [], goal: '', targetMarket: 'مصر', dialect: 'لهجة مصرية', isGenerating: false, progress: 0, currentStep: '', result: null, error: null
   });
 
+  const [storyboardProject, setStoryboardProject] = useState<StoryboardStudioProject>({
+    id: 'story-1', name: 'Storyboard Studio', subjectImages: [], customInstructions: '', isUploading: false, isGeneratingPlan: false, error: null, scenes: [], gridImage: null, aspectRatio: '9:16'
+  });
+
   const bridgeToPlan = (context: string) => { setPlanStudio(prev => ({ ...prev, prompt: context })); setView('plan_studio'); };
   const bridgeToVideo = (script: string) => { setActiveScriptContext(script); setView('video_studio'); };
   const bridgeToPhotoshoot = (context: string) => { setPhotoshootProject(prev => ({ ...prev, customStylePrompt: context })); setView('photoshoot'); };
@@ -143,7 +149,8 @@ export default function App() {
       color: 'from-yellow-500 to-yellow-700',
       tools: [
         { id: 'photoshoot', label: 'جلسات تصوير احترافية', icon: '📸' },
-        { id: 'video_studio', label: 'استوديو تصميم الفيديوهات', icon: '🎬' },
+        { id: 'storyboard_studio', label: 'مخرج الريلز والإعلانات', icon: '🎬' },
+        { id: 'video_studio', label: 'استوديو تصميم الفيديوهات', icon: '🎥' },
         { id: 'ugc_studio', label: 'صناعة محتوى الـ UGC', icon: '🤩' }
       ]
     },
@@ -306,6 +313,7 @@ export default function App() {
         {view === 'strategy_engine' && userId && <MarketingStudio project={marketingProject} setProject={setMarketingProject} onBridgeToPlan={bridgeToPlan} userId={userId} />}
         {view === 'video_studio' && userId && <VideoStudio userId={userId} refreshCredits={() => { }} initialScript={activeScriptContext} />}
         {view === 'plan_studio' && userId && <PlanStudio project={planStudio} setProject={setPlanStudio} onBridgeToPhotoshoot={bridgeToPhotoshoot} userId={userId} />}
+        {view === 'storyboard_studio' && userId && <StoryboardStudio project={storyboardProject} setProject={setStoryboardProject} onAutoGenerateVideo={(id, prompt) => bridgeToVideo(prompt || '')} userId={userId} />}
         {view === 'brand_kit' && userId && <BrandKitManager userId={userId} onBack={() => setView('dashboard')} />}
         {view === 'faq' && userId && <FAQ onBack={() => setView('dashboard')} />}
         {view === 'privacy_policy' && userId && <LegalPages type="privacy" onBack={() => setView('dashboard')} />}
