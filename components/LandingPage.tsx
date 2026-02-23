@@ -1,88 +1,91 @@
-
 import React from 'react';
 
 const ArrowLeftIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
     </svg>
 );
 
-const LandingPage: React.FC<{onGetStarted: () => void}> = ({ onGetStarted }) => {
+const LandingPage: React.FC<{ onGetStarted: () => void }> = ({ onGetStarted }) => {
     return (
-        <div className="min-h-screen bg-black text-white overflow-x-hidden font-sans selection:bg-yellow-500/30" dir="rtl">
-            {/* Background Glows */}
-            <div className="fixed inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-yellow-600/5 blur-[120px] rounded-full animate-pulse"></div>
-                <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-yellow-600/5 blur-[120px] rounded-full animate-pulse"></div>
+        <div className="min-h-screen bg-[#030712] text-white overflow-x-hidden font-sans selection:bg-[#FFD700]/30" dir="rtl">
+            {/* Ambient Background Glows */}
+            <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+                <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-[#FFD700] opacity-[0.03] blur-[150px] rounded-full"></div>
+                <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-[#FFD700] opacity-[0.02] blur-[150px] rounded-full"></div>
+                {/* Subtle Grid overlay */}
+                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
             </div>
 
-            {/* Hero Section */}
-            <section className="relative pt-32 pb-48 px-6 z-10">
-                <div className="max-w-7xl mx-auto text-center space-y-12">
-                    <div className="inline-flex items-center gap-3 px-6 py-2 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase tracking-[0.3em] text-[#FFD700] animate-in fade-in slide-in-from-top-4 duration-700">
-                        <span className="w-2 h-2 bg-[#FFD700] rounded-full animate-ping"></span>
-                        مستقبل الإنتاج الإبداعي وصل
+            <main className="relative z-10 flex flex-col items-center">
+
+                {/* Hero Section */}
+                <section className="w-full max-w-7xl mx-auto px-6 pt-32 pb-40 text-center space-y-10">
+                    <div className="inline-flex items-center gap-3 px-5 py-2 bg-white/5 border border-white/10 rounded-full text-xs font-bold text-[#FFD700] mx-auto animate-in fade-in slide-in-from-top-10 duration-1000">
+                        <span className="w-2 h-2 bg-[#FFD700] rounded-full animate-pulse shadow-[0_0_10px_#FFD700]"></span>
+                        وكالتك التسويقية الكاملة بالذكاء الاصطناعي
                     </div>
 
-                    <h1 className="text-6xl md:text-[120px] font-black leading-[0.9] tracking-tighter animate-in fade-in slide-in-from-bottom-8 duration-1000 uppercase">
-                        All-in-One <br />
-                        <span className="italic text-[#FFD700]">Image & Video</span> <br />
-                        Studio
+                    <h1 className="text-5xl md:text-8xl font-black leading-[1.1] tracking-tighter animate-in fade-in zoom-in-95 duration-1000 delay-150">
+                        أسرع وأذكى طريقة لإنشاء <br />
+                        <span className="text-[#FFD700] relative italic">
+                            المحتوى الإعلاني
+                            <svg className="absolute w-full h-4 -bottom-2 left-0 text-[#FFD700]/30" viewBox="0 0 100 10" preserveAspectRatio="none"><path d="M0 5 Q 50 15 100 5" stroke="currentColor" strokeWidth="4" fill="transparent" /></svg>
+                        </span>
                     </h1>
 
-                    <p className="text-xl md:text-2xl text-slate-400 max-w-3xl mx-auto font-medium leading-relaxed animate-in fade-in slide-in-from-bottom-10 duration-1000">
-                        One Subscription for All AI Visual Tools. <br />
-                        حول أفكارك إلى حملات إعلانية، صور منتجات سينمائية، وفيديوهات ريلز احترافية في ثوانٍ.
+                    <p className="text-lg md:text-2xl text-slate-400 max-w-2xl mx-auto font-medium leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
+                        نمي أعمالك في دقائق معدودة بدلاً من أسابيع. انضم إلى أكثر من ١٠,٠٠٠+ مسوق ناجح وقم بتسريع مبيعاتك بنقرة زر.
                     </p>
 
-                    <div className="flex flex-col sm:flex-row gap-6 justify-center pt-10 animate-in fade-in zoom-in-95 duration-1000 delay-300">
-                        <button onClick={onGetStarted} className="group bg-[#FFD700] text-black px-14 py-6 text-xl font-black rounded-full hover:scale-105 active:scale-95 transition-all flex items-center gap-4 shadow-[0_20px_50px_rgba(255,215,0,0.2)]">
-                            ابدأ مجاناً اليوم <ArrowLeftIcon />
+                    <div className="flex flex-col sm:flex-row gap-5 justify-center pt-8 animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-500">
+                        <button onClick={onGetStarted} className="group bg-[#FFD700] text-black px-12 py-5 text-xl font-black rounded-2xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-[0_15px_40px_-10px_rgba(255,215,0,0.4)]">
+                            دعنا نبدأ مجاناً الآن <ArrowLeftIcon />
                         </button>
                     </div>
-                </div>
-            </section>
+                </section>
 
-            {/* Proof Section */}
-            <section className="py-24 border-y border-white/5 bg-black/40 backdrop-blur-xl relative z-10">
-                <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
-                    {[
-                        { label: "صور تم توليدها", val: "+500K" },
-                        { label: "علامة تجارية", val: "12,000" },
-                        { label: "دقة الرندرة", val: "4K UHD" },
-                        { label: "سرعة التنفيذ", val: "3 SEC" }
-                    ].map((s, i) => (
-                        <div key={i} className="space-y-2 group">
-                            <div className="text-5xl font-black text-white tracking-tighter group-hover:text-[#FFD700] transition-colors">{s.val}</div>
-                            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{s.label}</div>
-                        </div>
-                    ))}
-                </div>
-            </section>
-
-            {/* Visual Service Grid */}
-            <section className="py-40 px-6 relative z-10">
-                <div className="max-w-7xl mx-auto space-y-24">
-                    <div className="text-center space-y-4">
-                        <h2 className="text-5xl md:text-7xl font-black tracking-tighter leading-tight italic">نظام المستويات الثلاثة</h2>
-                        <p className="text-slate-500 text-xl font-bold">رحلة متكاملة من الفكرة إلى السيطرة على السوق.</p>
+                {/* Features Hub (Glassmorphism Grid) */}
+                <section className="w-full max-w-7xl mx-auto px-6 py-20">
+                    <div className="text-center mb-16 space-y-4">
+                        <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter">أدواتنا الذهبية</h2>
+                        <p className="text-xl text-slate-400 font-medium">مجموعة متكاملة للسيطرة على السوق</p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         {[
-                            { i: "🟣", t: "Generate Ad", d: "صياغة السكريبتات البيعية، الخطافات الإعلانية، وأفكار الـ UGC التي لا تُقاوم.", color: "border-yellow-500/20" },
-                            { i: "🔵", t: "Create Visuals", d: "مركز التصوير والتحريك.. حول صور موبايلك لمشاهد سينمائية وفيديوهات موديلز 4K.", color: "border-yellow-500/20" },
-                            { i: "🟢", t: "Scale Content", d: "بناء استراتيجية النمو، تحليل المنافسين، وجدولة محتواك لأسابيع قادمة.", color: "border-yellow-500/20" }
-                        ].map((item, idx) => (
-                            <div key={idx} className={`group p-12 rounded-[3rem] bg-white/5 border ${item.color} hover:bg-white/10 transition-all hover:-translate-y-4 relative overflow-hidden shadow-2xl`}>
-                                <div className="text-6xl mb-10">{item.i}</div>
-                                <h3 className="text-3xl font-black mb-4 text-white italic uppercase tracking-tighter">{item.t}</h3>
-                                <p className="text-slate-400 text-lg font-medium leading-relaxed">{item.d}</p>
+                            { icon: "🗓️", title: "خطة المحتوى", desc: "جدولة ذكية وشاملة لمحتواك عبر جميع المنصات بضغطة زر واحدة." },
+                            { icon: "🚀", title: "مصنع المبيعات", desc: "تحويل العملاء المحتملين إلى مشترين دائمين عبر استراتيجيات مجربة." },
+                            { icon: "🎬", title: "صناعة الفيديوهات", desc: "إنتاج فيديوهات احترافية تجذب الانتباه دون الحاجة لخبرة في المونتاج." }
+                        ].map((feature, i) => (
+                            <div key={i} className="group flex flex-col p-10 bg-white/5 border border-white/5 hover:border-[#FFD700]/30 rounded-[2.5rem] backdrop-blur-xl transition-all duration-500 hover:-translate-y-2 shadow-2xl hover:shadow-[#FFD700]/10">
+                                <div className="text-5xl mb-6 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300 origin-center">{feature.icon}</div>
+                                <h3 className="text-2xl font-black text-white mb-3">{feature.title}</h3>
+                                <p className="text-slate-400 font-medium leading-relaxed">{feature.desc}</p>
                             </div>
                         ))}
                     </div>
-                </div>
-            </section>
+                </section>
+
+                {/* Social Proof Stats */}
+                <section className="w-full border-y border-white/5 bg-black/50 py-20 mt-20 backdrop-blur-md">
+                    <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-10 text-center">
+                        {[
+                            { val: "+10,000", label: "مسوق محترف" },
+                            { val: "3 Seconds", label: "سرعة التنفيذ" },
+                            { val: "4K UHD", label: "جودة الفيديوهات" },
+                            { val: "+500K", label: "محتوى تم إنشاؤه" }
+                        ].map((stat, idx) => (
+                            <div key={idx} className="space-y-3 p-6 rounded-3xl hover:bg-white/5 transition-colors">
+                                <div className="text-4xl md:text-5xl font-black text-[#FFD700] tracking-tighter">{stat.val}</div>
+                                <div className="text-sm font-bold text-slate-400 uppercase tracking-widest">{stat.label}</div>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+
+                <div className="h-32"></div>
+            </main>
         </div>
     );
 };

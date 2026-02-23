@@ -12,16 +12,6 @@ const MarketingIcon = () => (
 
 const LOGO_IMAGE_URL = "https://i.ibb.co/MDrpHPzS/Artboard-1.png";
 
-interface Props {
-    project: MarketingStudioProject;
-    setProject: React.Dispatch<React.SetStateAction<MarketingStudioProject>>;
-    onBridgeToPlan: (context: string) => void;
-    userId: string;
-}
-
-<<<<<<< HEAD
-const MarketingStudio: React.FC<Props> = ({ project, setProject, onBridgeToPlan }) => {
-=======
 // Parse markdown sections into cards
 const parseResultSections = (text: string) => {
     const sections: { icon: string; title: string; content: string }[] = [];
@@ -45,8 +35,14 @@ const parseResultSections = (text: string) => {
     return sections.filter(s => s.content.trim());
 };
 
+interface Props {
+    project: MarketingStudioProject;
+    setProject: React.Dispatch<React.SetStateAction<MarketingStudioProject>>;
+    onBridgeToPlan: (context: string) => void;
+    userId: string;
+}
+
 const MarketingStudio: React.FC<Props> = ({ project, setProject, onBridgeToPlan, userId }) => {
->>>>>>> abcc1b4 (feat: built awesome Content Library to save and view generated assets)
     const [copied, setCopied] = useState(false);
 
     const onGenerate = async () => {
@@ -61,10 +57,10 @@ const MarketingStudio: React.FC<Props> = ({ project, setProject, onBridgeToPlan,
 
         setProject(s => ({ ...s, isGenerating: true, error: null, result: null }));
         try {
-            const data = project.brandType === 'new' 
+            const data = project.brandType === 'new'
                 ? { type: project.brandType, name: project.brandName, specialty: project.specialty, brief: project.brief }
                 : { type: project.brandType, link: project.websiteLink };
-            
+
             const strategy = await generateMarketingAnalysis(data as any, project.language);
 
             await saveGeneratedAsset(userId, 'MARKETING_PLAN', { plan_content: strategy }, data);
@@ -109,14 +105,14 @@ const MarketingStudio: React.FC<Props> = ({ project, setProject, onBridgeToPlan,
                         </button>
                     </div>
                     <div className="lg:col-span-7 bg-black/40 border border-white/10 rounded-3xl p-8 overflow-y-auto max-h-[500px] text-right" dir="rtl">
-                         {project.result ? (
-                             <div className="prose prose-invert max-w-none text-slate-200 font-medium whitespace-pre-wrap">{project.result}</div>
-                         ) : (
-                             <div className="h-full flex items-center justify-center opacity-20 flex-col gap-4">
-                                 <div className="text-6xl">🎯</div>
-                                 <p className="font-black text-xs uppercase tracking-widest text-white">Strategy Ready</p>
-                             </div>
-                         )}
+                        {project.result ? (
+                            <div className="prose prose-invert max-w-none text-slate-200 font-medium whitespace-pre-wrap">{project.result}</div>
+                        ) : (
+                            <div className="h-full flex items-center justify-center opacity-20 flex-col gap-4">
+                                <div className="text-6xl">🎯</div>
+                                <p className="font-black text-xs uppercase tracking-widest text-white">Strategy Ready</p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
