@@ -1,0 +1,22 @@
+service: ebdaapro-ai-engine
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: eu-central-1 # Frankfurt (close to MENA region for low latency)
+  timeout: 900 # 15 minutes! The absolute maximum time for Lambda, ensuring NO timeouts.
+  memorySize: 1024 # 1GB RAM for fast processing
+  environment:
+    API_KEY: ${env:GEMINI_API_KEY, ""}
+    PERPLEXITY_API_KEY: ${env:PERPLEXITY_API_KEY, ""}
+
+functions:
+  geminiProcessor:
+    handler: handler.processAI
+    events:
+      - httpApi:
+          path: /ai/generate
+          method: post
+
+plugins:
+  - serverless-offline
