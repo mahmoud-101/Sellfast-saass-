@@ -30,18 +30,56 @@ export class CampaignOrchestrator {
      */
     static async runMarketIntelligence(context: ProductIntelligenceData): Promise<OrchestrationResult> {
         try {
-            // 1. Fetch live trends for the target niche and market
-            const trends = await fetchCurrentTrends(context.targetMarket, context.productName);
+            // Run BOTH in parallel: product analysis (primary) + trends (secondary)
+            const [productAnalysis, trends] = await Promise.allSettled([
+                // PRIMARY: Deep structured product analysis based on user inputs
+                askGemini(
+                    `أنت خبير تسويق متخصص في الأسواق العربية. قم بتحليل هذا المنتج بعمق:
 
-            // 2. Perform deep category analysis (mimicking classic Marketing Studio / Strategy Engine)
-            const analysisPrompt = `Product: ${context.productName}\nDescription: ${context.productDescription}\nMarket: ${context.targetMarket}\n\nProvide a deep marketing analysis including target audience, positioning, and 3 key USP angles.`;
-            const categoryAnalysis = await askGemini(analysisPrompt, "You are a Senior Product Marketing Analyst.");
+المنتج: ${context.productName}
+الوصف: ${context.productDescription}
+السوق المستهدف: ${context.targetMarket}
+اللهجة: ${context.dialect}
+
+أرجع JSON بالشكل التالي بالضبط (بالعربية):
+{
+  "targetAudience": "وصف دقيق للعميل المثالي (العمر، الاهتمامات، الألم، الرغبة)",
+  "positioning": "كيف يتميز المنتج ويُوضَع في السوق",
+  "mainUSP": "أقوى نقطة بيع فريدة واحدة للمنتج",
+  "advantages": ["ميزة 1", "ميزة 2", "ميزة 3"],
+  "pricingStrategy": "استراتيجية التسعير المقترحة",
+  "salesAngles": ["زاوية بيعية 1", "زاوية بيعية 2", "زاوية بيعية 3"],
+  "suggestedHook": "جملة افتتاحية مقترحة لإعلان فيديو بالعامية",
+  "summary": "ملخص تحليلي شامل في 3-4 جمل"
+}
+
+JSON فقط بدون markdown.`,
+                    "أنت محلل تسويق متمرس متخصص في منتجات التجارة الإلكترونية العربية."
+                ),
+                // SECONDARY: Fetch live trends (don't block if it fails)
+                fetchCurrentTrends(context.targetMarket, context.productName)
+            ]);
+
+            // Parse product analysis
+            let parsedAnalysis: any = null;
+            if (productAnalysis.status === 'fulfilled') {
+                try {
+                    const cleaned = productAnalysis.value.replace(/```json|```/g, '').trim();
+                    parsedAnalysis = JSON.parse(cleaned);
+                } catch {
+                    // If JSON parsing fails, use raw text
+                    parsedAnalysis = { summary: productAnalysis.value };
+                }
+            }
+
+            const trendData = trends.status === 'fulfilled' ? trends.value : [];
 
             return {
                 success: true,
                 data: {
-                    trends,
-                    categoryAnalysis
+                    productAnalysis: parsedAnalysis,
+                    categoryAnalysis: parsedAnalysis?.summary || '',
+                    trends: trendData
                 }
             };
         } catch (error: any) {

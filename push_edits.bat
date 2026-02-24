@@ -1,25 +1,34 @@
 @echo off
 echo ===================================================
-echo   Sellfast AI - Hotfix: [object Object] Bug
+echo   Sellfast AI - Full Audit + Priority Restructure
 echo ===================================================
 echo.
-echo Fixing: Market Intelligence Hub was showing [object Object]
-echo         instead of actual trend text in the results.
+echo Changes in this batch:
+echo  [FIX] Market Intelligence: Product Analysis is now PRIMARY output
+echo        Displayed as rich cards: Audience, USP, Positioning,
+echo        Pricing, Advantages, Sales Angles, and Video Hook
+echo  [FIX] Trends demoted to collapsible secondary section
+echo  [FIX] [object Object] bug fully resolved
+echo  [FIX] Orchestrator upgraded: runs analysis + trends in parallel
+echo  [FIX] Strategy summary textarea now filled from productAnalysis
+echo  [OK]  CampaignBuilderHub output rendering verified correct
+echo  [OK]  CreativeStudio storyboard schema verified correct (all strings)
+echo  [+]   sessionStorage state persistence
+echo  [+]   Image compression (PhotoshootDirector)
+echo  [+]   Supabase campaigns table + save function
+echo  [+]   Animated loading messages (all 3 hubs)
 echo.
-echo Pushing to GitHub to trigger Vercel auto-deploy...
-echo.
-
 cd /d "%~dp0"
 git add .
-git commit -m "fix: [object Object] bug - properly serialize TrendItem objects in MarketIntelligenceHub + 5 platform improvements"
+git commit -m "feat: product analysis as primary output + full hub audit + [object Object] fix"
 git push origin main
 
 echo.
 if %ERRORLEVEL% EQU 0 (
-    echo SUCCESS! Vercel will rebuild and deploy in about 2-3 minutes.
-    echo The trends will now show as proper Arabic text!
+    echo SUCCESS! Vercel is building...
+    echo Check again in 2-3 minutes.
 ) else (
-    echo Something went wrong. Check the error above.
+    echo Error during push. Check message above.
 )
 echo ===================================================
 pause

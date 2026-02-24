@@ -186,79 +186,179 @@ export default function MarketIntelligenceHub({
                 </div>
 
                 {/* Results Area */}
-                {results && (
-                    <div className="bg-blue-900/20 border border-blue-500/30 p-6 rounded-2xl animate-fade-in-up">
-                        <h3 className="text-2xl font-bold text-blue-400 mb-4">التحليل جاهز! 🎯</h3>
-                        <p className="text-gray-300 mb-6">تم رصد التريندات الحالية وتحليل سوق المنتج بنجاح. النظام الآن يمتلك السياق الكامل لبناء الحملة.</p>
+                {results && (() => {
+                    const pa = results.productAnalysis;
+                    return (
+                        <div className="space-y-6 animate-fade-in-up">
 
-                        <div className="grid grid-cols-2 gap-4 mb-6">
-                            <div className="bg-gray-900 p-4 rounded-xl border border-gray-700">
-                                <div className="text-3xl">{results.trends?.length || 0}</div>
-                                <div className="text-gray-400 text-sm">تريندات تم رصدها</div>
-                            </div>
-                            <div className="bg-gray-900 p-4 rounded-xl border border-gray-700">
-                                <div className="text-3xl text-emerald-400">✓</div>
-                                <div className="text-gray-400 text-sm">تم بناء استراتيجية النمو</div>
-                            </div>
-                        </div>
-
-                        {/* Display Actual Generated Content Here */}
-                        <div className="bg-gray-900 p-5 rounded-xl border border-gray-700 mb-6 max-h-96 overflow-y-auto custom-scrollbar">
-                            {results.trends && results.trends.length > 0 && (
-                                <div className="mb-6">
-                                    <h4 className="text-emerald-400 font-bold mb-3 border-b border-gray-800 pb-2 flex items-center justify-between">
-                                        <span className="flex items-center gap-2"><span className="text-xl">🔥</span> التريندات المرصودة (قابلة للتعديل):</span>
-                                        <span className="text-xs text-gray-500 font-normal">يمكنك تعديل التريندات قبل الإرسال</span>
-                                    </h4>
-                                    <textarea
-                                        value={editableTrends}
-                                        onChange={(e) => setEditableTrends(e.target.value)}
-                                        className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-emerald-500 min-h-[150px] leading-relaxed"
-                                        dir="auto"
-                                    />
-                                </div>
-                            )}
-
-                            {results.strategy && (
+                            {/* ── SUCCESS BANNER ── */}
+                            <div className="bg-blue-900/20 border border-blue-500/30 p-5 rounded-2xl flex items-center gap-4">
+                                <div className="text-4xl">🎯</div>
                                 <div>
-                                    <h4 className="text-blue-400 font-bold mb-3 border-b border-gray-800 pb-2 flex items-center justify-between">
-                                        <span className="flex items-center gap-2"><span className="text-xl">🧠</span> تحليل واستراتيجية السوق (قابلة للتعديل):</span>
-                                    </h4>
-                                    <textarea
-                                        value={editableStrategy}
-                                        onChange={(e) => setEditableStrategy(e.target.value)}
-                                        className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 min-h-[300px] leading-relaxed font-arabic custom-scrollbar"
-                                        dir="auto"
-                                    />
+                                    <h3 className="text-xl font-bold text-blue-400">تحليل المنتج جاهز!</h3>
+                                    <p className="text-gray-400 text-sm mt-1">تم تحليل منتجك بدقة بناءً على مدخلاتك. راجع النتائج وعدّل ما تشاء قبل الانتقال لمرحلة بناء الحملة.</p>
+                                </div>
+                            </div>
+
+                            {/* ── PRIMARY: PRODUCT ANALYSIS CARDS ── */}
+                            {pa && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* Target Audience */}
+                                    {pa.targetAudience && (
+                                        <div className="bg-purple-900/20 border border-purple-500/30 p-5 rounded-xl">
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <span className="text-xl">👥</span>
+                                                <h4 className="text-purple-400 font-bold">الجمهور المستهدف</h4>
+                                            </div>
+                                            <p className="text-gray-300 text-sm leading-relaxed">{pa.targetAudience}</p>
+                                        </div>
+                                    )}
+
+                                    {/* Main USP */}
+                                    {pa.mainUSP && (
+                                        <div className="bg-yellow-900/20 border border-yellow-500/30 p-5 rounded-xl">
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <span className="text-xl">⚡</span>
+                                                <h4 className="text-yellow-400 font-bold">نقطة البيع الفريدة (USP)</h4>
+                                            </div>
+                                            <p className="text-gray-300 text-sm leading-relaxed">{pa.mainUSP}</p>
+                                        </div>
+                                    )}
+
+                                    {/* Positioning */}
+                                    {pa.positioning && (
+                                        <div className="bg-blue-900/20 border border-blue-500/30 p-5 rounded-xl">
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <span className="text-xl">🏆</span>
+                                                <h4 className="text-blue-400 font-bold">التموضع التنافسي</h4>
+                                            </div>
+                                            <p className="text-gray-300 text-sm leading-relaxed">{pa.positioning}</p>
+                                        </div>
+                                    )}
+
+                                    {/* Pricing Strategy */}
+                                    {pa.pricingStrategy && (
+                                        <div className="bg-emerald-900/20 border border-emerald-500/30 p-5 rounded-xl">
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <span className="text-xl">💰</span>
+                                                <h4 className="text-emerald-400 font-bold">استراتيجية التسعير</h4>
+                                            </div>
+                                            <p className="text-gray-300 text-sm leading-relaxed">{pa.pricingStrategy}</p>
+                                        </div>
+                                    )}
                                 </div>
                             )}
-                        </div>
 
-                        <button
-                            onClick={handleNextPhase}
-                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all text-lg"
-                        >
-                            إرسال الملف إلى مصنع الحملات (Campaign Builder) ➡️
-                        </button>
-                    </div>
-                )}
+                            {/* Advantages list */}
+                            {pa?.advantages && pa.advantages.length > 0 && (
+                                <div className="bg-gray-800 border border-gray-700 p-5 rounded-xl">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <span className="text-xl">✅</span>
+                                        <h4 className="text-white font-bold">المزايا الرئيسية للمنتج</h4>
+                                    </div>
+                                    <ul className="space-y-2">
+                                        {pa.advantages.map((adv: string, i: number) => (
+                                            <li key={i} className="flex items-start gap-2 text-gray-300 text-sm">
+                                                <span className="text-emerald-400 mt-0.5">•</span>
+                                                <span>{adv}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {/* Sales Angles */}
+                            {pa?.salesAngles && pa.salesAngles.length > 0 && (
+                                <div className="bg-gray-800 border border-gray-700 p-5 rounded-xl">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <span className="text-xl">🎯</span>
+                                        <h4 className="text-white font-bold">الزوايا البيعية المقترحة</h4>
+                                        <span className="text-xs text-gray-500">(ستُستخدم في بناء الحملة)</span>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {pa.salesAngles.map((angle: string, i: number) => (
+                                            <span key={i} className="bg-blue-900/40 border border-blue-500/40 text-blue-300 px-3 py-1.5 rounded-lg text-sm">
+                                                {angle}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Suggested Hook */}
+                            {pa?.suggestedHook && (
+                                <div className="bg-orange-900/20 border border-orange-500/30 p-5 rounded-xl">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <span className="text-xl">🎣</span>
+                                        <h4 className="text-orange-400 font-bold">الجملة الافتتاحية المقترحة للإعلان</h4>
+                                    </div>
+                                    <p className="text-gray-200 text-base font-semibold leading-relaxed italic">"{pa.suggestedHook}"</p>
+                                </div>
+                            )}
+
+                            {/* Editable Strategy Summary */}
+                            <div className="bg-gray-800 border border-gray-700 p-5 rounded-xl">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xl">🧠</span>
+                                        <h4 className="text-blue-400 font-bold">ملخص تحليل الاستراتيجية (قابل للتعديل)</h4>
+                                    </div>
+                                    <span className="text-xs text-gray-500">يُرسل للمرحلة التالية</span>
+                                </div>
+                                <textarea
+                                    value={editableStrategy}
+                                    onChange={(e) => setEditableStrategy(e.target.value)}
+                                    className="w-full bg-gray-900 border border-gray-600 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 min-h-[120px] leading-relaxed text-sm"
+                                    dir="auto"
+                                    placeholder="سيظهر هنا ملخص التحليل التسويقي..."
+                                />
+                            </div>
+
+                            {/* SECONDARY: Trends (Collapsible) */}
+                            {results.trends && results.trends.length > 0 && editableTrends && (
+                                <details className="bg-gray-800 border border-gray-700 rounded-xl">
+                                    <summary className="p-4 cursor-pointer flex items-center gap-2 text-gray-400 hover:text-white font-bold select-none">
+                                        <span className="text-lg">🔥</span>
+                                        تريندات السوق الحالية ({results.trends.length} تريند) — انقر للعرض
+                                    </summary>
+                                    <div className="p-4 border-t border-gray-700">
+                                        <textarea
+                                            value={editableTrends}
+                                            onChange={(e) => setEditableTrends(e.target.value)}
+                                            className="w-full bg-gray-900 border border-gray-600 rounded-xl px-4 py-3 text-gray-300 focus:ring-2 focus:ring-orange-500 min-h-[200px] leading-relaxed text-sm"
+                                            dir="auto"
+                                        />
+                                    </div>
+                                </details>
+                            )}
+
+                            {/* NEXT PHASE BUTTON */}
+                            <button
+                                onClick={handleNextPhase}
+                                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all text-lg"
+                            >
+                                إرسال التحليل إلى مصنع الحملات ➡️
+                            </button>
+                        </div>
+                    );
+                })()}
 
                 {/* Advanced Mode Tools List */}
                 {isAdvanced && (
                     <div className="mt-8 border-t border-gray-700 pt-8 animate-fade-in-up">
                         <h3 className="text-xl text-gray-400 mb-4 flex items-center gap-2">
-                            <span className="text-purple-500">⚙️</span> Internal Engines (Advanced Mode)
+                            <span className="text-purple-500">⚙️</span> أدوات متقدمة (Advanced Mode)
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <button onClick={() => setInternalView('strategy')} className="text-right bg-gray-800 hover:bg-gray-700 p-6 rounded-xl border border-gray-600 transition-colors">
                                 <div className="text-2xl mb-2">🎯</div>
                                 <div className="font-bold text-lg mb-1">استراتيجية النمو السريع</div>
-                                <div className="text-gray-400 text-sm">تحليل يدوي مفصل للسوق والجمهور (النسخة الكلاسيكية)</div>
+                                <div className="text-gray-400 text-sm">تحليل يدوي مفصل للسوق والجمهور</div>
                             </button>
                             <button onClick={() => setInternalView('trend')} className="text-right bg-gray-800 hover:bg-gray-700 p-6 rounded-xl border border-gray-600 transition-colors">
                                 <div className="text-2xl mb-2">🔥</div>
                                 <div className="font-bold text-lg mb-1">محرك التريندات</div>
-                                <div className="text-gray-400 text-sm">بحث يدوي متقدم عن المحتوى الفيروسي (النسخة الكلاسيكية)</div>
+                                <div className="text-gray-400 text-sm">بحث يدوي متقدم عن المحتوى الفيروسي</div>
                             </button>
                         </div>
                     </div>
@@ -268,3 +368,4 @@ export default function MarketIntelligenceHub({
         </div>
     );
 }
+
