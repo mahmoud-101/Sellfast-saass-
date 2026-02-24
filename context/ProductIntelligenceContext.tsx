@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
 export interface ProductIntelligenceData {
     // Basic Product Info
@@ -41,10 +41,35 @@ const defaultData: ProductIntelligenceData = {
     smartMode: false,
 };
 
+const STORAGE_KEY = 'sellfast_product_intelligence';
+
+function loadFromSession(): ProductIntelligenceData {
+    try {
+        const raw = sessionStorage.getItem(STORAGE_KEY);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            // Merge with defaultData to handle any missing new fields gracefully
+            return { ...defaultData, ...parsed };
+        }
+    } catch (e) {
+        console.warn('[Context] Failed to restore session state:', e);
+    }
+    return defaultData;
+}
+
 const ProductIntelligenceContext = createContext<ProductIntelligenceContextType | undefined>(undefined);
 
 export function ProductIntelligenceProvider({ children }: { children: ReactNode }) {
-    const [data, setData] = useState<ProductIntelligenceData>(defaultData);
+    const [data, setData] = useState<ProductIntelligenceData>(loadFromSession);
+
+    // Persist state to sessionStorage on every change
+    useEffect(() => {
+        try {
+            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        } catch (e) {
+            console.warn('[Context] Failed to persist session state:', e);
+        }
+    }, [data]);
 
     const updateData = (updates: Partial<ProductIntelligenceData>) => {
         setData((prev) => ({ ...prev, ...updates }));
@@ -52,6 +77,9 @@ export function ProductIntelligenceProvider({ children }: { children: ReactNode 
 
     const resetData = () => {
         setData(defaultData);
+        try {
+            sessionStorage.removeItem(STORAGE_KEY);
+        } catch (e) { /* ignore */ }
     };
 
     return (

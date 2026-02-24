@@ -255,3 +255,74 @@ export const getUserVideoJobs = async (userId: string) => {
     const { data } = await supabase.from('video_jobs').select('*').eq('user_id', userId).order('created_at', { ascending: false });
     return data || [];
 };
+
+// ==========================================
+// 🏆 Campaign Storage (Fix 5: Database Storage)
+// ==========================================
+
+export interface SavedCampaign {
+    id?: string;
+    user_id: string;
+    product_name: string;
+    campaign_goal: string;
+    selected_angle: string;
+    ad_copy: string;
+    storyboard: any[];
+    created_at?: string;
+}
+
+/**
+ * Saves a completed campaign to Supabase so the user can access it later.
+ */
+export const saveCampaign = async (campaign: Omit<SavedCampaign, 'id' | 'created_at'>): Promise<SavedCampaign | null> => {
+    if (!isSupabaseConfigured()) {
+        console.warn('[Supabase] Not configured - campaign save skipped');
+        return null;
+    }
+    try {
+        const { data, error } = await supabase
+            .from('campaigns')
+            .insert([campaign])
+            .select()
+            .single();
+        if (error) throw error;
+        return data;
+    } catch (e) {
+        console.error('[Supabase] saveCampaign error:', e);
+        return null;
+    }
+};
+
+/**
+ * Fetches all campaigns for a user, ordered newest first.
+ */
+export const getCampaigns = async (userId: string): Promise<SavedCampaign[]> => {
+    if (!isSupabaseConfigured()) return [];
+    try {
+        const { data, error } = await supabase
+            .from('campaigns')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false });
+        if (error) throw error;
+        return data || [];
+    } catch (e) {
+        console.error('[Supabase] getCampaigns error:', e);
+        return [];
+    }
+};
+
+/**
+ * Deletes a campaign by ID.
+ */
+export const deleteCampaign = async (campaignId: string): Promise<boolean> => {
+    if (!isSupabaseConfigured()) return false;
+    try {
+        const { error } = await supabase.from('campaigns').delete().eq('id', campaignId);
+        if (error) throw error;
+        return true;
+    } catch (e) {
+        console.error('[Supabase] deleteCampaign error:', e);
+        return false;
+    }
+};

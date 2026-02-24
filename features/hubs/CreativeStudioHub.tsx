@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useProductIntelligence } from '../../context/ProductIntelligenceContext';
 import { CampaignOrchestrator } from '../../orchestrator/CampaignOrchestrator';
+import { useLoadingMessages, creativeStudioMessages } from '../../utils/useLoadingMessages';
+import { saveCampaign } from '../../lib/supabase';
 
 // Import existing internal tools
 import StoryboardStudio from '../../components/StoryboardStudio';
@@ -31,6 +33,9 @@ export default function CreativeStudioHub({
     const [isGenerating, setIsGenerating] = useState(false);
     const [results, setResults] = useState<any>(null);
     const [editableStoryboard, setEditableStoryboard] = useState<any[]>([]);
+    const [isSaving, setIsSaving] = useState(false);
+    const [savedSuccessfully, setSavedSuccessfully] = useState(false);
+    const { message: loadingMessage, start: startMessages, stop: stopMessages } = useLoadingMessages(creativeStudioMessages);
 
     useEffect(() => {
         // If we have an angle from the Campaign Builder and Smart Mode is ON
@@ -41,6 +46,7 @@ export default function CreativeStudioHub({
 
     const runCreativeStudio = async () => {
         setIsGenerating(true);
+        startMessages();
 
         // Trigger Orchestrator to generate Video Storyboards automatically for the winning angle
         const result = await CampaignOrchestrator.generateCreatives(data, data.selectedAngle || 'حملة إعلانية للمنتج');
@@ -51,11 +57,26 @@ export default function CreativeStudioHub({
         }
 
         setIsGenerating(false);
+        stopMessages();
     };
 
-    const handleFinish = () => {
-        // Here you could technically save the 'editableStoryboard' to the backend library.
-        // End of the 3-Core Flow
+    const handleFinish = async () => {
+        // Save the finished campaign to Supabase before navigating to the library
+        if (editableStoryboard.length > 0 && userId && !savedSuccessfully) {
+            setIsSaving(true);
+            await saveCampaign({
+                user_id: userId,
+                product_name: data.productName || 'حملة بلا اسم',
+                campaign_goal: data.campaignGoal || '',
+                selected_angle: data.selectedAngle || '',
+                ad_copy: typeof data.adPackResults?.launchPack?.adCopy === 'string'
+                    ? data.adPackResults.launchPack.adCopy
+                    : '',
+                storyboard: editableStoryboard,
+            });
+            setSavedSuccessfully(true);
+            setIsSaving(false);
+        }
         updateData({ smartMode: false });
         setInternalView('library');
     };
@@ -115,7 +136,10 @@ export default function CreativeStudioHub({
                             className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-xl transition-all disabled:opacity-50 flex items-center gap-2"
                         >
                             {isGenerating ? (
-                                <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> جاري التوليد المرئي...</>
+                                <div className="flex flex-col items-center gap-3 py-2">
+                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    <span className="text-sm text-emerald-300 animate-pulse">{loadingMessage}</span>
+                                </div>
                             ) : (
                                 <>🎬 ابدأ إخراج المحتوى المرئي</>
                             )}
@@ -188,9 +212,30 @@ export default function CreativeStudioHub({
                                 <div className="text-3xl mb-1">🎞️</div>
                                 <div className="text-white font-bold">تصفح الستوري بورد</div>
                             </button>
-                            <button onClick={handleFinish} className="bg-gray-900 border border-gray-700 hover:border-blue-500 p-4 rounded-xl transition-all">
-                                <div className="text-3xl mb-1">📁</div>
-                                <div className="text-white font-bold">الحفظ في المكتبة كحملة نهائية</div>
+                            <button
+                                onClick={handleFinish}
+                                disabled={isSaving}
+                                className={`p-4 rounded-xl transition-all border ${savedSuccessfully
+                                        ? 'bg-emerald-900/40 border-emerald-500 text-emerald-400'
+                                        : 'bg-gray-900 border-gray-700 hover:border-blue-500'
+                                    }`}
+                            >
+                                {isSaving ? (
+                                    <>
+                                        <div className="text-3xl mb-1 animate-spin">⌛️</div>
+                                        <div className="text-gray-400 font-bold text-sm">جاري الحفظ...</div>
+                                    </>
+                                ) : savedSuccessfully ? (
+                                    <>
+                                        <div className="text-3xl mb-1">✅</div>
+                                        <div className="font-bold text-sm">تم الحفظ - الذهاب للمكتبة</div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="text-3xl mb-1">💾</div>
+                                        <div className="text-white font-bold text-sm">حفظ الحملة بشكل دائم</div>
+                                    </>
+                                )}
                             </button>
                         </div>
                     </div>

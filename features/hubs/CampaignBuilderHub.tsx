@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useProductIntelligence } from '../../context/ProductIntelligenceContext';
 import { CampaignOrchestrator } from '../../orchestrator/CampaignOrchestrator';
+import { useLoadingMessages, campaignBuilderMessages } from '../../utils/useLoadingMessages';
 
 // Import existing internal tools
 import AdContentFactory from '../../components/AdContentFactory'; // Ensure this matches what PerformanceStudio is usually called 
@@ -31,6 +32,7 @@ export default function CampaignBuilderHub({
     const [results, setResults] = useState<any>(null);
     const [editableAdCopy, setEditableAdCopy] = useState<string>('');
     const [editableSocialPosts, setEditableSocialPosts] = useState<string[]>([]);
+    const { message: loadingMessage, start: startMessages, stop: stopMessages } = useLoadingMessages(campaignBuilderMessages);
 
     // If Smart Mode is on, we can auto-run the campaign builder when arriving here
     useEffect(() => {
@@ -41,6 +43,7 @@ export default function CampaignBuilderHub({
 
     const runCampaignBuilder = async () => {
         setIsBuilding(true);
+        startMessages();
 
         // Trigger Orchestrator
         const result = await CampaignOrchestrator.buildCampaign(data, 'Quick');
@@ -62,6 +65,7 @@ export default function CampaignBuilderHub({
         }
 
         setIsBuilding(false);
+        stopMessages();
     };
 
     const handleNextPhase = () => {
@@ -159,7 +163,10 @@ export default function CampaignBuilderHub({
                             className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-xl transition-all disabled:opacity-50 flex items-center gap-2"
                         >
                             {isBuilding ? (
-                                <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> جاري بناء هندسة الحملة...</>
+                                <div className="flex flex-col items-center gap-3 py-2">
+                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    <span className="text-sm text-purple-300 animate-pulse">{loadingMessage}</span>
+                                </div>
                             ) : (
                                 <>✨ بناء الحملة الإعلانية حصرياً لهذا الهدف</>
                             )}

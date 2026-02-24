@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useProductIntelligence } from '../../context/ProductIntelligenceContext';
 import { CampaignOrchestrator } from '../../orchestrator/CampaignOrchestrator';
+import { useLoadingMessages, marketIntelligenceMessages } from '../../utils/useLoadingMessages';
 
 // Import existing internal tools to be used in advanced mode
 import TrendEngine from '../../components/TrendEngine';
@@ -28,9 +29,11 @@ export default function MarketIntelligenceHub({
     const [results, setResults] = useState<any>(null);
     const [editableTrends, setEditableTrends] = useState<string>('');
     const [editableStrategy, setEditableStrategy] = useState<string>('');
+    const { message: loadingMessage, start: startMessages, stop: stopMessages } = useLoadingMessages(marketIntelligenceMessages);
 
     const runSmartAnalysis = async () => {
         setIsAnalyzing(true);
+        startMessages();
         // 1. Save smart mode flag
         updateData({ smartMode: true });
 
@@ -48,6 +51,7 @@ export default function MarketIntelligenceHub({
         }
 
         setIsAnalyzing(false);
+        stopMessages();
     };
 
     const handleNextPhase = () => {
@@ -153,7 +157,10 @@ export default function MarketIntelligenceHub({
                             className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition-all disabled:opacity-50 flex items-center gap-2"
                         >
                             {isAnalyzing ? (
-                                <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> جاري التحليل المعمق...</>
+                                <div className="flex flex-col items-center gap-3 py-2">
+                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    <span className="text-sm text-blue-300 animate-pulse">{loadingMessage}</span>
+                                </div>
                             ) : (
                                 <>🚀 تشغيل محركات التحليل الذكية</>
                             )}
