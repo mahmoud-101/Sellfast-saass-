@@ -30,6 +30,7 @@ export default function CreativeStudioHub({
     // Smart Mode State
     const [isGenerating, setIsGenerating] = useState(false);
     const [results, setResults] = useState<any>(null);
+    const [editableStoryboard, setEditableStoryboard] = useState<any[]>([]);
 
     useEffect(() => {
         // If we have an angle from the Campaign Builder and Smart Mode is ON
@@ -46,12 +47,14 @@ export default function CreativeStudioHub({
 
         if (result.success) {
             setResults(result.data);
+            setEditableStoryboard(result.data.storyboard || []);
         }
 
         setIsGenerating(false);
     };
 
     const handleFinish = () => {
+        // Here you could technically save the 'editableStoryboard' to the backend library.
         // End of the 3-Core Flow
         updateData({ smartMode: false });
         setInternalView('library');
@@ -128,25 +131,43 @@ export default function CreativeStudioHub({
 
                         {/* Display Actual Generated Content Here */}
                         <div className="bg-gray-900 p-5 rounded-xl border border-gray-700 mb-6 max-h-[600px] overflow-y-auto custom-scrollbar">
-                            {results.storyboard && Array.isArray(results.storyboard) && results.storyboard.length > 0 && (
+                            {editableStoryboard && editableStoryboard.length > 0 && (
                                 <div>
                                     <h4 className="text-emerald-400 font-bold mb-4 border-b border-gray-800 pb-2 flex items-center gap-2">
                                         <span className="text-xl">🎞️</span> السيناريو والمشاهد (Storyboard):
                                     </h4>
                                     <div className="space-y-6">
-                                        {results.storyboard.map((scene: any, idx: number) => (
+                                        {editableStoryboard.map((scene: any, idx: number) => (
                                             <div key={idx} className="bg-gray-800 p-4 rounded-xl border border-gray-700 relative overflow-hidden">
                                                 <div className="absolute top-0 right-0 bg-emerald-600/20 text-emerald-400 px-3 py-1 rounded-bl-lg text-sm font-bold border-b border-l border-emerald-500/30">
                                                     مشهد {idx + 1}
                                                 </div>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                                                     <div>
-                                                        <div className="text-sm text-gray-400 mb-1">الوصف البصري</div>
-                                                        <div className="text-white bg-gray-900 p-3 rounded-lg text-sm leading-relaxed">{scene.description || scene.visualPrompt}</div>
+                                                        <div className="text-sm text-gray-400 mb-1">الوصف البصري (قابل للتعديل)</div>
+                                                        <textarea
+                                                            value={scene.description || scene.visualPrompt || ''}
+                                                            onChange={(e) => {
+                                                                const arr = [...editableStoryboard];
+                                                                arr[idx] = { ...arr[idx], description: e.target.value, visualPrompt: e.target.value };
+                                                                setEditableStoryboard(arr);
+                                                            }}
+                                                            className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white text-sm leading-relaxed min-h-[100px] focus:ring-2 focus:ring-emerald-500 custom-scrollbar"
+                                                            dir="auto"
+                                                        />
                                                     </div>
                                                     <div>
-                                                        <div className="text-sm text-gray-400 mb-1">التعليق الصوتي / الحوار</div>
-                                                        <div className="text-cyan-300 bg-gray-900 p-3 rounded-lg text-sm leading-relaxed font-arabic">"{scene.dialogue || scene.text || 'بدون حوار'}"</div>
+                                                        <div className="text-sm text-gray-400 mb-1">التعليق الصوتي / الحوار (قابل للتعديل)</div>
+                                                        <textarea
+                                                            value={scene.dialogue || scene.text || ''}
+                                                            onChange={(e) => {
+                                                                const arr = [...editableStoryboard];
+                                                                arr[idx] = { ...arr[idx], dialogue: e.target.value, text: e.target.value };
+                                                                setEditableStoryboard(arr);
+                                                            }}
+                                                            className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-cyan-300 text-sm leading-relaxed font-arabic min-h-[100px] focus:ring-2 focus:ring-emerald-500 custom-scrollbar"
+                                                            dir="auto"
+                                                        />
                                                     </div>
                                                 </div>
                                                 {(scene.cameraAngle || scene.action) && (

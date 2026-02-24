@@ -26,6 +26,8 @@ export default function MarketIntelligenceHub({
     // Smart Mode State
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [results, setResults] = useState<any>(null);
+    const [editableTrends, setEditableTrends] = useState<string>('');
+    const [editableStrategy, setEditableStrategy] = useState<string>('');
 
     const runSmartAnalysis = async () => {
         setIsAnalyzing(true);
@@ -37,6 +39,8 @@ export default function MarketIntelligenceHub({
 
         if (result.success) {
             setResults(result.data);
+            setEditableTrends((result.data.trends || []).join('\n'));
+            setEditableStrategy(result.data.strategy || result.data.categoryAnalysis || '');
             updateData({
                 marketTrends: result.data.trends,
                 categoryAnalysis: result.data.categoryAnalysis
@@ -47,6 +51,11 @@ export default function MarketIntelligenceHub({
     };
 
     const handleNextPhase = () => {
+        // Save the edited texts back to Context
+        updateData({
+            marketTrends: editableTrends.split('\n').filter(t => t.trim() !== ''),
+            categoryAnalysis: editableStrategy
+        });
         setView('campaign_builder_hub');
     };
 
@@ -173,21 +182,30 @@ export default function MarketIntelligenceHub({
                         <div className="bg-gray-900 p-5 rounded-xl border border-gray-700 mb-6 max-h-96 overflow-y-auto custom-scrollbar">
                             {results.trends && results.trends.length > 0 && (
                                 <div className="mb-6">
-                                    <h4 className="text-emerald-400 font-bold mb-3 border-b border-gray-800 pb-2 flex items-center gap-2"><span className="text-xl">🔥</span> التريندات المرصودة:</h4>
-                                    <ul className="list-disc list-inside space-y-2 text-gray-300 text-sm">
-                                        {results.trends.map((trend: string, idx: number) => (
-                                            <li key={idx} className="leading-relaxed">{trend}</li>
-                                        ))}
-                                    </ul>
+                                    <h4 className="text-emerald-400 font-bold mb-3 border-b border-gray-800 pb-2 flex items-center justify-between">
+                                        <span className="flex items-center gap-2"><span className="text-xl">🔥</span> التريندات المرصودة (قابلة للتعديل):</span>
+                                        <span className="text-xs text-gray-500 font-normal">يمكنك تعديل التريندات قبل الإرسال</span>
+                                    </h4>
+                                    <textarea
+                                        value={editableTrends}
+                                        onChange={(e) => setEditableTrends(e.target.value)}
+                                        className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-emerald-500 min-h-[150px] leading-relaxed"
+                                        dir="auto"
+                                    />
                                 </div>
                             )}
 
                             {results.strategy && (
                                 <div>
-                                    <h4 className="text-blue-400 font-bold mb-3 border-b border-gray-800 pb-2 flex items-center gap-2"><span className="text-xl">🧠</span> تحليل واستراتيجية السوق:</h4>
-                                    <div className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap font-arabic">
-                                        {results.strategy}
-                                    </div>
+                                    <h4 className="text-blue-400 font-bold mb-3 border-b border-gray-800 pb-2 flex items-center justify-between">
+                                        <span className="flex items-center gap-2"><span className="text-xl">🧠</span> تحليل واستراتيجية السوق (قابلة للتعديل):</span>
+                                    </h4>
+                                    <textarea
+                                        value={editableStrategy}
+                                        onChange={(e) => setEditableStrategy(e.target.value)}
+                                        className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 min-h-[300px] leading-relaxed font-arabic custom-scrollbar"
+                                        dir="auto"
+                                    />
                                 </div>
                             )}
                         </div>

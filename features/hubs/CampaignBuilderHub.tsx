@@ -29,6 +29,8 @@ export default function CampaignBuilderHub({
     // Smart Mode State
     const [isBuilding, setIsBuilding] = useState(false);
     const [results, setResults] = useState<any>(null);
+    const [editableAdCopy, setEditableAdCopy] = useState<string>('');
+    const [editableSocialPosts, setEditableSocialPosts] = useState<string[]>([]);
 
     // If Smart Mode is on, we can auto-run the campaign builder when arriving here
     useEffect(() => {
@@ -45,14 +47,40 @@ export default function CampaignBuilderHub({
 
         if (result.success) {
             setResults(result.data);
+
+            if (result.data.strategy === 'performance') {
+                setEditableAdCopy(result.data.pack?.launchPack?.adCopy || '');
+            } else if (result.data.strategy === 'content') {
+                setEditableSocialPosts(Array.isArray(result.data.pack) ? result.data.pack : []);
+            }
+
             updateData({
                 adPackResults: result.data.pack,
                 // Pick the first angle automatically if available
-                selectedAngle: result.data.pack?.campaigns?.[0]?.angle || null
+                selectedAngle: result.data.pack?.creativeStrategyMatrix?.angles?.[0]?.title || result.data.pack?.campaigns?.[0]?.angle || null
             });
         }
 
         setIsBuilding(false);
+    };
+
+    const handleNextPhase = () => {
+        // Construct the angle to pass to Creative Studio depending on strategy
+        if (results?.strategy === 'performance') {
+            const updatedPack = { ...results.pack };
+            if (updatedPack.launchPack) updatedPack.launchPack.adCopy = editableAdCopy;
+
+            updateData({
+                adPackResults: updatedPack,
+                selectedAngle: `${data.selectedAngle} | النص الإعلاني: ${editableAdCopy}`
+            });
+        } else if (results?.strategy === 'content') {
+            updateData({
+                adPackResults: editableSocialPosts,
+                selectedAngle: `نشر محتوى: ${editableSocialPosts[0] || 'محتوى السوشيال ميديا'}`
+            });
+        }
+        setView('creative_studio_hub');
     };
 
     if (isAdvanced && internalView !== 'hub') {
@@ -165,23 +193,37 @@ export default function CampaignBuilderHub({
 
                                         {results.pack.launchPack?.adCopy && (
                                             <div className="mt-6">
-                                                <h4 className="text-purple-400 font-bold mb-3 border-b border-gray-700 pb-2 flex items-center gap-2">📝 نص الإعلان المقترح:</h4>
-                                                <div className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap font-arabic">
-                                                    {results.pack.launchPack.adCopy}
-                                                </div>
+                                                <h4 className="text-purple-400 font-bold mb-3 border-b border-gray-700 pb-2 flex items-center justify-between">
+                                                    <span className="flex items-center gap-2"><span className="text-xl">📝</span> نص الإعلان المقترح (قابل للتعديل):</span>
+                                                </h4>
+                                                <textarea
+                                                    value={editableAdCopy}
+                                                    onChange={(e) => setEditableAdCopy(e.target.value)}
+                                                    className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-purple-500 min-h-[250px] leading-relaxed font-arabic"
+                                                    dir="auto"
+                                                />
                                             </div>
                                         )}
                                     </div>
                                 )}
 
-                                {results.strategy === 'content' && Array.isArray(results.pack) && (
+                                {results.strategy === 'content' && editableSocialPosts.length > 0 && (
                                     <div>
-                                        <h4 className="text-blue-400 font-bold mb-3 border-b border-gray-700 pb-2 flex items-center gap-2">📅 خطة المحتوى (7 أيام):</h4>
+                                        <h4 className="text-blue-400 font-bold mb-3 border-b border-gray-700 pb-2 flex items-center gap-2">📅 خطة المحتوى (قابلة للتعديل):</h4>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {results.pack.map((post: string, idx: number) => (
+                                            {editableSocialPosts.map((post: string, idx: number) => (
                                                 <div key={idx} className="bg-gray-900 p-4 rounded-lg border border-gray-700">
                                                     <div className="text-blue-400 font-bold mb-2">اليوم {idx + 1}</div>
-                                                    <div className="text-gray-300 text-sm whitespace-pre-wrap font-arabic">{post}</div>
+                                                    <textarea
+                                                        value={post}
+                                                        onChange={(e) => {
+                                                            const arr = [...editableSocialPosts];
+                                                            arr[idx] = e.target.value;
+                                                            setEditableSocialPosts(arr);
+                                                        }}
+                                                        className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 min-h-[120px] leading-relaxed font-arabic text-sm"
+                                                        dir="auto"
+                                                    />
                                                 </div>
                                             ))}
                                         </div>
@@ -191,10 +233,10 @@ export default function CampaignBuilderHub({
                         </div>
 
                         <button
-                            onClick={() => setView('creative_studio_hub')}
-                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all text-lg"
+                            onClick={handleNextPhase}
+                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all text-lg flex items-center justify-center gap-2"
                         >
-                            إرسال الزاوية الفائزة لـ استوديو الفيديو والتصميم (Creative Studio) ➡️
+                            <span className="text-xl">➡️</span>  إرسال الزاوية والنصوص لـ استوديو الإخراج (Creative Studio)
                         </button>
                     </div>
                 )}
