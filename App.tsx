@@ -45,6 +45,7 @@ import { ProductIntelligenceProvider } from './context/ProductIntelligenceContex
 import MarketIntelligenceHub from './features/hubs/MarketIntelligenceHub';
 import CampaignBuilderHub from './features/hubs/CampaignBuilderHub';
 import CreativeStudioHub from './features/hubs/CreativeStudioHub';
+import OnboardingModal, { shouldShowOnboarding } from './components/OnboardingModal';
 
 const LOGO_IMAGE_URL = "https://i.ibb.co/MDrpHPzS/Artboard-1.png";
 
@@ -55,6 +56,7 @@ export default function App() {
   const [activeScriptContext, setActiveScriptContext] = useState('');
   const [session, setSession] = useState<any>(null);
   const [isGuest, setIsGuest] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -166,9 +168,19 @@ export default function App() {
     }
   ];
 
+  // Show onboarding for first-time users when they log in
+  useEffect(() => {
+    if (userId && shouldShowOnboarding()) {
+      setShowOnboarding(true);
+    }
+  }, [userId]);
+
   return (
     <ProductIntelligenceProvider>
       <div className="min-h-screen w-full flex flex-col items-center bg-black text-white font-sans overflow-x-hidden selection:bg-yellow-500/30">
+        {/* Onboarding overlay — shows once for first-time users */}
+        {showOnboarding && <OnboardingModal onClose={() => setShowOnboarding(false)} />}
+
         <nav className="sticky top-0 z-[100] w-full backdrop-blur-xl bg-black/80 border-b border-white/5">
           <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
             <div className="flex items-center gap-3 cursor-pointer group" onClick={() => { setView('dashboard'); setIsMenuOpen(false); }}>
