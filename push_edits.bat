@@ -1,30 +1,31 @@
 @echo off
 echo ===================================================
-echo   Sellfast AI - UX Polish Batch 3: Progress Steps
+echo   Sellfast AI - UX Polish Batch 4: Demo Section
 echo ===================================================
 echo.
 echo Changes in this batch:
-echo  [+] NEW AIProgressSteps component - replaces generic spinner
-echo       Blue  - مركز ذكاء السوق (5 named steps)
-echo       Purple - مصنع الحملات (4 named steps)
-echo       Green  - الاستوديو الإبداعي (4 named steps)
-echo       Includes: live progress bar, step icons, bouncing dots
+echo  [+] Demo Section on Landing Page (before subscribing)
+echo       Tab 1: تحليل المنتج - audience, USP, positioning cards
+echo       Tab 2: الحملة الإعلانية - angles + full Arabic ad copy
+echo       Tab 3: السيناريو المرئي - 4-scene storyboard with dialogues
+echo       Product: كبسولات كيتو سليم (real-looking Arabic output)
+echo       CTA: "جرّب الآن مجاناً" button
 echo.
+echo  [+] AIProgressSteps component (named steps + progress bar)
 echo  [+] Onboarding 3-step guide (shows once per device)
-echo  [FIX] Hub titles fully translated to Arabic
-echo  [FIX] Pricing plans show real deliverables
-echo  [FIX] Product Analysis as primary output
-echo  [FIX] [object Object] trends bug resolved
+echo  [FIX] Hub titles translated to Arabic
+echo  [FIX] Pricing plan descriptions in real deliverables
+echo  [FIX] Product Analysis as primary output in Market Hub
 echo.
 cd /d "%~dp0"
 git add .
-git commit -m "ux: ai progress steps + onboarding + arabic titles + credits clarity"
+git commit -m "ux: demo section + progress steps + onboarding + arabic ux fixes"
 git push origin main
 
 echo.
 if %ERRORLEVEL% EQU 0 (
     echo SUCCESS! Vercel deploying...
-    echo Users will now see step-by-step progress instead of a generic spinner!
+    echo Visitors can now see real outputs BEFORE subscribing!
 ) else (
     echo Error - check above.
 )

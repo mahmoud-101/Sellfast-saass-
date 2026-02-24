@@ -1,4 +1,5 @@
 import React from 'react';
+import DemoSection from './DemoSection';
 
 const ArrowLeftIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -82,6 +83,11 @@ const LandingPage: React.FC<{ onGetStarted: () => void }> = ({ onGetStarted }) =
                             </div>
                         ))}
                     </div>
+                </section>
+
+                {/* ── DEMO SECTION ── */}
+                <section className="w-full max-w-7xl mx-auto px-6 py-24">
+                    <DemoSection onGetStarted={onGetStarted} />
                 </section>
 
                 <div className="h-32"></div>
