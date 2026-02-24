@@ -147,7 +147,47 @@ export default function CampaignBuilderHub({
 
                         <div className="bg-gray-900 p-6 rounded-xl border border-gray-700 mb-6">
                             <div className="text-sm text-gray-500 mb-1">الزاوية المختارة تلقائياً لدخول الاستوديو:</div>
-                            <div className="text-xl font-bold text-white">{data.selectedAngle || "لا يوجد"}</div>
+                            <div className="text-xl font-bold text-white mb-4">{data.selectedAngle || "لا يوجد"}</div>
+
+                            {/* Display Display Generated Campaign Output */}
+                            <div className="mt-4 p-4 bg-gray-800 rounded-lg max-h-96 overflow-y-auto custom-scrollbar">
+                                {results.strategy === 'performance' && results.pack?.creativeStrategyMatrix?.angles && (
+                                    <div>
+                                        <h4 className="text-purple-400 font-bold mb-3 border-b border-gray-700 pb-2 flex items-center gap-2">🎯 جميع الزوايا البيعية:</h4>
+                                        <div className="space-y-4">
+                                            {results.pack.creativeStrategyMatrix.angles.map((angle: any, idx: number) => (
+                                                <div key={idx} className="bg-gray-900 p-3 rounded-lg border border-gray-700">
+                                                    <div className="font-bold text-emerald-400 mb-1">{angle.title}</div>
+                                                    <div className="text-gray-300 text-sm">{angle.trigger}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {results.pack.launchPack?.adCopy && (
+                                            <div className="mt-6">
+                                                <h4 className="text-purple-400 font-bold mb-3 border-b border-gray-700 pb-2 flex items-center gap-2">📝 نص الإعلان المقترح:</h4>
+                                                <div className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap font-arabic">
+                                                    {results.pack.launchPack.adCopy}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {results.strategy === 'content' && Array.isArray(results.pack) && (
+                                    <div>
+                                        <h4 className="text-blue-400 font-bold mb-3 border-b border-gray-700 pb-2 flex items-center gap-2">📅 خطة المحتوى (7 أيام):</h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {results.pack.map((post: string, idx: number) => (
+                                                <div key={idx} className="bg-gray-900 p-4 rounded-lg border border-gray-700">
+                                                    <div className="text-blue-400 font-bold mb-2">اليوم {idx + 1}</div>
+                                                    <div className="text-gray-300 text-sm whitespace-pre-wrap font-arabic">{post}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         <button

@@ -169,6 +169,29 @@ export default function MarketIntelligenceHub({
                             </div>
                         </div>
 
+                        {/* Display Actual Generated Content Here */}
+                        <div className="bg-gray-900 p-5 rounded-xl border border-gray-700 mb-6 max-h-96 overflow-y-auto custom-scrollbar">
+                            {results.trends && results.trends.length > 0 && (
+                                <div className="mb-6">
+                                    <h4 className="text-emerald-400 font-bold mb-3 border-b border-gray-800 pb-2 flex items-center gap-2"><span className="text-xl">🔥</span> التريندات المرصودة:</h4>
+                                    <ul className="list-disc list-inside space-y-2 text-gray-300 text-sm">
+                                        {results.trends.map((trend: string, idx: number) => (
+                                            <li key={idx} className="leading-relaxed">{trend}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {results.strategy && (
+                                <div>
+                                    <h4 className="text-blue-400 font-bold mb-3 border-b border-gray-800 pb-2 flex items-center gap-2"><span className="text-xl">🧠</span> تحليل واستراتيجية السوق:</h4>
+                                    <div className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap font-arabic">
+                                        {results.strategy}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
                         <button
                             onClick={handleNextPhase}
                             className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all text-lg"

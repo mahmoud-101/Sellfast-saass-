@@ -126,6 +126,42 @@ export default function CreativeStudioHub({
                         <h3 className="text-2xl font-bold text-emerald-400 mb-4">المعلّم المرئي جاهز! 🎬</h3>
                         <p className="text-gray-300 mb-6">النظام أنشأ السيناريوهات المرئية والستوري بورد كاملة للزاوية المختارة. يمكنك تصفحها الآن أو الانتقال للمكتبة.</p>
 
+                        {/* Display Actual Generated Content Here */}
+                        <div className="bg-gray-900 p-5 rounded-xl border border-gray-700 mb-6 max-h-[600px] overflow-y-auto custom-scrollbar">
+                            {results.storyboard && Array.isArray(results.storyboard) && results.storyboard.length > 0 && (
+                                <div>
+                                    <h4 className="text-emerald-400 font-bold mb-4 border-b border-gray-800 pb-2 flex items-center gap-2">
+                                        <span className="text-xl">🎞️</span> السيناريو والمشاهد (Storyboard):
+                                    </h4>
+                                    <div className="space-y-6">
+                                        {results.storyboard.map((scene: any, idx: number) => (
+                                            <div key={idx} className="bg-gray-800 p-4 rounded-xl border border-gray-700 relative overflow-hidden">
+                                                <div className="absolute top-0 right-0 bg-emerald-600/20 text-emerald-400 px-3 py-1 rounded-bl-lg text-sm font-bold border-b border-l border-emerald-500/30">
+                                                    مشهد {idx + 1}
+                                                </div>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                                    <div>
+                                                        <div className="text-sm text-gray-400 mb-1">الوصف البصري</div>
+                                                        <div className="text-white bg-gray-900 p-3 rounded-lg text-sm leading-relaxed">{scene.description || scene.visualPrompt}</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-sm text-gray-400 mb-1">التعليق الصوتي / الحوار</div>
+                                                        <div className="text-cyan-300 bg-gray-900 p-3 rounded-lg text-sm leading-relaxed font-arabic">"{scene.dialogue || scene.text || 'بدون حوار'}"</div>
+                                                    </div>
+                                                </div>
+                                                {(scene.cameraAngle || scene.action) && (
+                                                    <div className="mt-3 bg-gray-900/50 p-2 rounded-lg inline-block border border-gray-700">
+                                                        <span className="text-xs text-gray-500 mr-2">ملاحظات الإخراج:</span>
+                                                        <span className="text-xs text-gray-300">{scene.cameraAngle || scene.action}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
                         <div className="grid grid-cols-2 gap-4 mb-6">
                             <button onClick={() => setInternalView('storyboard')} className="bg-gray-900 border border-gray-700 hover:border-emerald-500 p-4 rounded-xl transition-all">
                                 <div className="text-3xl mb-1">🎞️</div>
