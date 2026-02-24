@@ -29,7 +29,7 @@ export type AppView =
   | 'branding_mockups' | 'strategy_engine' | 'trend_engine' | 'brand_kit' | 'pricing'
   | 'library' | 'auth' | 'suite_view' | 'power' | 'ads_studio' | 'faq' | 'privacy_policy' | 'terms_of_service'
   | 'production_factory' | 'ugc_studio' | 'admin' | 'performance_studio' | 'content_library' | 'storyboard_studio'
-  | 'market_intelligence_hub' | 'campaign_builder_hub' | 'creative_studio_hub';
+  | 'market_intelligence_hub' | 'campaign_builder_hub' | 'creative_studio_hub' | 'launch_brief_hub';
 
 export interface EliteChatMessage {
   role: 'user' | 'bot';
@@ -410,6 +410,22 @@ export interface PerformanceStudioProject extends ProjectBase {
       image?: string;
     }[];
   } | null;
+  error: string | null;
+}
+
+export interface ProductionFactoryProject extends ProjectBase {
+  activeCampaignId: string | null;
+  jobs: VideoJob[];
+  isGenerating: boolean;
+  error: string | null;
+}
+
+export interface VoiceStudioProject extends ProjectBase {
+  text: string;
+  voiceId: string;
+  dialect: string;
+  isGenerating: boolean;
+  resultAudioUrl: string | null;
   error: string | null;
 }
 

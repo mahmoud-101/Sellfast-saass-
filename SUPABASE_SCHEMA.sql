@@ -199,6 +199,12 @@ CREATE TABLE IF NOT EXISTS public.campaigns (
   sales_angles jsonb, -- The 6 strategy angles
   photoshoot_brief jsonb, -- Poses, backgrounds, props
   
+  -- Versioning & Multi-Engine Meta (New)
+  version integer default 1,
+  status text default 'draft' check (status in ('draft', 'final', 'active')),
+  parent_id uuid references public.campaigns(id) on delete set null,
+  original_analysis jsonb, -- Stores targeting, strategicDepth, and launchCaptions (Super-Intelligence)
+  
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 

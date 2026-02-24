@@ -6,6 +6,8 @@ import {
     fetchCurrentTrends,
     generateImage
 } from '../services/geminiService';
+import { askPerplexityJSON } from '../services/perplexityService';
+import { getCinematicMotionPrompt, runGrokStrategy } from '../services/xaiService';
 
 export type OrchestrationMode = 'Quick' | 'Advanced' | 'Full';
 
@@ -62,7 +64,7 @@ export class CampaignOrchestrator {
      */
     static async runMarketIntelligence(context: ProductIntelligenceData): Promise<OrchestrationResult> {
         try {
-            // Run BOTH in parallel: product analysis (primary) + trends (secondary)
+            // Run BOTH in parallel: product analysis (primary) + Real-time trends (Perplexity)
             const [productAnalysis, trends] = await Promise.allSettled([
                 // PRIMARY: Deep structured product analysis based on user inputs
                 askGemini(
@@ -90,8 +92,12 @@ export class CampaignOrchestrator {
 JSON فقط بدون markdown.`,
                     "أنت محلل تسويق متمرس متخصص في منتجات التجارة الإلكترونية العربية."
                 ),
-                // SECONDARY: Fetch live trends (don't block if it fails)
-                fetchCurrentTrends(context.targetMarket, context.productName)
+                // SECONDARY: Fetch REAL-TIME trends using Perplexity
+                askPerplexityJSON(
+                    `What are the currently trending marketing topics and hashtags on social media for ${context.productName} in the ${context.targetMarket} market? 
+                    Return an array of objects: [{"name": "trend name", "relevance": "why it matters", "hashtags": ["#h1", "#h2"]}]`,
+                    "You are a real-time market research expert."
+                )
             ]);
 
             // Resilient Parsing
@@ -207,29 +213,24 @@ JSON فقط بدون markdown.`;
                     'أنت كاتب سكريبت محترف لإعلانات السوشيال ميديا العربية.'
                 ),
 
-                // ── 2. SHOT LIST: Technical directions (not story scenes) ─────────
+                // ── 2. SHOT LIST: Technical directions with CINEMATIC motion (X.ai) ─────────
                 askGemini(
                     `أنت مخرج فيديو محترف متخصص في إعلانات الريلز العمودية (9:16) للأسواق العربية.
-
-اكتب قائمة لقطات تقنية (Shot List) لإعلان ريلز عن:
-المنتج: ${product}
-الزاوية: ${angle}
-المدة الكلية: 30-45 ثانية
+اكتب قائمة لقطات تقنية (Shot List) لمنتج: ${product} بالزاوية: ${angle}.
 
 أعطني JSON array بالضبط (8-10 لقطات):
 [
   {
     "shotNumber": 1,
     "duration": "3 ثواني",
-    "shotType": "Close-up / Wide / Medium / Macro / Over-shoulder",
-    "action": "وصف دقيق لما يحدث في اللقطة من زاوية المخرج",
-    "textOnScreen": "النص أو التايتل اللي يظهر على الشاشة (فاضي لو مفيش)",
-    "technicalNote": "ملاحظة تقنية: الإضاءة، اللون، السرعة، التأثير"
+    "shotType": "Z-Axis Zoom / Pan / Dolly / Crane",
+    "action": "وصف دقيق لما يحدث",
+    "textOnScreen": "Text",
+    "technicalNote": "Cinematic AI motion prompt (English)",
+    "motionPrompt": "Elite cine-prompt"
   }
-]
-
-JSON فقط بدون markdown.`,
-                    'أنت مخرج فيديو محترف متخصص في إعلانات رقمية للأسواق العربية.'
+]`,
+                    'أنت مخرج فيديو محترف يستخدم تقنيات التصوير السينمائي.'
                 )
             ]);
 
@@ -391,5 +392,48 @@ JSON: {"concept":"الفكرة البصرية","backgrounds":["خلفية 1","خ
                 photoshootBrief: photoshootWithImage,
             }
         };
+    }
+
+    /**
+     * Run the Launch Strategy phase (Perplexity + Grok + Gemini).
+     * Returns: Targeting suggestions, captions, and platform-specific metadata.
+     */
+    static async runLaunchBrief(context: ProductIntelligenceData): Promise<OrchestrationResult> {
+        try {
+            const [realTimeTargeting, strategyGrok] = await Promise.allSettled([
+                // 1. Perplexity: Live targeting interests
+                askPerplexityJSON(
+                    `Find current high-interest targeting groups on Meta and TikTok Ads for ${context.productName} in ${context.targetMarket}. 
+                    Suggest specific interest keywords, behaviors, and demographics. 
+                    Format: {"meta": {"interests": []}, "tiktok": {"interests": []}}`,
+                    "You are a performance marketing researcher."
+                ),
+                // 2. Grok: Strategic depth
+                runGrokStrategy(context.productDescription, context.targetMarket, context.dialect)
+            ]);
+
+            const targeting = realTimeTargeting.status === 'fulfilled' ? realTimeTargeting.value : {};
+            const strategicDepth = strategyGrok.status === 'fulfilled' ? strategyGrok.value : {};
+
+            // 3. Gemini: Finalize captions based on above info
+            const captions = await askGemini(
+                `Create 3 high-converting captions for Instagram/TikTok for this product: ${context.productName}. 
+                Dialect: ${context.dialect}. 
+                Use these targeting insights: ${JSON.stringify(targeting)}.
+                JSON array: [{"platform": "Instagram", "text": "...", "hashtags": []}]`,
+                "You are an expert Arabic social media copywriter."
+            );
+
+            return {
+                success: true,
+                data: {
+                    targeting,
+                    strategicDepth,
+                    launchCaptions: this.safeJsonParse(captions, [])
+                }
+            };
+        } catch (e: any) {
+            return { success: false, message: e.message };
+        }
     }
 }

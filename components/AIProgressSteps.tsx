@@ -74,6 +74,7 @@ export default function AIProgressSteps({
         blue: { ring: 'ring-blue-500', bg: 'bg-blue-500/20', text: 'text-blue-400', bar: 'bg-blue-500' },
         purple: { ring: 'ring-purple-500', bg: 'bg-purple-500/20', text: 'text-purple-400', bar: 'bg-purple-500' },
         emerald: { ring: 'ring-emerald-500', bg: 'bg-emerald-500/20', text: 'text-emerald-400', bar: 'bg-emerald-500' },
+        orange: { ring: 'ring-orange-500', bg: 'bg-orange-500/20', text: 'text-orange-400', bar: 'bg-orange-500' },
     };
     const c = colorMap[accentColor] || colorMap.blue;
 

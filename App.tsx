@@ -45,6 +45,7 @@ import { ProductIntelligenceProvider } from './context/ProductIntelligenceContex
 import MarketIntelligenceHub from './features/hubs/MarketIntelligenceHub';
 import CampaignBuilderHub from './features/hubs/CampaignBuilderHub';
 import CreativeStudioHub from './features/hubs/CreativeStudioHub';
+import LaunchBriefHub from './features/hubs/LaunchBriefHub';
 import OnboardingModal, { shouldShowOnboarding } from './components/OnboardingModal';
 
 const LOGO_IMAGE_URL = "https://i.ibb.co/MDrpHPzS/Artboard-1.png";
@@ -164,6 +165,17 @@ export default function App() {
       color: 'from-emerald-500 to-teal-700',
       tools: [
         { id: 'creative_studio_hub', label: 'دخول استوديو الإبداع', icon: '🎬' }
+      ]
+    },
+    {
+      id: 'launch_brief_hub',
+      title: 'مركز التحكم والإطلاق',
+      level: 'المرحلة النهائية',
+      desc: 'تجهيز بيانات الاستهداف، الهاشتاجات التريند، وتوليد التعليق الصوتي لإطلاق حملتك فوراً.',
+      icon: '🚀',
+      color: 'from-orange-500 to-red-600',
+      tools: [
+        { id: 'launch_brief_hub', label: 'دخول غرفة التحكم والإطلاق', icon: '🎯' }
       ]
     }
   ];
@@ -365,16 +377,27 @@ export default function App() {
             />
           )}
 
-          {view === 'creative_studio_hub' && userId && (
-            <CreativeStudioHub
-              setView={setView}
-              userId={userId}
-              storyboardProject={storyboardProject} setStoryboardProject={setStoryboardProject}
-              bridgeToVideo={bridgeToVideo}
-              ugcProject={ugcProject} setUgcProject={setUgcProject}
-              photoshootProject={photoshootProject} setPhotoshootProject={setPhotoshootProject}
-            />
-          )}
+          {
+            view === 'creative_studio_hub' && userId && (
+              <CreativeStudioHub
+                setView={setView}
+                userId={userId}
+                storyboardProject={storyboardProject} setStoryboardProject={setStoryboardProject}
+                bridgeToVideo={bridgeToVideo}
+                ugcProject={ugcProject} setUgcProject={setUgcProject}
+                photoshootProject={photoshootProject} setPhotoshootProject={setPhotoshootProject}
+              />
+            )
+          }
+
+          {
+            view === 'launch_brief_hub' && userId && (
+              <LaunchBriefHub
+                setView={setView}
+                userId={userId}
+              />
+            )
+          }
 
           {view === 'performance_studio' && userId && (
             <AdContentFactory

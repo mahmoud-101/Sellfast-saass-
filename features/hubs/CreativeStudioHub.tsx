@@ -220,7 +220,21 @@ export default function CreativeStudioHub({
                                         className="w-full bg-gray-900 border border-gray-600 rounded-xl px-4 py-3 text-white leading-loose text-base focus:ring-2 focus:ring-emerald-500 min-h-[200px]"
                                         dir="auto"
                                     />
-                                    <p className="text-xs text-emerald-500 mt-2 font-bold animate-pulse">🛠️ يمكنك التعديل مباشرة على النص أعلاه</p>
+                                    <div className="flex items-center gap-3 mt-4">
+                                        <button
+                                            onClick={() => bridgeToVideo(reelsScript)}
+                                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-xl text-sm font-black flex items-center gap-2 transition-all shadow-lg shadow-emerald-900/20"
+                                        >
+                                            🎙️ توليد التعليق الصوتي AI
+                                        </button>
+                                        <button
+                                            onClick={() => setInternalView('library')}
+                                            className="bg-gray-700 hover:bg-gray-600 text-white px-6 py-2 rounded-xl text-sm font-black transition-all"
+                                        >
+                                            📁 حفظ للمراجعة
+                                        </button>
+                                    </div>
+                                    <p className="text-xs text-emerald-500 mt-2 font-bold animate-pulse">🛠️ يمكنك التعديل مباشرة على النص أو توليد الصوت فوراً</p>
                                 </div>
                             )}
 
@@ -312,7 +326,21 @@ export default function CreativeStudioHub({
                                         className="w-full bg-gray-900 border border-gray-600 rounded-xl px-4 py-3 text-white leading-loose min-h-[220px] focus:ring-2 focus:ring-yellow-500"
                                         dir="auto"
                                     />
-                                    <p className="text-xs text-yellow-500 mt-2 font-bold animate-pulse">🛠️ سكريبت الـ UGC جاهز للتعديل</p>
+                                    <div className="flex items-center gap-3 mt-4">
+                                        <button
+                                            onClick={() => bridgeToVideo(ugcScript)}
+                                            className="bg-yellow-600 hover:bg-yellow-700 text-black px-6 py-2 rounded-xl text-sm font-black flex items-center gap-2 transition-all shadow-lg shadow-yellow-900/20"
+                                        >
+                                            🎙️ توليد صوت المؤثر (AI)
+                                        </button>
+                                        <button
+                                            onClick={() => setInternalView('library')}
+                                            className="bg-gray-700 hover:bg-gray-600 text-white px-6 py-2 rounded-xl text-sm font-black transition-all"
+                                        >
+                                            📁 حفظ في المكتبة
+                                        </button>
+                                    </div>
+                                    <p className="text-xs text-yellow-500 mt-2 font-bold animate-pulse">🛠️ سكريبت الـ UGC جاهز للإرسال للاستوديو</p>
                                 </div>
                             )}
 

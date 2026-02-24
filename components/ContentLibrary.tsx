@@ -210,7 +210,7 @@ export function ContentLibrary({ userId }: ContentLibraryProps) {
                                             <div key={i} className="bg-black/40 p-4 rounded-2xl border border-white/5">
                                                 <div className="flex justify-between items-center mb-2">
                                                     <span className="w-6 h-6 bg-blue-500/20 text-blue-400 font-bold text-[10px] flex items-center justify-center rounded-md">{i + 1}</span>
-                                                    <span className="text-[10px] text-slate-500">{shot.shotType}</span>
+                                                    <span className="text-[10px] text-slate-500 uppercase">{shot.shotType}</span>
                                                 </div>
                                                 {shot.imageUrl && (
                                                     <div className="w-full h-32 rounded-xl overflow-hidden mb-3 border border-blue-500/30">
@@ -218,8 +218,75 @@ export function ContentLibrary({ userId }: ContentLibraryProps) {
                                                     </div>
                                                 )}
                                                 <p className="text-xs text-white leading-relaxed">{shot.action}</p>
+                                                {shot.motionPrompt && (
+                                                    <div className="mt-2 p-2 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+                                                        <p className="text-[8px] text-purple-400 font-black uppercase tracking-widest mb-1">X.ai Cinematic Motion</p>
+                                                        <p className="text-[9px] text-slate-400 italic font-mono">{shot.motionPrompt}</p>
+                                                    </div>
+                                                )}
                                             </div>
                                         ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Super-Intelligence Section (Perplexity & Grok Data) */}
+                            {selectedCampaign.original_analysis && (
+                                <div className="space-y-6 pt-8 border-t border-white/10">
+                                    <h4 className="text-orange-400 font-black flex items-center gap-3 text-xl">
+                                        🚀 بيانات الذكاء الفائق (Super-Intelligence)
+                                    </h4>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {/* Targeting & Strategy */}
+                                        <div className="space-y-4">
+                                            <div className="p-5 bg-blue-500/5 border border-blue-500/20 rounded-3xl">
+                                                <h5 className="text-blue-400 font-black text-xs mb-3 flex items-center gap-2">🎯 استهداف المنصات (Perplexity)</h5>
+                                                <div className="space-y-3">
+                                                    <div>
+                                                        <span className="text-[10px] text-slate-500 font-bold block mb-1">Meta Interests:</span>
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {selectedCampaign.original_analysis.targeting?.meta?.interests?.map((tag: string, i: number) => (
+                                                                <span key={i} className="px-2 py-0.5 bg-blue-500/10 text-blue-300 text-[9px] rounded-md">{tag}</span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-[10px] text-slate-500 font-bold block mb-1">TikTok Keywords:</span>
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {selectedCampaign.original_analysis.targeting?.tiktok?.interests?.map((tag: string, i: number) => (
+                                                                <span key={i} className="px-2 py-0.5 bg-pink-500/10 text-pink-300 text-[9px] rounded-md">{tag}</span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="p-5 bg-orange-500/5 border border-orange-500/20 rounded-3xl">
+                                                <h5 className="text-orange-400 font-black text-xs mb-3 flex items-center gap-2">🧠 التحليل الاستراتيجي (Grok)</h5>
+                                                <p className="text-xs text-white font-bold mb-2">Persona: {selectedCampaign.original_analysis.strategicDepth?.personas?.[0]?.name}</p>
+                                                <p className="text-[10px] text-slate-400 leading-relaxed italic line-clamp-3">"{selectedCampaign.original_analysis.strategicDepth?.personas?.[0]?.lifestyle}"</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Launch Captions */}
+                                        <div className="space-y-4">
+                                            <h5 className="text-orange-400 font-black text-xs flex items-center gap-2 mr-2">✍️ نصوص الإطلاق النهائية (Gemini)</h5>
+                                            <div className="space-y-3 overflow-y-auto max-h-[300px] pr-2 custom-scrollbar">
+                                                {selectedCampaign.original_analysis.launchCaptions?.map((cap: any, i: number) => (
+                                                    <div key={i} className="p-4 bg-white/[0.03] border border-white/5 rounded-2xl">
+                                                        <div className="flex justify-between items-center mb-2">
+                                                            <span className="text-[9px] font-black text-white/40 uppercase">{cap.platform}</span>
+                                                            <button
+                                                                onClick={() => navigator.clipboard.writeText(cap.text)}
+                                                                className="text-[9px] text-[#FFD700] font-bold hover:underline"
+                                                            >نسخ</button>
+                                                        </div>
+                                                        <p className="text-[11px] text-slate-300 leading-relaxed">{cap.text}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             )}
