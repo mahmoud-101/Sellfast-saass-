@@ -33,7 +33,7 @@ export default function CreativeStudioHub({
     // Smart Mode State
     const [isGenerating, setIsGenerating] = useState(false);
     const [results, setResults] = useState<any>(null);
-    const [editableStoryboard, setEditableStoryboard] = useState<any[]>([]);
+    const [activeTab, setActiveTab] = useState<'script' | 'shots' | 'ugc' | 'photoshoot'>('script');
     const [isSaving, setIsSaving] = useState(false);
     const [savedSuccessfully, setSavedSuccessfully] = useState(false);
     const { message: loadingMessage, start: startMessages, stop: stopMessages } = useLoadingMessages(creativeStudioMessages);
@@ -49,12 +49,11 @@ export default function CreativeStudioHub({
         setIsGenerating(true);
         startMessages();
 
-        // Trigger Orchestrator to generate Video Storyboards automatically for the winning angle
-        const result = await CampaignOrchestrator.generateCreatives(data, data.selectedAngle || 'حملة إعلانية للمنتج');
+        const angle = data.selectedAngle || data.productName || 'حملة إعلانية للمنتج';
+        const result = await CampaignOrchestrator.runAllCreativeTools(data, angle);
 
         if (result.success) {
             setResults(result.data);
-            setEditableStoryboard(result.data.storyboard || []);
         }
 
         setIsGenerating(false);
@@ -62,18 +61,28 @@ export default function CreativeStudioHub({
     };
 
     const handleFinish = async () => {
-        // Save the finished campaign to Supabase before navigating to the library
-        if (editableStoryboard.length > 0 && userId && !savedSuccessfully) {
+        if (results && userId && !savedSuccessfully) {
             setIsSaving(true);
+
+            // Map the unified results to the database fields
             await saveCampaign({
                 user_id: userId,
                 product_name: data.productName || 'حملة بلا اسم',
                 campaign_goal: data.campaignGoal || '',
                 selected_angle: data.selectedAngle || '',
-                ad_copy: typeof data.adPackResults?.launchPack?.adCopy === 'string'
-                    ? data.adPackResults.launchPack.adCopy
-                    : '',
-                storyboard: editableStoryboard,
+
+                // Creative Studio Results
+                reels_script: results.reelsScript || '',
+                shots: results.shots || [],
+                photoshoot_brief: results.photoshootBrief || null,
+
+                // UGC (Available in both hubs, prioritizing Creative Studio's output)
+                ugc_script: results.ugcScript || '',
+
+                // Note: Performance ads, hooks, and angles are typically generated in 
+                // the Campaign Builder phase. We could either pass them here or 
+                // expect them to be in the 'data' context if we stored them there.
+                // For now, we save what was generated in this hub.
             });
             setSavedSuccessfully(true);
             setIsSaving(false);
@@ -82,6 +91,7 @@ export default function CreativeStudioHub({
         setInternalView('library');
     };
 
+    // Advanced tool mode - show internal tool
     if (isAdvanced && internalView !== 'hub') {
         return (
             <div className="relative">
@@ -94,156 +104,261 @@ export default function CreativeStudioHub({
         );
     }
 
+    const TABS = [
+        { id: 'script', label: '🎙️ سكريبت الريلز' },
+        { id: 'shots', label: '🎥 قائمة اللقطات' },
+        { id: 'ugc', label: '🤳 سكريبت UGC' },
+        { id: 'photoshoot', label: '📸 بريف التصوير' },
+    ] as const;
+
     return (
         <div className="w-full space-y-8 animate-in fade-in duration-500" dir="rtl">
             <div className="max-w-5xl mx-auto space-y-8">
 
-                {/* Header & Modes */}
+                {/* Header */}
                 <div className="flex justify-between items-center bg-gray-800 p-6 rounded-2xl border border-gray-700">
                     <div>
-                        <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">🎬 الاستوديو الإبداعي المرئي</h1>
-                        <p className="text-gray-400 mt-2">تحويل الزوايا التسويقية إلى محتوى مرئي قوي وجاهز للتنفيذ.</p>
+                        <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">🎬 الاستوديو الإبداعي الكامل</h1>
+                        <p className="text-gray-400 mt-2">سكريبت ريلز + لقطات تقنية + UGC + بريف تصوير — كلها دفعة واحدة.</p>
                     </div>
-                    <div className="flex gap-4">
-                        {/* Hidden toggle for power users */}
-                        <label className="flex items-center gap-2 cursor-pointer opacity-50 hover:opacity-100 transition-opacity">
-                            <input
-                                type="checkbox"
-                                checked={isAdvanced}
-                                onChange={(e) => setIsAdvanced(e.target.checked)}
-                                className="w-4 h-4 text-emerald-500 bg-gray-700 border-gray-600 rounded focus:ring-emerald-600 focus:ring-2"
-                            />
-                            <span className="text-xs select-none">أدوات الخبراء</span>
-                        </label>
-                    </div>
+                    <label className="flex items-center gap-2 cursor-pointer opacity-50 hover:opacity-100 transition-opacity">
+                        <input type="checkbox" checked={isAdvanced} onChange={(e) => setIsAdvanced(e.target.checked)} className="w-4 h-4 text-emerald-500 bg-gray-700 border-gray-600 rounded" />
+                        <span className="text-xs select-none">أدوات الخبراء</span>
+                    </label>
                 </div>
 
-                {/* Global Context Viewer */}
-                <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700 space-y-4">
-                    <h2 className="text-xl font-semibold mb-2">استكمال إنتاج المحتوى</h2>
-                    {data.selectedAngle ? (
-                        <div className="bg-emerald-900/30 border border-emerald-500/30 p-4 rounded-xl">
-                            <span className="text-gray-400 text-sm block mb-1">يتم الآن إنتاج محتوى بناءً على زاوية:</span>
-                            <span className="font-bold text-lg text-emerald-300">{data.selectedAngle}</span>
+                {/* Info + Run Button */}
+                <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700">
+                    <div className="flex items-center gap-4 mb-4">
+                        <div className="bg-emerald-900/30 border border-emerald-500/30 px-4 py-2 rounded-xl text-sm">
+                            <span className="text-gray-400">الزاوية التسويقية: </span>
+                            <span className="text-emerald-400 font-bold">{data.selectedAngle || data.productName || 'غير محدد'}</span>
                         </div>
-                    ) : (
-                        <p className="text-gray-400">لم يتم اختيار زاوية تسويقية بعد أو المنتج غير محدد. يرجى تمرير زاوية من Campaign Builder لإخراج المحتوى تلقائياً.</p>
-                    )}
-
-                    <div className="pt-4 flex flex-col gap-4">
-                        <button
-                            onClick={runCreativeStudio}
-                            disabled={isGenerating || !data.selectedAngle}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-xl transition-all disabled:opacity-50 flex items-center gap-2 self-end"
-                        >
-                            {isGenerating ? (
-                                <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> جاري الإخراج...</>
-                            ) : (
-                                <>🎬 ابدأ إخراج المحتوى المرئي</>
-                            )}
-                        </button>
-                        {isGenerating && (
-                            <div className="bg-gray-900 border border-emerald-500/20 rounded-2xl p-5">
-                                <div className="text-sm text-emerald-400 font-bold mb-4 flex items-center gap-2">
-                                    <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-                                    يُبنى السيناريو المرئي الآن...
-                                </div>
-                                <AIProgressSteps
-                                    steps={CREATIVE_STEPS}
-                                    isActive={isGenerating}
-                                    accentColor="emerald"
-                                    message={loadingMessage}
-                                />
-                            </div>
-                        )}
                     </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                        {[
+                            { icon: '🎙️', title: 'سكريبت ريلز', desc: 'نص صوتي بالعامية' },
+                            { icon: '🎥', title: 'قائمة لقطات', desc: '8-10 لقطات تقنية' },
+                            { icon: '🤳', title: 'سكريبت UGC', desc: 'صوت مؤثر حقيقي' },
+                            { icon: '📸', title: 'بريف تصوير', desc: 'خلفيات، إكسسوارات، زوايا' },
+                        ].map((t, i) => (
+                            <div key={i} className="bg-gray-900 border border-gray-700 rounded-xl p-3 text-center">
+                                <div className="text-2xl mb-1">{t.icon}</div>
+                                <div className="text-white text-xs font-bold">{t.title}</div>
+                                <div className="text-gray-500 text-xs">{t.desc}</div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <button
+                        onClick={runCreativeStudio}
+                        disabled={isGenerating || (!data.productName && !data.selectedAngle)}
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-lg"
+                    >
+                        {isGenerating
+                            ? <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> جاري تشغيل كل الأدوات...</>
+                            : <>✨ شغّل الاستوديو الكامل (4 أدوات دفعة واحدة)</>
+                        }
+                    </button>
+
+                    {isGenerating && (
+                        <div className="bg-gray-900 border border-emerald-500/20 rounded-2xl p-5 mt-4">
+                            <div className="text-sm text-emerald-400 font-bold mb-4 flex items-center gap-2">
+                                <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                                الذكاء الاصطناعي يشغّل 4 أدوات إبداعية تلقائياً...
+                            </div>
+                            <AIProgressSteps steps={CREATIVE_STEPS} isActive={isGenerating} accentColor="emerald" message={loadingMessage} />
+                        </div>
+                    )}
                 </div>
 
-                {/* Results Area */}
+                {/* ── Results Area — Tabbed Panel ── */}
                 {results && (
-                    <div className="space-y-6 animate-fade-in-up">
+                    <div className="space-y-4 animate-fade-in-up">
 
                         {/* Success banner */}
                         <div className="bg-emerald-900/20 border border-emerald-500/30 p-5 rounded-2xl flex items-center gap-4">
                             <div className="text-4xl">🎬</div>
                             <div>
-                                <h3 className="text-xl font-bold text-emerald-400">السكريبت واللقطات جاهزة!</h3>
-                                <p className="text-gray-400 text-sm mt-1">تم توليد سكريبت ريلز كامل وقائمة لقطات تقنية جاهزة للتصوير.</p>
+                                <h3 className="text-xl font-bold text-emerald-400">الاستوديو الكامل جاهز!</h3>
+                                <p className="text-gray-400 text-sm mt-1">4 أدوات إبداعية اشتغلت تلقائياً — تصفح كل واحدة من التابات.</p>
                             </div>
                         </div>
 
-                        {/* ── REELS SCRIPT ── */}
-                        {results.reelsScript && (
-                            <div className="bg-gray-800 border border-gray-700 rounded-2xl overflow-hidden">
-                                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-xl">🎙️</span>
-                                        <h4 className="text-emerald-400 font-bold">سكريبت الريلز — النص الصوتي الكامل</h4>
-                                    </div>
-                                    <button
-                                        onClick={() => navigator.clipboard.writeText(results.reelsScript)}
-                                        className="text-xs text-gray-400 hover:text-white bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded-lg transition-all"
-                                    >
-                                        📋 نسخ السكريبت
-                                    </button>
-                                </div>
+                        {/* Tab bar */}
+                        <div className="flex gap-2 overflow-x-auto pb-1">
+                            {TABS.map(t => (
+                                <button
+                                    key={t.id}
+                                    onClick={() => setActiveTab(t.id)}
+                                    className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${activeTab === t.id ? 'bg-emerald-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white border border-gray-700'}`}
+                                >
+                                    {t.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Tab content */}
+                        <div className="bg-gray-800 border border-gray-700 rounded-2xl overflow-hidden">
+
+                            {/* ── سكريبت الريلز ── */}
+                            {activeTab === 'script' && (
                                 <div className="p-5">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <h4 className="text-emerald-400 font-bold flex items-center gap-2">
+                                            <span>🎙️</span> سكريبت الريلز — النص الصوتي الكامل
+                                        </h4>
+                                        <button onClick={() => navigator.clipboard.writeText(results.reelsScript || '')} className="text-xs text-gray-400 hover:text-white bg-gray-700 px-3 py-1.5 rounded-lg">📋 نسخ</button>
+                                    </div>
                                     <textarea
-                                        value={results.reelsScript}
+                                        value={results.reelsScript || ''}
                                         onChange={(e) => setResults((prev: any) => ({ ...prev, reelsScript: e.target.value }))}
-                                        className="w-full bg-gray-900 border border-gray-600 rounded-xl px-4 py-3 text-white leading-loose text-base focus:ring-2 focus:ring-emerald-500 min-h-[180px]"
+                                        className="w-full bg-gray-900 border border-gray-600 rounded-xl px-4 py-3 text-white leading-loose text-base focus:ring-2 focus:ring-emerald-500 min-h-[200px]"
                                         dir="auto"
                                     />
-                                    <p className="text-xs text-gray-500 mt-2">* النص قابل للتعديل — عدّل عليه كما تشاء قبل التصوير</p>
+                                    <p className="text-xs text-gray-500 mt-2">قابل للتعديل — عدّل قبل التصوير</p>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        {/* ── SHOT LIST ── */}
-                        {results.shots && results.shots.length > 0 && (
-                            <div className="bg-gray-800 border border-gray-700 rounded-2xl overflow-hidden">
-                                <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-700">
-                                    <span className="text-xl">🎥</span>
-                                    <h4 className="text-white font-bold">قائمة اللقطات التقنية ({results.shots.length} لقطة)</h4>
-                                    <span className="text-xs text-gray-500 mr-auto">جاهزة للتصوير المباشر</span>
+                            {/* ── قائمة اللقطات ── */}
+                            {activeTab === 'shots' && (
+                                <div className="p-5">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <span className="text-xl">🎥</span>
+                                        <h4 className="text-white font-bold">قائمة اللقطات التقنية ({Array.isArray(results.shots) ? results.shots.length : 0} لقطة)</h4>
+                                        <span className="text-xs text-gray-500 mr-auto">جاهزة للتصوير المباشر</span>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {Array.isArray(results.shots) ? results.shots.map((shot: any, idx: number) => (
+                                            <div key={idx} className="bg-gray-900 border border-gray-700 rounded-xl p-4">
+                                                <div className="flex items-center gap-3 mb-3 flex-wrap">
+                                                    <span className="w-7 h-7 bg-emerald-600/20 border border-emerald-500/30 rounded-lg flex items-center justify-center text-emerald-400 font-black text-sm shrink-0">
+                                                        {shot.shotNumber || idx + 1}
+                                                    </span>
+                                                    <span className="bg-blue-900/40 border border-blue-500/30 text-blue-300 text-xs px-2.5 py-1 rounded-lg font-bold">{shot.shotType || 'Medium'}</span>
+                                                    {shot.duration && <span className="bg-gray-700 text-gray-300 text-xs px-2.5 py-1 rounded-lg">⏱ {shot.duration}</span>}
+                                                </div>
+                                                <div className="space-y-2 text-sm">
+                                                    {shot.action && (
+                                                        <div>
+                                                            <span className="text-gray-500 text-xs block mb-0.5">الحركة والأكشن:</span>
+                                                            <p className="text-gray-200 leading-relaxed" dir="auto">{shot.action}</p>
+                                                        </div>
+                                                    )}
+                                                    {shot.textOnScreen && (
+                                                        <div className="bg-yellow-900/20 border border-yellow-500/30 px-3 py-2 rounded-lg">
+                                                            <span className="text-yellow-400 text-xs font-bold block mb-0.5">📝 نص على الشاشة:</span>
+                                                            <p className="text-yellow-100 text-sm font-semibold" dir="auto">{shot.textOnScreen}</p>
+                                                        </div>
+                                                    )}
+                                                    {shot.technicalNote && (
+                                                        <div>
+                                                            <span className="text-gray-500 text-xs block mb-0.5">⚙️ ملاحظة تقنية:</span>
+                                                            <p className="text-gray-400 text-xs leading-relaxed" dir="auto">{shot.technicalNote}</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )) : (
+                                            <div className="text-gray-300 whitespace-pre-wrap text-sm leading-relaxed p-3 bg-gray-900 rounded-xl" dir="auto">
+                                                {typeof results.shots === 'string' ? results.shots : 'لم يتم توليد لقطات.'}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className="p-4 space-y-3">
-                                    {results.shots.map((shot: any, idx: number) => (
-                                        <div key={idx} className="bg-gray-900 border border-gray-700 rounded-xl p-4">
-                                            <div className="flex items-center gap-3 mb-3 flex-wrap">
-                                                <span className="w-7 h-7 bg-emerald-600/20 border border-emerald-500/30 rounded-lg flex items-center justify-center text-emerald-400 font-black text-sm shrink-0">
-                                                    {shot.shotNumber || idx + 1}
-                                                </span>
-                                                <span className="bg-blue-900/40 border border-blue-500/30 text-blue-300 text-xs px-2.5 py-1 rounded-lg font-bold">{shot.shotType || 'Medium'}</span>
-                                                {shot.duration && <span className="bg-gray-700 text-gray-300 text-xs px-2.5 py-1 rounded-lg">⏱ {shot.duration}</span>}
+                            )}
+
+                            {/* ── سكريبت UGC ── */}
+                            {activeTab === 'ugc' && (
+                                <div className="p-5">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <h4 className="text-yellow-400 font-bold flex items-center gap-2">
+                                            <span>🤳</span> سكريبت UGC — صوت مؤثر أمام الكاميرا
+                                        </h4>
+                                        <button onClick={() => navigator.clipboard.writeText(results.ugcScript || '')} className="text-xs text-gray-400 hover:text-white bg-gray-700 px-3 py-1.5 rounded-lg">📋 نسخ</button>
+                                    </div>
+                                    <textarea
+                                        value={results.ugcScript || ''}
+                                        onChange={(e) => setResults((prev: any) => ({ ...prev, ugcScript: e.target.value }))}
+                                        className="w-full bg-gray-900 border border-gray-600 rounded-xl px-4 py-3 text-white leading-loose min-h-[220px] focus:ring-2 focus:ring-yellow-500"
+                                        dir="auto"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-2">للاستخدام مع مؤثر حقيقي أو أفاتار AI (HeyGen, Synthesia)</p>
+                                </div>
+                            )}
+
+                            {/* ── بريف التصوير ── */}
+                            {activeTab === 'photoshoot' && (
+                                <div className="p-5">
+                                    <h4 className="text-pink-400 font-bold flex items-center gap-2 mb-4">
+                                        <span>📸</span> بريف التصوير الاحترافي
+                                    </h4>
+                                    {results.photoshootBrief && typeof results.photoshootBrief === 'object' ? (
+                                        <div className="space-y-4">
+                                            {results.photoshootBrief.concept && (
+                                                <div className="bg-gray-900 border border-gray-700 rounded-xl p-4">
+                                                    <span className="text-pink-400 font-bold text-xs block mb-1">💡 الفكرة البصرية الكاملة</span>
+                                                    <p className="text-white text-sm leading-relaxed" dir="auto">{results.photoshootBrief.concept}</p>
+                                                </div>
+                                            )}
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                {results.photoshootBrief.backgrounds && (
+                                                    <div className="bg-gray-900 border border-gray-700 rounded-xl p-4">
+                                                        <span className="text-blue-400 font-bold text-xs block mb-2">🖼️ الخلفيات</span>
+                                                        <ul className="space-y-1">{results.photoshootBrief.backgrounds.map((b: string, i: number) => (
+                                                            <li key={i} className="text-gray-300 text-sm" dir="auto">• {b}</li>
+                                                        ))}</ul>
+                                                    </div>
+                                                )}
+                                                {results.photoshootBrief.props && (
+                                                    <div className="bg-gray-900 border border-gray-700 rounded-xl p-4">
+                                                        <span className="text-yellow-400 font-bold text-xs block mb-2">🎨 الإكسسوارات</span>
+                                                        <ul className="space-y-1">{results.photoshootBrief.props.map((p: string, i: number) => (
+                                                            <li key={i} className="text-gray-300 text-sm" dir="auto">• {p}</li>
+                                                        ))}</ul>
+                                                    </div>
+                                                )}
+                                                <div className="bg-gray-900 border border-gray-700 rounded-xl p-4 space-y-2">
+                                                    {results.photoshootBrief.colors && (
+                                                        <div>
+                                                            <span className="text-purple-400 font-bold text-xs block mb-1">🎨 لوحة الألوان</span>
+                                                            <p className="text-gray-300 text-sm" dir="auto">{results.photoshootBrief.colors}</p>
+                                                        </div>
+                                                    )}
+                                                    {results.photoshootBrief.lighting && (
+                                                        <div>
+                                                            <span className="text-orange-400 font-bold text-xs block mb-1">💡 الإضاءة</span>
+                                                            <p className="text-gray-300 text-sm" dir="auto">{results.photoshootBrief.lighting}</p>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <div className="space-y-2 text-sm">
-                                                {shot.action && (
-                                                    <div>
-                                                        <span className="text-gray-500 text-xs block mb-0.5">الحركة والأكشن:</span>
-                                                        <p className="text-gray-200 leading-relaxed" dir="auto">{shot.action}</p>
+                                            {results.photoshootBrief.shots && results.photoshootBrief.shots.length > 0 && (
+                                                <div>
+                                                    <span className="text-pink-400 font-bold text-xs block mb-2">📷 اللقطات المقترحة</span>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                        {results.photoshootBrief.shots.map((s: any, i: number) => (
+                                                            <div key={i} className="bg-gray-900 border border-gray-700 rounded-xl p-3">
+                                                                <div className="text-white font-bold text-sm mb-1">{s.name}</div>
+                                                                {s.setup && <p className="text-gray-400 text-xs" dir="auto">{s.setup}</p>}
+                                                                {s.mood && <span className="text-pink-300 text-xs">{s.mood}</span>}
+                                                            </div>
+                                                        ))}
                                                     </div>
-                                                )}
-                                                {shot.textOnScreen && (
-                                                    <div className="bg-yellow-900/20 border border-yellow-500/30 px-3 py-2 rounded-lg">
-                                                        <span className="text-yellow-400 text-xs font-bold block mb-0.5">📝 نص على الشاشة:</span>
-                                                        <p className="text-yellow-100 text-sm font-semibold" dir="auto">{shot.textOnScreen}</p>
-                                                    </div>
-                                                )}
-                                                {shot.technicalNote && (
-                                                    <div>
-                                                        <span className="text-gray-500 text-xs block mb-0.5">⚙️ ملاحظة تقنية:</span>
-                                                        <p className="text-gray-400 text-xs leading-relaxed" dir="auto">{shot.technicalNote}</p>
-                                                    </div>
-                                                )}
-                                            </div>
+                                                </div>
+                                            )}
                                         </div>
-                                    ))}
+                                    ) : (
+                                        <div className="text-gray-300 whitespace-pre-wrap leading-relaxed text-sm p-3 bg-gray-900 rounded-xl" dir="auto">
+                                            {typeof results.photoshootBrief === 'string' ? results.photoshootBrief : 'لم يتم توليد بريف التصوير.'}
+                                        </div>
+                                    )}
                                 </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
 
-                        {/* Save button */}
+                        {/* Save to Library */}
                         <button
                             onClick={handleFinish}
                             disabled={isSaving}
@@ -257,7 +372,7 @@ export default function CreativeStudioHub({
                     </div>
                 )}
 
-                {/* Advanced Mode Tools List */}
+                {/* Advanced Mode Tools */}
                 {isAdvanced && (
                     <div className="mt-8 border-t border-gray-700 pt-8 animate-fade-in-up">
                         <h3 className="text-xl text-gray-400 mb-4 flex items-center gap-2">

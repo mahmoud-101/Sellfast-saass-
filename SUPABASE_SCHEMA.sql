@@ -180,5 +180,40 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- Trigger to call the function when a new user signs up
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+-- 8. Campaigns Table (Stores unified multi-tool outputs)
+CREATE TABLE IF NOT EXISTS public.campaigns (
+  id uuid default uuid_generate_v4() primary key,
+  user_id uuid references public.profiles(id) on delete cascade not null,
+  product_name text not null,
+  campaign_goal text,
+  selected_angle text,
+  
+  -- Structured Data (using jsonb for flexibility)
+  reels_script text,
+  shots jsonb, -- The shot list array
+  ugc_script text,
+  performance_ads jsonb, -- The array of 3 ads
+  viral_hooks jsonb, -- The 10 hooks
+  sales_angles jsonb, -- The 6 strategy angles
+  photoshoot_brief jsonb, -- Poses, backgrounds, props
+  
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Campaigns Policies
+ALTER TABLE public.campaigns ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view own campaigns" ON public.campaigns;
+CREATE POLICY "Users can view own campaigns" ON public.campaigns FOR SELECT USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can insert own campaigns" ON public.campaigns;
+CREATE POLICY "Users can insert own campaigns" ON public.campaigns FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can delete own campaigns" ON public.campaigns;
+CREATE POLICY "Users can delete own campaigns" ON public.campaigns FOR DELETE USING (auth.uid() = user_id);
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS campaigns_user_id_idx ON public.campaigns(user_id);
+CREATE INDEX IF NOT EXISTS campaigns_created_at_idx ON public.campaigns(created_at DESC);

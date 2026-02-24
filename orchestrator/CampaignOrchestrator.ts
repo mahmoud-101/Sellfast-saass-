@@ -229,4 +229,119 @@ JSON فقط بدون markdown.`,
             return { success: false, message: error.message };
         }
     }
+
+    /**
+     * Run ALL Campaign Builder tools in parallel.
+     * Returns: performanceAds + ugcScript + viralHooks + salesAngles
+     */
+    static async runAllCampaignTools(context: ProductIntelligenceData): Promise<OrchestrationResult> {
+        const p = context.productName || 'المنتج';
+        const d = context.productDescription || '';
+        const m = context.targetMarket || 'السوق العربي';
+        const dial = context.dialect || 'اللهجة المصرية';
+        const angle = context.selectedAngle || p;
+
+        const [adsR, ugcR, hooksR, anglesR] = await Promise.allSettled([
+
+            // 1. نصوص إعلانات مباشرة
+            askGemini(
+                `أنت كاتب إعلانات Direct Response للأسواق العربية. اكتب 3 إعلانات مختلفة بـ${dial} لـ: ${p}. ${d}. السوق: ${m}. الزاوية: ${angle}.
+أعطني JSON array: [{"headline":"عنوان جذاب","body":"نص الإعلان 50-80 كلمة بالعامية","cta":"دعوة للشراء","format":"Facebook/TikTok"}] JSON فقط.`,
+                'أنت خبير إعلانات مباشرة للأسواق العربية.'
+            ),
+
+            // 2. سكريبت UGC
+            askGemini(
+                `اكتب سكريبت UGC بـ${dial} (شخص يتكلم للكاميرا مباشرة) لمنتج: ${p}. ${d}. الزاوية: ${angle}.
+أسلوب سيلفي، عفوي، صادق. 30-45 ثانية. نص صوتي متصل فقط.`,
+                'أنت كاتب UGC محترف للسوشيال ميديا العربية.'
+            ),
+
+            // 3. 10 خطافات فيرال
+            askGemini(
+                `اكتب 10 hooks فيرال بـ${dial} لمنتج: ${p}. ${d}. تنوع: سؤال/صدمة/فضول/ألم/وعد.
+JSON array: [{"hook":"الجملة","type":"نوع","why":"لماذا يوقف التمرير"}] JSON فقط.`,
+                'أنت خبير Viral Hooks للأسواق العربية.'
+            ),
+
+            // 4. زوايا تسويقية
+            askGemini(
+                `أعطني 6 زوايا تسويقية مبتكرة بالعربية لمنتج: ${p}. ${d}. السوق: ${m}.
+JSON array: [{"angle":"الاسم","concept":"الفكرة","exampleHook":"مثال hook","targetEmotion":"المشاعر"}] JSON فقط.`,
+                'أنت استراتيجي تسويق محترف للأسواق العربية.'
+            ),
+        ]);
+
+        const parseJ = (r: PromiseSettledResult<string>) => {
+            if (r.status !== 'fulfilled') return null;
+            try { return JSON.parse(r.value.replace(/```json|```/g, '').trim()); } catch { return r.value; }
+        };
+
+        return {
+            success: true,
+            data: {
+                performanceAds: parseJ(adsR),
+                ugcScript: ugcR.status === 'fulfilled' ? ugcR.value.trim() : null,
+                viralHooks: parseJ(hooksR),
+                salesAngles: parseJ(anglesR),
+            }
+        };
+    }
+
+    /**
+     * Run ALL Creative Studio tools in parallel.
+     * Returns: reelsScript + shots + ugcScript + photoshootBrief
+     */
+    static async runAllCreativeTools(context: ProductIntelligenceData, angle: string): Promise<OrchestrationResult> {
+        const p = context.productName || 'المنتج';
+        const d = context.productDescription || '';
+        const dial = context.dialect || 'اللهجة المصرية';
+
+        const [scriptR, shotsR, ugcR, photoR] = await Promise.allSettled([
+
+            // 1. سكريبت ريلز
+            askGemini(
+                `اكتب سكريبت ريلز كامل بـ${dial} للمنتج: ${p} بالزاوية: ${angle}. 30-45 ثانية، Hook قوي، ينتهي بـ CTA. نص متصل فقط.`,
+                'أنت كاتب سكريبت ريلز للأسواق العربية.'
+            ),
+
+            // 2. قائمة لقطات تقنية
+            askGemini(
+                `اكتب shot list تقني لريلز 9:16 للمنتج: ${p} بالزاوية: ${angle}. 8-10 لقطات.
+JSON array: [{"shotNumber":1,"duration":"3ث","shotType":"Close-up","action":"وصف","textOnScreen":"تايتل","technicalNote":"ملاحظة"}] JSON فقط.`,
+                'أنت مخرج فيديو محترف.'
+            ),
+
+            // 3. سكريبت UGC مرئي
+            askGemini(
+                `اكتب سكريبت UGC بـ${dial} (شخص حقيقي يتكلم للكاميرا) للمنتج: ${p}. ${d}. الزاوية: ${angle}. عفوي، صادق، 30-45 ثانية.`,
+                'أنت كاتب UGC محترف.'
+            ),
+
+            // 4. بريف التصوير الاحترافي
+            askGemini(
+                `اكتب بريف تصوير منتج احترافي بالعربية للمنتج: ${p}. ${d}. الزاوية: ${angle}.
+JSON: {"concept":"الفكرة البصرية","backgrounds":["خلفية 1","خلفية 2","خلفية 3"],"props":["إكسسوار 1","إكسسوار 2"],"shots":[{"name":"اسم","setup":"إعداد","mood":"مزاج"}],"colors":"لوحة الألوان","lighting":"نوع الإضاءة"} JSON فقط.`,
+                'أنت مدير إبداعي لتصوير منتجات e-commerce.'
+            ),
+        ]);
+
+        const parseJ = (r: PromiseSettledResult<string>) => {
+            if (r.status !== 'fulfilled') return null;
+            try { return JSON.parse(r.value.replace(/```json|```/g, '').trim()); } catch { return r.value; }
+        };
+
+        let shots: any[] = [];
+        try { if (shotsR.status === 'fulfilled') shots = JSON.parse(shotsR.value.replace(/```json|```/g, '').trim()); } catch { shots = []; }
+
+        return {
+            success: true,
+            data: {
+                reelsScript: scriptR.status === 'fulfilled' ? scriptR.value.trim() : '',
+                shots,
+                ugcScript: ugcR.status === 'fulfilled' ? ugcR.value.trim() : '',
+                photoshootBrief: parseJ(photoR),
+            }
+        };
+    }
 }

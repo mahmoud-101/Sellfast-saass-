@@ -266,8 +266,16 @@ export interface SavedCampaign {
     product_name: string;
     campaign_goal: string;
     selected_angle: string;
-    ad_copy: string;
-    storyboard: any[];
+
+    // Structured Data
+    reels_script?: string;
+    shots?: any[];
+    ugc_script?: string;
+    performance_ads?: any[];
+    viral_hooks?: any[];
+    sales_angles?: any[];
+    photoshoot_brief?: any;
+
     created_at?: string;
 }
 
