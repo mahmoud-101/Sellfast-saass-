@@ -12,42 +12,46 @@ const PricingModal: React.FC<PricingModalProps> = ({ onClose, userId }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const plans = [
-        { 
+        {
             id: 'starter',
-            name: 'باقة التجربة (Starter)', 
-            price: '199', 
-            credits: '350', 
-            color: 'border-white/10', 
-            bg: 'bg-white/5', 
-            features: ['350 نقطة ذكاء اصطناعي', 'توليد صور 2K', 'دعم فني عبر البريد', 'صلاحية لمدة سنة'] 
+            name: 'باقة التجربة',
+            price: '199',
+            credits: '350',
+            equivalent: '≈ 3 حملات إعلانية كاملة',
+            color: 'border-white/10',
+            bg: 'bg-white/5',
+            features: ['3 حملات إعلانية كاملة', '10 صور منتج احترافية', 'دعم فني عبر البريد', 'صلاحية لمدة سنة']
         },
-        { 
+        {
             id: 'pro',
-            name: 'باقة النمو (Growth)', 
-            price: '599', 
-            credits: '1200', 
-            color: 'border-[#FFD700]/50', 
-            bg: 'bg-[#FFD700]/10', 
-            popular: true, 
-            features: ['1200 نقطة (الأكثر مبيعاً)', 'توليد صور 4K وسوبر UGC', 'أولوية في الرندرة', 'دعم فني واتساب مباشر'] 
+            name: 'باقة النمو',
+            price: '599',
+            credits: '1200',
+            equivalent: '≈ 10 حملات + 40 صورة',
+            color: 'border-[#FFD700]/50',
+            bg: 'bg-[#FFD700]/10',
+            popular: true,
+            features: ['10 حملات إعلانية كاملة', '40 صورة منتج 4K', 'أولوية في المعالجة', 'دعم واتساب مباشر']
         },
-        { 
+        {
             id: 'agency',
-            name: 'باقة الوكالات (Agency)', 
-            price: '1499', 
-            credits: '3500', 
-            color: 'border-emerald-500/40', 
-            bg: 'bg-emerald-500/5', 
-            features: ['3500 نقطة (توفير ضخم)', 'وصول لمحرك الفيديو Veo', 'تصدير تقارير PDF', 'رخصة تجارية شاملة'] 
+            name: 'باقة الوكالات',
+            price: '1499',
+            credits: '3500',
+            equivalent: '≈ 30 حملة + 120 صورة',
+            color: 'border-emerald-500/40',
+            bg: 'bg-emerald-500/5',
+            features: ['30 حملة إعلانية كاملة', '120 صورة منتج', 'وصول لمحرك الفيديو Veo', 'رخصة تجارية شاملة']
         },
-        { 
+        {
             id: 'beast',
-            name: 'باقة السيطرة (Beast)', 
-            price: '3999', 
-            credits: '10000', 
-            color: 'border-purple-500/40', 
-            bg: 'bg-purple-500/5', 
-            features: ['10,000 نقطة (أفضل قيمة)', 'لوحة تحكم لإدارة الفريق', 'أعلى سرعة معالجة', 'تحديثات حصرية قبل الجميع'] 
+            name: 'باقة السيطرة',
+            price: '3999',
+            credits: '10000',
+            equivalent: '≈ 90 حملة + 350 صورة',
+            color: 'border-purple-500/40',
+            bg: 'bg-purple-500/5',
+            features: ['90 حملة إعلانية كاملة', '350 صورة احترافية', 'لوحة إدارة الفريق', 'تحديثات حصرية قبل الجميع']
         },
     ];
 
@@ -92,6 +96,11 @@ const PricingModal: React.FC<PricingModalProps> = ({ onClose, userId }) => {
                                 <div className="py-2.5 px-5 bg-white/5 rounded-2xl inline-block text-[#FFD700] font-black text-sm border border-white/5">
                                     {plan.credits} نقطة
                                 </div>
+                                {(plan as any).equivalent && (
+                                    <div className="mt-2 text-emerald-400 text-xs font-bold opacity-80">
+                                        {(plan as any).equivalent}
+                                    </div>
+                                )}
                             </div>
                             <ul className="space-y-4 mb-10 flex-grow border-t border-white/5 pt-8">
                                 {plan.features.map((f, idx) => (
@@ -100,7 +109,7 @@ const PricingModal: React.FC<PricingModalProps> = ({ onClose, userId }) => {
                                     </li>
                                 ))}
                             </ul>
-                            <button 
+                            <button
                                 onClick={() => setSelectedPlan(plan)}
                                 className={`w-full py-5 rounded-[1.5rem] text-center font-black text-sm transition-all shadow-2xl ${plan.popular ? 'bg-[#FFD700] text-black hover:bg-yellow-400' : 'bg-white text-black hover:bg-gray-100'} ${selectedPlan?.id === plan.id ? 'ring-2 ring-white' : ''}`}
                             >
@@ -117,7 +126,7 @@ const PricingModal: React.FC<PricingModalProps> = ({ onClose, userId }) => {
                             <h3 className="text-2xl font-black text-white">طريقة التفعيل الفوري ⚡</h3>
                             <p className="text-white/40 text-sm font-medium">حول قيمة الباقة المختارة، وأرسل "سكرين شوت" للتحويل على الواتساب وسيتم إضافة النقاط لحسابك في أقل من 5 دقائق.</p>
                         </div>
-                        
+
                         <div className="flex flex-wrap gap-4 justify-end">
                             <div className="px-6 py-4 bg-red-500/10 border border-red-500/20 rounded-3xl flex items-center gap-4 group transition-all cursor-pointer">
                                 <div className="text-right">
@@ -135,19 +144,19 @@ const PricingModal: React.FC<PricingModalProps> = ({ onClose, userId }) => {
                             </div>
                         </div>
                     </div>
-                    
+
                     <div className="flex flex-col items-center gap-6">
                         <div className="text-center p-6 bg-[#FFD700]/10 border border-[#FFD700]/20 rounded-3xl w-full">
                             <p className="text-white/60 text-sm font-black mb-2 uppercase">الباقة المختارة</p>
                             <h4 className="text-white font-bold text-2xl">{selectedPlan?.name || 'اختر باقة للبدء'}</h4>
                         </div>
-                        <button 
+                        <button
                             onClick={handlePaymentClick}
                             disabled={!selectedPlan || isSubmitting}
                             className="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-30 text-white w-full py-6 rounded-[2rem] font-black text-xl flex items-center justify-center gap-4 shadow-2xl transition-all hover:scale-105 active:scale-95"
                         >
                             {isSubmitting ? 'جاري تسجيل الطلب...' : 'تأكيد التحويل (واتساب)'}
-                            <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M12.012 2c-5.508 0-9.987 4.479-9.987 9.988 0 1.757.455 3.409 1.251 4.849l-1.332 4.86 4.975-1.304c1.404.757 2.997 1.189 4.693 1.189 5.508 0 9.988-4.479 9.988-9.988 0-5.508-4.48-9.988-9.988-9.988zm6.541 14.156c-.285.802-1.454 1.459-2.003 1.558-.49.088-1.127.159-1.808-.159-2.883-1.343-4.706-4.321-4.851-4.512-.144-.191-1.171-1.554-1.171-2.96 0-1.406.738-2.097 1-2.39.262-.293.571-.366.762-.366.191 0 .381.001.547.009.176.009.414-.066.649.492.235.558.802 1.956.872 2.1.07.144.117.311.023.498-.094.187-.141.311-.282.47-.141.159-.297.355-.424.476-.141.134-.288.28-.124.558.164.278.728 1.199 1.562 1.933.1.088.192.13.284.13.111 0 .216-.051.31-.137.288-.266.63-.687.9-.993.271-.306.495-.257.778-.152.282.105 1.79.845 2.097.998.307.153.511.228.586.356.075.127.075.736-.21 1.538z"/></svg>
+                            <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M12.012 2c-5.508 0-9.987 4.479-9.987 9.988 0 1.757.455 3.409 1.251 4.849l-1.332 4.86 4.975-1.304c1.404.757 2.997 1.189 4.693 1.189 5.508 0 9.988-4.479 9.988-9.988 0-5.508-4.48-9.988-9.988-9.988zm6.541 14.156c-.285.802-1.454 1.459-2.003 1.558-.49.088-1.127.159-1.808-.159-2.883-1.343-4.706-4.321-4.851-4.512-.144-.191-1.171-1.554-1.171-2.96 0-1.406.738-2.097 1-2.39.262-.293.571-.366.762-.366.191 0 .381.001.547.009.176.009.414-.066.649.492.235.558.802 1.956.872 2.1.07.144.117.311.023.498-.094.187-.141.311-.282.47-.141.159-.297.355-.424.476-.141.134-.288.28-.124.558.164.278.728 1.199 1.562 1.933.1.088.192.13.284.13.111 0 .216-.051.31-.137.288-.266.63-.687.9-.993.271-.306.495-.257.778-.152.282.105 1.79.845 2.097.998.307.153.511.228.586.356.075.127.075.736-.21 1.538z" /></svg>
                         </button>
                     </div>
                 </div>

@@ -105,7 +105,7 @@ export default function MarketIntelligenceHub({
                 {/* Header & Modes */}
                 <div className="flex justify-between items-center bg-gray-800 p-6 rounded-2xl border border-gray-700">
                     <div>
-                        <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">Market Intelligence Hub</h1>
+                        <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">🧠 مركز ذكاء السوق</h1>
                         <p className="text-gray-400 mt-2">تحليل المنتج، السوق، واكتشاف الزوايا البيعية تلقائياً.</p>
                     </div>
                     <div className="flex gap-4">
@@ -127,7 +127,7 @@ export default function MarketIntelligenceHub({
                                 onChange={(e) => setIsAdvanced(e.target.checked)}
                                 className="w-4 h-4 text-purple-500 bg-gray-700 border-gray-600 rounded focus:ring-purple-600 focus:ring-2"
                             />
-                            <span className="text-xs select-none">Advanced Tools</span>
+                            <span className="text-xs select-none">أدوات الخبراء</span>
                         </label>
                     </div>
                 </div>

@@ -115,7 +115,7 @@ export default function CampaignBuilderHub({
                 {/* Header & Modes */}
                 <div className="flex justify-between items-center bg-gray-800 p-6 rounded-2xl border border-gray-700">
                     <div>
-                        <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Campaign Builder Hub</h1>
+                        <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">🚀 مصنع الحملات الإعلانية</h1>
                         <p className="text-gray-400 mt-2">محرك بناء الحملات الإعلانية وصناعة المحتوى.</p>
                     </div>
                     <div className="flex gap-4">
@@ -127,7 +127,7 @@ export default function CampaignBuilderHub({
                                 onChange={(e) => setIsAdvanced(e.target.checked)}
                                 className="w-4 h-4 text-purple-500 bg-gray-700 border-gray-600 rounded focus:ring-purple-600 focus:ring-2"
                             />
-                            <span className="text-xs select-none">Advanced Tools</span>
+                            <span className="text-xs select-none">أدوات الخبراء</span>
                         </label>
                     </div>
                 </div>

@@ -100,7 +100,7 @@ export default function CreativeStudioHub({
                 {/* Header & Modes */}
                 <div className="flex justify-between items-center bg-gray-800 p-6 rounded-2xl border border-gray-700">
                     <div>
-                        <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">Creative Studio Hub</h1>
+                        <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">🎬 الاستوديو الإبداعي المرئي</h1>
                         <p className="text-gray-400 mt-2">تحويل الزوايا التسويقية إلى محتوى مرئي قوي وجاهز للتنفيذ.</p>
                     </div>
                     <div className="flex gap-4">
@@ -112,7 +112,7 @@ export default function CreativeStudioHub({
                                 onChange={(e) => setIsAdvanced(e.target.checked)}
                                 className="w-4 h-4 text-emerald-500 bg-gray-700 border-gray-600 rounded focus:ring-emerald-600 focus:ring-2"
                             />
-                            <span className="text-xs select-none">Advanced Tools</span>
+                            <span className="text-xs select-none">أدوات الخبراء</span>
                         </label>
                     </div>
                 </div>
@@ -216,8 +216,8 @@ export default function CreativeStudioHub({
                                 onClick={handleFinish}
                                 disabled={isSaving}
                                 className={`p-4 rounded-xl transition-all border ${savedSuccessfully
-                                        ? 'bg-emerald-900/40 border-emerald-500 text-emerald-400'
-                                        : 'bg-gray-900 border-gray-700 hover:border-blue-500'
+                                    ? 'bg-emerald-900/40 border-emerald-500 text-emerald-400'
+                                    : 'bg-gray-900 border-gray-700 hover:border-blue-500'
                                     }`}
                             >
                                 {isSaving ? (
