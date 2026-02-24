@@ -291,11 +291,18 @@ export async function generateCampaignPlan(productImages: ImageFile[], goal: str
 }
 
 export async function analyzeProductForCampaign(images: ImageFile[]): Promise<string> {
-    const ai = new GoogleGenAI({ apiKey: getApiKey() });
-    const parts: Part[] = images.map(img => ({ inlineData: { data: img.base64, mimeType: img.mimeType } }));
-    parts.push({ text: "Analyze this product for marketing purposes. What is it? What are its strengths?" });
-    const res = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: { parts } });
-    return res.text || "";
+    try {
+        return await executeWithRetry(async () => {
+            const ai = new GoogleGenAI({ apiKey: getApiKey() });
+            const parts: Part[] = images.map(img => ({ inlineData: { data: img.base64, mimeType: img.mimeType } }));
+            parts.push({ text: "Analyze this product for marketing purposes. What is it? What are its strengths?" });
+            const res = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: { parts } });
+            return res.text || "";
+        });
+    } catch (e) {
+        console.warn("[AI] analyzeProductForCampaign falling back to OpenRouter", e);
+        return await askOpenRouter("Analyze this product for marketing purposes. What is it? What are its strengths? Describe it in detail.");
+    }
 }
 
 export async function editImage(image: ImageFile, prompt: string): Promise<ImageFile> { return generateImage([image], prompt); }
@@ -326,40 +333,36 @@ export async function runPowerProduction(images: ImageFile[], context: string, m
 export async function generateAdScript(p: string, b: string, pr: string, l: string, t: string): Promise<string> { return askGemini(`Write an ad script for ${p}`); }
 
 export async function generateDynamicStoryboard(productImages: ImageFile[], referenceImages: ImageFile[], userInstructions: string): Promise<string[]> {
-    const ai = new GoogleGenAI({ apiKey: getApiKey() });
-    const parts: Part[] = [];
-
-    productImages.forEach(img => parts.push({ inlineData: { data: img.base64, mimeType: img.mimeType } }));
-    referenceImages.forEach(img => parts.push({ inlineData: { data: img.base64, mimeType: img.mimeType } }));
-
-    parts.push({
-        text: `
-        Analyze the PRODUCT in Image 1 and the STYLE/MODEL in Image 2.
-        User Instructions: ${userInstructions}
-        
-        TASK: Generate 9 unique, high-converting, and creative shot descriptions for a professional commercial photoshoot.
-        The goal is to show the model from Image 2 wearing the product from Image 1 in various cinematic scenarios.
-        
-        VARIETY REQUIREMENTS:
-        - 2 Catalog shots (Clean, product-focused, studio background).
-        - 3 Lifestyle shots (In-use, natural environment, storytelling).
-        - 2 Editorial shots (High-fashion, dramatic lighting, artistic pose).
-        - 2 Creative shots (Unique perspective, conceptual, eye-catching).
-        
-        Output exactly 9 lines, each being a detailed description of a shot.
-    ` });
-
-    const res = await ai.models.generateContent({
-        model: SMART_MODEL,
-        contents: { parts },
-        config: {
-            systemInstruction: "You are a world-class Creative Director and Fashion Photographer. Your goal is to create a diverse and powerful 9-shot storyboard using the 'Master Prompt' framework to sell a product effectively."
-        }
-    });
-
-    return (res.text || "").split('\n').filter(l => l.trim().length > 0).slice(0, 9);
+    try {
+        return await executeWithRetry(async () => {
+            const ai = new GoogleGenAI({ apiKey: getApiKey() });
+            const parts: Part[] = [];
+            productImages.forEach(img => parts.push({ inlineData: { data: img.base64, mimeType: img.mimeType } }));
+            referenceImages.forEach(img => parts.push({ inlineData: { data: img.base64, mimeType: img.mimeType } }));
+            parts.push({ text: `Analyze the PRODUCT and STYLE images. User Instructions: ${userInstructions}. Generate 9 unique shot descriptions for a professional commercial photoshoot. Include 2 Catalog, 3 Lifestyle, 2 Editorial, 2 Creative shots. Output exactly 9 lines.` });
+            const res = await ai.models.generateContent({ model: SMART_MODEL, contents: { parts }, config: { systemInstruction: "You are a world-class Creative Director and Fashion Photographer." } });
+            return (res.text || "").split('\n').filter(l => l.trim().length > 0).slice(0, 9);
+        });
+    } catch (e) {
+        console.warn("[AI] generateDynamicStoryboard falling back to OpenRouter", e);
+        const text = await askOpenRouter(`Generate 9 unique shot descriptions for a commercial photoshoot. User instructions: ${userInstructions}. Include 2 Catalog, 3 Lifestyle, 2 Editorial, 2 Creative shots. Output exactly 9 lines.`, "You are a world-class Creative Director.");
+        return text.split('\n').filter(l => l.trim().length > 0).slice(0, 9);
+    }
 }
-export async function generateMarketingAnalysis(d: any, l: string): Promise<string> { return "Market Analysis Result"; }
+export async function generateMarketingAnalysis(d: any, l: string): Promise<string> {
+    return askGemini(`Perform a comprehensive marketing & competitor analysis for this brand:
+Brand: ${d.brandName || 'Unknown'}
+Specialty: ${d.specialty || 'General'}
+Brief: ${d.brief || ''}
+Language: ${l}
+
+Provide:
+1. Market landscape overview
+2. Competitor strengths & weaknesses
+3. Unique positioning opportunities
+4. Recommended channels & tactics
+5. Action plan for first 30 days`, "You are a Senior Marketing Strategist specialized in the Arabic/MENA market.");
+}
 export async function generateStoryboardPlan(i: any, ins: string): Promise<any[]> {
     const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
@@ -446,7 +449,20 @@ export async function generateStoryboardPlan(i: any, ins: string): Promise<any[]
     });
 }
 export async function animateImageToVideo(i: any, p: string, a: string, cb: any): Promise<string> { return ""; }
-export async function fetchCurrentTrends(r: string, n: string): Promise<TrendItem[]> { return []; }
+export async function fetchCurrentTrends(r: string, n: string): Promise<TrendItem[]> {
+    try {
+        const res = await askOpenRouter(`You are a social media trends analyst. Find the TOP 10 current viral trends in region: ${r}, niche: ${n}.
+
+Return ONLY a valid JSON array with this exact format:
+[{"id":"1","title":"Trend name","platform":"TikTok/Instagram/Twitter","description":"Brief description","viralScore":85,"relevance":"Why this is relevant to the niche","hookIdea":"A hook idea to use this trend"}]
+
+Return 10 items. JSON only, no markdown.`, "You are a viral trends analyst for Arabic social media markets.");
+        try {
+            const parsed = JSON.parse(res.replace(/```json|```/g, '').trim());
+            return Array.isArray(parsed) ? parsed : [];
+        } catch { return []; }
+    } catch { return []; }
+}
 export async function transformScriptToUGC(originalScript: string): Promise<string> { return askGemini(`Transform this to raw UGC script: ${originalScript}`); }
 
 export async function generateSocialContentPack(script: string): Promise<string[]> {
@@ -464,11 +480,18 @@ export async function generateImagePromptsFromStrategy(script: string): Promise<
 }
 
 export async function analyzeImageForPrompt(images: ImageFile[], instructions: string): Promise<string> {
-    const ai = new GoogleGenAI({ apiKey: getApiKey() });
-    const parts: Part[] = images.map(img => ({ inlineData: { data: img.base64, mimeType: img.mimeType } }));
-    parts.push({ text: `Create a highly detailed, professional AI image generation prompt based on these images and instructions: ${instructions}` });
-    const res = await ai.models.generateContent({ model: SMART_MODEL, contents: { parts } });
-    return res.text || "";
+    try {
+        return await executeWithRetry(async () => {
+            const ai = new GoogleGenAI({ apiKey: getApiKey() });
+            const parts: Part[] = images.map(img => ({ inlineData: { data: img.base64, mimeType: img.mimeType } }));
+            parts.push({ text: `Create a highly detailed, professional AI image generation prompt based on these images and instructions: ${instructions}` });
+            const res = await ai.models.generateContent({ model: SMART_MODEL, contents: { parts } });
+            return res.text || "";
+        });
+    } catch (e) {
+        console.warn("[AI] analyzeImageForPrompt falling back to OpenRouter", e);
+        return await askOpenRouter(`Create a highly detailed, professional AI image generation prompt based on these instructions: ${instructions}`);
+    }
 }
 
 export async function generatePerformanceAdPack(data: {
@@ -541,129 +564,134 @@ export async function generatePerformanceAdPack(data: {
         parts.push({ inlineData: { data: data.referenceImage.base64, mimeType: data.referenceImage.mimeType } });
     }
 
-    return executeWithRetry(async () => {
-        const ai = new GoogleGenAI({ apiKey: getApiKey() });
-        const res = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: { parts: [...parts, { text: prompt }] },
-            config: {
-                systemInstruction,
-                responseMimeType: "application/json",
-                temperature: 0.5,
-                topK: 40,
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        strategicIntelligence: {
-                            type: Type.OBJECT,
-                            properties: {
-                                productType: { type: Type.STRING, description: "Impulse / Considered / Premium / Routine" },
-                                riskLevel: { type: Type.STRING },
-                                emotionalDriver: { type: Type.STRING, description: "Pain / Desire / Status / Fear / Convenience" },
-                                archetype: { type: Type.STRING },
-                                psychologicalTrigger: { type: Type.STRING },
-                                biggestObjection: { type: Type.STRING }
-                            }
-                        },
-                        creativeStrategyMatrix: {
-                            type: Type.OBJECT,
-                            properties: {
-                                angles: {
-                                    type: Type.ARRAY,
-                                    items: {
-                                        type: Type.OBJECT,
-                                        properties: {
-                                            title: { type: Type.STRING },
-                                            trigger: { type: Type.STRING },
-                                            principle: { type: Type.STRING },
-                                            marketReason: { type: Type.STRING },
-                                            objectionNeutralizer: { type: Type.STRING },
-                                            rank: { type: Type.INTEGER },
-                                            isRecommended: { type: Type.BOOLEAN }
+    try {
+        return await executeWithRetry(async () => {
+            const ai = new GoogleGenAI({ apiKey: getApiKey() });
+            const res = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: { parts: [...parts, { text: prompt }] },
+                config: {
+                    systemInstruction,
+                    responseMimeType: "application/json",
+                    temperature: 0.5,
+                    topK: 40,
+                    responseSchema: {
+                        type: Type.OBJECT,
+                        properties: {
+                            strategicIntelligence: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    productType: { type: Type.STRING, description: "Impulse / Considered / Premium / Routine" },
+                                    riskLevel: { type: Type.STRING },
+                                    emotionalDriver: { type: Type.STRING, description: "Pain / Desire / Status / Fear / Convenience" },
+                                    archetype: { type: Type.STRING },
+                                    psychologicalTrigger: { type: Type.STRING },
+                                    biggestObjection: { type: Type.STRING }
+                                }
+                            },
+                            creativeStrategyMatrix: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    angles: {
+                                        type: Type.ARRAY,
+                                        items: {
+                                            type: Type.OBJECT,
+                                            properties: {
+                                                title: { type: Type.STRING },
+                                                trigger: { type: Type.STRING },
+                                                principle: { type: Type.STRING },
+                                                marketReason: { type: Type.STRING },
+                                                objectionNeutralizer: { type: Type.STRING },
+                                                rank: { type: Type.INTEGER },
+                                                isRecommended: { type: Type.BOOLEAN }
+                                            }
                                         }
-                                    }
-                                },
-                                recommendationReason: { type: Type.STRING, description: "Max 3 lines why this angle was chosen" }
-                            }
-                        },
-                        launchPack: {
-                            type: Type.OBJECT,
-                            properties: {
-                                hooks: { type: Type.ARRAY, items: { type: Type.STRING }, description: "5 Scroll-Stopping Hooks" },
-                                adCopy: { type: Type.STRING, description: "High-Converting Direct Response Ad" },
-                                ugcScript: { type: Type.STRING, description: "Hook -> Problem -> Demo -> Emotion -> CTA" },
-                                offerStructure: { type: Type.STRING },
-                                upsellSuggestion: { type: Type.STRING },
-                                cta: { type: Type.STRING },
-                                testingHooks: { type: Type.ARRAY, items: { type: Type.STRING }, description: "3 Hook Variations for Testing" }
-                            }
-                        },
-                        visualMatchingEngine: {
-                            type: Type.OBJECT,
-                            properties: {
-                                imageConcepts: {
-                                    type: Type.ARRAY,
-                                    items: {
-                                        type: Type.OBJECT,
-                                        properties: {
-                                            description: { type: Type.STRING },
-                                            angle: { type: Type.STRING },
-                                            emotion: { type: Type.STRING },
-                                            lighting: { type: Type.STRING },
-                                            why: { type: Type.STRING }
+                                    },
+                                    recommendationReason: { type: Type.STRING, description: "Max 3 lines why this angle was chosen" }
+                                }
+                            },
+                            launchPack: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    hooks: { type: Type.ARRAY, items: { type: Type.STRING }, description: "5 Scroll-Stopping Hooks" },
+                                    adCopy: { type: Type.STRING, description: "High-Converting Direct Response Ad" },
+                                    ugcScript: { type: Type.STRING, description: "Hook -> Problem -> Demo -> Emotion -> CTA" },
+                                    offerStructure: { type: Type.STRING },
+                                    upsellSuggestion: { type: Type.STRING },
+                                    cta: { type: Type.STRING },
+                                    testingHooks: { type: Type.ARRAY, items: { type: Type.STRING }, description: "3 Hook Variations for Testing" }
+                                }
+                            },
+                            visualMatchingEngine: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    imageConcepts: {
+                                        type: Type.ARRAY,
+                                        items: {
+                                            type: Type.OBJECT,
+                                            properties: {
+                                                description: { type: Type.STRING },
+                                                angle: { type: Type.STRING },
+                                                emotion: { type: Type.STRING },
+                                                lighting: { type: Type.STRING },
+                                                why: { type: Type.STRING }
+                                            }
                                         }
-                                    }
-                                },
-                                thumbnailConcept: { type: Type.STRING },
-                                storyboard: {
-                                    type: Type.ARRAY,
-                                    items: {
-                                        type: Type.OBJECT,
-                                        properties: {
-                                            frame: { type: Type.INTEGER },
-                                            scene: { type: Type.STRING },
-                                            shot: { type: Type.STRING },
-                                            movement: { type: Type.STRING },
-                                            text: { type: Type.STRING },
-                                            purpose: { type: Type.STRING }
+                                    },
+                                    thumbnailConcept: { type: Type.STRING },
+                                    storyboard: {
+                                        type: Type.ARRAY,
+                                        items: {
+                                            type: Type.OBJECT,
+                                            properties: {
+                                                frame: { type: Type.INTEGER },
+                                                scene: { type: Type.STRING },
+                                                shot: { type: Type.STRING },
+                                                movement: { type: Type.STRING },
+                                                text: { type: Type.STRING },
+                                                purpose: { type: Type.STRING }
+                                            }
                                         }
                                     }
                                 }
+                            },
+                            profitBrain: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    valueStacking: { type: Type.STRING },
+                                    aovIncrease: { type: Type.STRING },
+                                    scarcityUrgency: { type: Type.STRING },
+                                    riskReversal: { type: Type.STRING }
+                                }
+                            },
+                            performanceSimulation: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    hookStrength: { type: Type.STRING, enum: ["Low", "Medium", "High"] },
+                                    conversionConfidence: { type: Type.INTEGER, description: "1-10" },
+                                    riskLevel: { type: Type.STRING },
+                                    testingStructure: { type: Type.STRING }
+                                }
                             }
                         },
-                        profitBrain: {
-                            type: Type.OBJECT,
-                            properties: {
-                                valueStacking: { type: Type.STRING },
-                                aovIncrease: { type: Type.STRING },
-                                scarcityUrgency: { type: Type.STRING },
-                                riskReversal: { type: Type.STRING }
-                            }
-                        },
-                        performanceSimulation: {
-                            type: Type.OBJECT,
-                            properties: {
-                                hookStrength: { type: Type.STRING, enum: ["Low", "Medium", "High"] },
-                                conversionConfidence: { type: Type.INTEGER, description: "1-10" },
-                                riskLevel: { type: Type.STRING },
-                                testingStructure: { type: Type.STRING }
-                            }
-                        }
-                    },
-                    required: [
-                        "strategicIntelligence", "creativeStrategyMatrix", "launchPack",
-                        "visualMatchingEngine", "profitBrain", "performanceSimulation"
-                    ]
+                        required: [
+                            "strategicIntelligence", "creativeStrategyMatrix", "launchPack",
+                            "visualMatchingEngine", "profitBrain", "performanceSimulation"
+                        ]
+                    }
                 }
+            });
+
+            try {
+                return JSON.parse(res.text || "{}");
+            } catch {
+                throw new Error("فشل تحليل استجابة المحرك النخبة");
             }
         });
-
-        try {
-            return JSON.parse(res.text || "{}");
-        } catch {
-            throw new Error("فشل تحليل استجابة المحرك النخبة");
-        }
-    });
+    } catch (e) {
+        console.warn("[AI] generatePerformanceAdPack falling back to OpenRouter", e);
+        return await askOpenRouterJSON(prompt, systemInstruction);
+    }
 }
 
 export async function generateVisualStrategy(data: {
