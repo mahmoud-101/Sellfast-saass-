@@ -181,6 +181,11 @@ export function ContentLibrary({ userId }: ContentLibraryProps) {
                                     <div className="bg-black/40 p-5 rounded-[2rem] border border-white/5 space-y-3">
                                         {selectedCampaign.photoshoot_brief ? (
                                             <>
+                                                {selectedCampaign.photoshoot_brief.conceptImageUrl && (
+                                                    <div className="w-full h-40 rounded-2xl overflow-hidden mb-3 border border-pink-500/30">
+                                                        <img src={selectedCampaign.photoshoot_brief.conceptImageUrl} className="w-full h-full object-cover" alt="Concept" />
+                                                    </div>
+                                                )}
                                                 <p className="text-xs text-slate-400">💡 {selectedCampaign.photoshoot_brief.concept}</p>
                                                 <div className="flex flex-wrap gap-2 pt-2">
                                                     {selectedCampaign.photoshoot_brief.props?.map((p: string, i: number) => (
@@ -204,6 +209,11 @@ export function ContentLibrary({ userId }: ContentLibraryProps) {
                                                     <span className="w-6 h-6 bg-blue-500/20 text-blue-400 font-bold text-[10px] flex items-center justify-center rounded-md">{i + 1}</span>
                                                     <span className="text-[10px] text-slate-500">{shot.shotType}</span>
                                                 </div>
+                                                {shot.imageUrl && (
+                                                    <div className="w-full h-32 rounded-xl overflow-hidden mb-3 border border-blue-500/30">
+                                                        <img src={shot.imageUrl} className="w-full h-full object-cover" alt={`Shot ${i + 1}`} />
+                                                    </div>
+                                                )}
                                                 <p className="text-xs text-white leading-relaxed">{shot.action}</p>
                                             </div>
                                         ))}

@@ -3,6 +3,7 @@ import { useProductIntelligence } from '../../context/ProductIntelligenceContext
 import { CampaignOrchestrator } from '../../orchestrator/CampaignOrchestrator';
 import { useLoadingMessages, marketIntelligenceMessages } from '../../utils/useLoadingMessages';
 import AIProgressSteps, { MARKET_STEPS } from '../../components/AIProgressSteps';
+import ImageUploader from '../../components/ImageUploader';
 
 // Import existing internal tools to be used in advanced mode
 import TrendEngine from '../../components/TrendEngine';
@@ -24,6 +25,7 @@ export default function MarketIntelligenceHub({
     const { data, updateData } = useProductIntelligence();
     const [isAdvanced, setIsAdvanced] = useState(false);
     const [internalView, setInternalView] = useState<'hub' | 'trend' | 'strategy'>('hub');
+    const [isUploadingFiles, setIsUploadingFiles] = useState(false);
 
     // Smart Mode State
     const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -31,6 +33,32 @@ export default function MarketIntelligenceHub({
     const [editableTrends, setEditableTrends] = useState<string>('');
     const [editableStrategy, setEditableStrategy] = useState<string>('');
     const { message: loadingMessage, start: startMessages, stop: stopMessages } = useLoadingMessages(marketIntelligenceMessages);
+
+    const handleFileUpload = async (files: File[]) => {
+        if (!files.length) return;
+        setIsUploadingFiles(true);
+        const newImages = [];
+        for (const file of files) {
+            const base64 = await new Promise<string>((resolve) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve((reader.result as string).split(',')[1]);
+                reader.readAsDataURL(file);
+            });
+            newImages.push({
+                base64,
+                mimeType: file.type,
+                name: file.name
+            });
+        }
+        updateData({ productImages: [...data.productImages, ...newImages] });
+        setIsUploadingFiles(false);
+    };
+
+    const handleRemoveImage = (index: number) => {
+        const updated = [...data.productImages];
+        updated.splice(index, 1);
+        updateData({ productImages: updated });
+    };
 
     const runSmartAnalysis = async () => {
         setIsAnalyzing(true);
@@ -135,7 +163,20 @@ export default function MarketIntelligenceHub({
 
                 {/* Global Product Context Inputs */}
                 <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700 space-y-4">
-                    <h2 className="text-xl font-semibold mb-4">معلومات المنتج الأساسية</h2>
+                    <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">📸 صور المنتج الأساسية <span className="text-xs text-gray-400 font-normal">(اختياري ولكن يفضل للعرض المرئي)</span></h2>
+                    <div className="h-48 mb-8">
+                        <ImageUploader
+                            id="product-images"
+                            title="ارفع صور المنتج"
+                            images={data.productImages}
+                            onFileUpload={handleFileUpload}
+                            onRemove={handleRemoveImage}
+                            multiple={true}
+                            isUploading={isUploadingFiles}
+                        />
+                    </div>
+
+                    <h2 className="text-xl font-semibold mb-4 pt-4">معلومات المنتج والجمهور</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm text-gray-400 mb-1">اسم المنتج</label>
@@ -148,6 +189,16 @@ export default function MarketIntelligenceHub({
                             />
                         </div>
                         <div>
+                            <label className="block text-sm text-gray-400 mb-1">سعر البيع</label>
+                            <input
+                                type="text"
+                                value={data.sellingPrice}
+                                onChange={(e) => updateData({ sellingPrice: e.target.value })}
+                                className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500"
+                                placeholder="مثال: 199 ريال"
+                            />
+                        </div>
+                        <div>
                             <label className="block text-sm text-gray-400 mb-1">السوق المستهدف</label>
                             <input
                                 type="text"
@@ -155,6 +206,16 @@ export default function MarketIntelligenceHub({
                                 onChange={(e) => updateData({ targetMarket: e.target.value })}
                                 className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500"
                                 placeholder="مثال: السعودية"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm text-gray-400 mb-1">الجمهور المستهدف (اختياري)</label>
+                            <input
+                                type="text"
+                                value={data.targetAudienceInput}
+                                onChange={(e) => updateData({ targetAudienceInput: e.target.value })}
+                                className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500"
+                                placeholder="مثال: الشباب المهتمين بالرياضة"
                             />
                         </div>
                     </div>

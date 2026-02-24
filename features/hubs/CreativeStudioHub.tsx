@@ -239,25 +239,32 @@ export default function CreativeStudioHub({
                                                     <span className="bg-blue-900/40 border border-blue-500/30 text-blue-300 text-xs px-2.5 py-1 rounded-lg font-bold">{shot.shotType || 'Medium'}</span>
                                                     {shot.duration && <span className="bg-gray-700 text-gray-300 text-xs px-2.5 py-1 rounded-lg">⏱ {shot.duration}</span>}
                                                 </div>
-                                                <div className="space-y-2 text-sm">
-                                                    {shot.action && (
-                                                        <div>
-                                                            <span className="text-gray-500 text-xs block mb-0.5">الحركة والأكشن:</span>
-                                                            <p className="text-gray-200 leading-relaxed" dir="auto">{shot.action}</p>
+                                                <div className="flex flex-col md:flex-row gap-4">
+                                                    {shot.imageUrl && (
+                                                        <div className="w-full md:w-32 h-56 shrink-0 rounded-xl overflow-hidden border border-emerald-500/30">
+                                                            <img src={shot.imageUrl} alt={`Shot ${shot.shotNumber}`} className="w-full h-full object-cover" />
                                                         </div>
                                                     )}
-                                                    {shot.textOnScreen && (
-                                                        <div className="bg-yellow-900/20 border border-yellow-500/30 px-3 py-2 rounded-lg">
-                                                            <span className="text-yellow-400 text-xs font-bold block mb-0.5">📝 نص على الشاشة:</span>
-                                                            <p className="text-yellow-100 text-sm font-semibold" dir="auto">{shot.textOnScreen}</p>
-                                                        </div>
-                                                    )}
-                                                    {shot.technicalNote && (
-                                                        <div>
-                                                            <span className="text-gray-500 text-xs block mb-0.5">⚙️ ملاحظة تقنية:</span>
-                                                            <p className="text-gray-400 text-xs leading-relaxed" dir="auto">{shot.technicalNote}</p>
-                                                        </div>
-                                                    )}
+                                                    <div className="flex-1 space-y-2 text-sm">
+                                                        {shot.action && (
+                                                            <div>
+                                                                <span className="text-gray-500 text-xs block mb-0.5">الحركة والأكشن:</span>
+                                                                <p className="text-gray-200 leading-relaxed" dir="auto">{shot.action}</p>
+                                                            </div>
+                                                        )}
+                                                        {shot.textOnScreen && (
+                                                            <div className="bg-yellow-900/20 border border-yellow-500/30 px-3 py-2 rounded-lg">
+                                                                <span className="text-yellow-400 text-xs font-bold block mb-0.5">📝 نص على الشاشة:</span>
+                                                                <p className="text-yellow-100 text-sm font-semibold" dir="auto">{shot.textOnScreen}</p>
+                                                            </div>
+                                                        )}
+                                                        {shot.technicalNote && (
+                                                            <div>
+                                                                <span className="text-gray-500 text-xs block mb-0.5">⚙️ ملاحظة تقنية:</span>
+                                                                <p className="text-gray-400 text-xs leading-relaxed" dir="auto">{shot.technicalNote}</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         )) : (
@@ -297,9 +304,16 @@ export default function CreativeStudioHub({
                                     {results.photoshootBrief && typeof results.photoshootBrief === 'object' ? (
                                         <div className="space-y-4">
                                             {results.photoshootBrief.concept && (
-                                                <div className="bg-gray-900 border border-gray-700 rounded-xl p-4">
-                                                    <span className="text-pink-400 font-bold text-xs block mb-1">💡 الفكرة البصرية الكاملة</span>
-                                                    <p className="text-white text-sm leading-relaxed" dir="auto">{results.photoshootBrief.concept}</p>
+                                                <div className="bg-gray-900 border border-gray-700 rounded-xl p-4 flex flex-col md:flex-row gap-6">
+                                                    {results.photoshootBrief.conceptImageUrl && (
+                                                        <div className="w-full md:w-64 h-64 shrink-0 rounded-2xl overflow-hidden border border-pink-500/30 shadow-2xl">
+                                                            <img src={results.photoshootBrief.conceptImageUrl} alt="Concept Preview" className="w-full h-full object-cover" />
+                                                        </div>
+                                                    )}
+                                                    <div className="flex-1">
+                                                        <span className="text-pink-400 font-bold text-xs block mb-1">💡 الفكرة البصرية الكاملة</span>
+                                                        <p className="text-white text-lg leading-relaxed" dir="auto">{results.photoshootBrief.concept}</p>
+                                                    </div>
                                                 </div>
                                             )}
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

@@ -6,6 +6,9 @@ export interface ProductIntelligenceData {
     productDescription: string;
     targetMarket: string;
     dialect: string;
+    sellingPrice: string;
+    targetAudienceInput: string;
+    productImages: any[]; // Array of ImageFile objects
 
     // Intelligence Outputs (Populated by Market Intelligence Hub)
     categoryAnalysis: any | null;
@@ -32,6 +35,9 @@ const defaultData: ProductIntelligenceData = {
     productDescription: '',
     targetMarket: 'السعودية',
     dialect: 'لهجة سعودية',
+    sellingPrice: '',
+    targetAudienceInput: '',
+    productImages: [],
     categoryAnalysis: null,
     marketTrends: [],
     contentStrategy: null,

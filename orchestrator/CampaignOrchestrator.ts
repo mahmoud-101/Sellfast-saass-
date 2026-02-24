@@ -3,7 +3,8 @@ import {
     generatePerformanceAdPack,
     askGemini,
     generateStoryboardPlan,
-    fetchCurrentTrends
+    fetchCurrentTrends,
+    generateImage
 } from '../services/geminiService';
 
 export type OrchestrationMode = 'Quick' | 'Advanced' | 'Full';
@@ -37,6 +38,8 @@ export class CampaignOrchestrator {
                     `أنت خبير تسويق متخصص في الأسواق العربية. قم بتحليل هذا المنتج بعمق:
 
 المنتج: ${context.productName}
+السعر: ${context.sellingPrice}
+الجمهور المستهدف: ${context.targetAudienceInput}
 الوصف: ${context.productDescription}
 السوق المستهدف: ${context.targetMarket}
 اللهجة: ${context.dialect}
@@ -334,13 +337,36 @@ JSON: {"concept":"الفكرة البصرية","backgrounds":["خلفية 1","خ
         let shots: any[] = [];
         try { if (shotsR.status === 'fulfilled') shots = JSON.parse(shotsR.value.replace(/```json|```/g, '').trim()); } catch { shots = []; }
 
+        // --- NEW: Generate AI Visuals for the Creative Suite ---
+        const productImages = context.productImages || [];
+
+        // 1. Generate images for the first 3 key shots in the storyboard
+        const shotsWithImages = await Promise.all(shots.map(async (shot, idx) => {
+            if (idx < 3 && productImages.length > 0) {
+                try {
+                    const img = await generateImage(productImages, `Video Shot #${shot.shotNumber}: ${shot.action}. Cinematic lighting, professional ${shot.shotType} camera angle. 8k resolution, photorealistic.`, null, "9:16");
+                    return { ...shot, imageUrl: `data:${img.mimeType};base64,${img.base64}` };
+                } catch (e) { return { ...shot, imageUrl: null }; }
+            }
+            return { ...shot, imageUrl: null };
+        }));
+
+        // 2. Generate a "Master Concept" image for the photoshoot
+        let photoshootWithImage = parseJ(photoR);
+        if (photoshootWithImage && productImages.length > 0) {
+            try {
+                const img = await generateImage(productImages, `Professional Product Photoshoot: ${photoshootWithImage.concept}. Lighting: ${photoshootWithImage.lighting}. Colors: ${photoshootWithImage.colors}. High-end commercial photography, 8k.`, null, "1:1");
+                photoshootWithImage.conceptImageUrl = `data:${img.mimeType};base64,${img.base64}`;
+            } catch (e) { photoshootWithImage.conceptImageUrl = null; }
+        }
+
         return {
             success: true,
             data: {
                 reelsScript: scriptR.status === 'fulfilled' ? scriptR.value.trim() : '',
-                shots,
+                shots: shotsWithImages,
                 ugcScript: ugcR.status === 'fulfilled' ? ugcR.value.trim() : '',
-                photoshootBrief: parseJ(photoR),
+                photoshootBrief: photoshootWithImage,
             }
         };
     }
