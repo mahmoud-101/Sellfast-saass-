@@ -1,33 +1,41 @@
 @echo off
-echo ===================================================
-echo   Sellfast AI - UX Polish Batch 4: Demo Section
-echo ===================================================
+echo =====================================================
+echo   Sellfast AI - Output Quality + Creative Tools Fix
+echo =====================================================
 echo.
 echo Changes in this batch:
-echo  [+] Demo Section on Landing Page (before subscribing)
-echo       Tab 1: تحليل المنتج - audience, USP, positioning cards
-echo       Tab 2: الحملة الإعلانية - angles + full Arabic ad copy
-echo       Tab 3: السيناريو المرئي - 4-scene storyboard with dialogues
-echo       Product: كبسولات كيتو سليم (real-looking Arabic output)
-echo       CTA: "جرّب الآن مجاناً" button
 echo.
-echo  [+] AIProgressSteps component (named steps + progress bar)
-echo  [+] Onboarding 3-step guide (shows once per device)
-echo  [FIX] Hub titles translated to Arabic
-echo  [FIX] Pricing plan descriptions in real deliverables
-echo  [FIX] Product Analysis as primary output in Market Hub
+echo  [FIX] Creative Studio - Output completely restructured:
+echo       Was: مشاهد قصة (storyboard scenes)
+echo       Now: سكريبت ريلز كامل + قائمة لقطات تقنية
+echo.
+echo  [+] سكريبت الريلز: نص صوتي كامل بالعامية
+echo       Hook, مشكلة, حل, دليل اجتماعي, CTA
+echo       قابل للتعديل + زر نسخ
+echo.
+echo  [+] قائمة اللقطات التقنية (Shot List):
+echo       نوع اللقطة, المدة, الأكشن, النص على الشاشة
+echo       ملاحظة تقنية للمخرج
+echo.
+echo  [FIX] أدوات الإخراج - ترجمة للعربية:
+echo       Storyboard Studio, UGC Studio, Photoshoot, Library
+echo.
+echo  [FIX] Campaign Builder - خطة المحتوى (٧ أيام):
+echo       Was: English generic text
+echo       Now: JSON عربي هيكلي (hook/body/CTA/hashtags)
+echo.
+echo  [FIX] Market Intelligence - جودة التحليل أحسن
 echo.
 cd /d "%~dp0"
 git add .
-git commit -m "ux: demo section + progress steps + onboarding + arabic ux fixes"
+git commit -m "fix: reels script + shot list output, upgrade arabic ai prompts, translate creative tools"
 git push origin main
 
 echo.
 if %ERRORLEVEL% EQU 0 (
-    echo SUCCESS! Vercel deploying...
-    echo Visitors can now see real outputs BEFORE subscribing!
+    echo SUCCESS! Deploying to Vercel...
 ) else (
     echo Error - check above.
 )
-echo ===================================================
+echo =====================================================
 pause

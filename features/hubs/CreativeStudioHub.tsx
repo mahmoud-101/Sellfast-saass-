@@ -161,95 +161,99 @@ export default function CreativeStudioHub({
 
                 {/* Results Area */}
                 {results && (
-                    <div className="bg-emerald-900/20 border border-emerald-500/30 p-6 rounded-2xl animate-fade-in-up">
-                        <h3 className="text-2xl font-bold text-emerald-400 mb-4">المعلّم المرئي جاهز! 🎬</h3>
-                        <p className="text-gray-300 mb-6">النظام أنشأ السيناريوهات المرئية والستوري بورد كاملة للزاوية المختارة. يمكنك تصفحها الآن أو الانتقال للمكتبة.</p>
+                    <div className="space-y-6 animate-fade-in-up">
 
-                        {/* Display Actual Generated Content Here */}
-                        <div className="bg-gray-900 p-5 rounded-xl border border-gray-700 mb-6 max-h-[600px] overflow-y-auto custom-scrollbar">
-                            {editableStoryboard && editableStoryboard.length > 0 && (
-                                <div>
-                                    <h4 className="text-emerald-400 font-bold mb-4 border-b border-gray-800 pb-2 flex items-center gap-2">
-                                        <span className="text-xl">🎞️</span> السيناريو والمشاهد (Storyboard):
-                                    </h4>
-                                    <div className="space-y-6">
-                                        {editableStoryboard.map((scene: any, idx: number) => (
-                                            <div key={idx} className="bg-gray-800 p-4 rounded-xl border border-gray-700 relative overflow-hidden">
-                                                <div className="absolute top-0 right-0 bg-emerald-600/20 text-emerald-400 px-3 py-1 rounded-bl-lg text-sm font-bold border-b border-l border-emerald-500/30">
-                                                    مشهد {idx + 1}
-                                                </div>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        {/* Success banner */}
+                        <div className="bg-emerald-900/20 border border-emerald-500/30 p-5 rounded-2xl flex items-center gap-4">
+                            <div className="text-4xl">🎬</div>
+                            <div>
+                                <h3 className="text-xl font-bold text-emerald-400">السكريبت واللقطات جاهزة!</h3>
+                                <p className="text-gray-400 text-sm mt-1">تم توليد سكريبت ريلز كامل وقائمة لقطات تقنية جاهزة للتصوير.</p>
+                            </div>
+                        </div>
+
+                        {/* ── REELS SCRIPT ── */}
+                        {results.reelsScript && (
+                            <div className="bg-gray-800 border border-gray-700 rounded-2xl overflow-hidden">
+                                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xl">🎙️</span>
+                                        <h4 className="text-emerald-400 font-bold">سكريبت الريلز — النص الصوتي الكامل</h4>
+                                    </div>
+                                    <button
+                                        onClick={() => navigator.clipboard.writeText(results.reelsScript)}
+                                        className="text-xs text-gray-400 hover:text-white bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded-lg transition-all"
+                                    >
+                                        📋 نسخ السكريبت
+                                    </button>
+                                </div>
+                                <div className="p-5">
+                                    <textarea
+                                        value={results.reelsScript}
+                                        onChange={(e) => setResults((prev: any) => ({ ...prev, reelsScript: e.target.value }))}
+                                        className="w-full bg-gray-900 border border-gray-600 rounded-xl px-4 py-3 text-white leading-loose text-base focus:ring-2 focus:ring-emerald-500 min-h-[180px]"
+                                        dir="auto"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-2">* النص قابل للتعديل — عدّل عليه كما تشاء قبل التصوير</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ── SHOT LIST ── */}
+                        {results.shots && results.shots.length > 0 && (
+                            <div className="bg-gray-800 border border-gray-700 rounded-2xl overflow-hidden">
+                                <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-700">
+                                    <span className="text-xl">🎥</span>
+                                    <h4 className="text-white font-bold">قائمة اللقطات التقنية ({results.shots.length} لقطة)</h4>
+                                    <span className="text-xs text-gray-500 mr-auto">جاهزة للتصوير المباشر</span>
+                                </div>
+                                <div className="p-4 space-y-3">
+                                    {results.shots.map((shot: any, idx: number) => (
+                                        <div key={idx} className="bg-gray-900 border border-gray-700 rounded-xl p-4">
+                                            <div className="flex items-center gap-3 mb-3 flex-wrap">
+                                                <span className="w-7 h-7 bg-emerald-600/20 border border-emerald-500/30 rounded-lg flex items-center justify-center text-emerald-400 font-black text-sm shrink-0">
+                                                    {shot.shotNumber || idx + 1}
+                                                </span>
+                                                <span className="bg-blue-900/40 border border-blue-500/30 text-blue-300 text-xs px-2.5 py-1 rounded-lg font-bold">{shot.shotType || 'Medium'}</span>
+                                                {shot.duration && <span className="bg-gray-700 text-gray-300 text-xs px-2.5 py-1 rounded-lg">⏱ {shot.duration}</span>}
+                                            </div>
+                                            <div className="space-y-2 text-sm">
+                                                {shot.action && (
                                                     <div>
-                                                        <div className="text-sm text-gray-400 mb-1">الوصف البصري (قابل للتعديل)</div>
-                                                        <textarea
-                                                            value={scene.description || scene.visualPrompt || ''}
-                                                            onChange={(e) => {
-                                                                const arr = [...editableStoryboard];
-                                                                arr[idx] = { ...arr[idx], description: e.target.value, visualPrompt: e.target.value };
-                                                                setEditableStoryboard(arr);
-                                                            }}
-                                                            className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white text-sm leading-relaxed min-h-[100px] focus:ring-2 focus:ring-emerald-500 custom-scrollbar"
-                                                            dir="auto"
-                                                        />
+                                                        <span className="text-gray-500 text-xs block mb-0.5">الحركة والأكشن:</span>
+                                                        <p className="text-gray-200 leading-relaxed" dir="auto">{shot.action}</p>
                                                     </div>
+                                                )}
+                                                {shot.textOnScreen && (
+                                                    <div className="bg-yellow-900/20 border border-yellow-500/30 px-3 py-2 rounded-lg">
+                                                        <span className="text-yellow-400 text-xs font-bold block mb-0.5">📝 نص على الشاشة:</span>
+                                                        <p className="text-yellow-100 text-sm font-semibold" dir="auto">{shot.textOnScreen}</p>
+                                                    </div>
+                                                )}
+                                                {shot.technicalNote && (
                                                     <div>
-                                                        <div className="text-sm text-gray-400 mb-1">التعليق الصوتي / الحوار (قابل للتعديل)</div>
-                                                        <textarea
-                                                            value={scene.dialogue || scene.text || ''}
-                                                            onChange={(e) => {
-                                                                const arr = [...editableStoryboard];
-                                                                arr[idx] = { ...arr[idx], dialogue: e.target.value, text: e.target.value };
-                                                                setEditableStoryboard(arr);
-                                                            }}
-                                                            className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-cyan-300 text-sm leading-relaxed font-arabic min-h-[100px] focus:ring-2 focus:ring-emerald-500 custom-scrollbar"
-                                                            dir="auto"
-                                                        />
-                                                    </div>
-                                                </div>
-                                                {(scene.cameraAngle || scene.action) && (
-                                                    <div className="mt-3 bg-gray-900/50 p-2 rounded-lg inline-block border border-gray-700">
-                                                        <span className="text-xs text-gray-500 mr-2">ملاحظات الإخراج:</span>
-                                                        <span className="text-xs text-gray-300">{scene.cameraAngle || scene.action}</span>
+                                                        <span className="text-gray-500 text-xs block mb-0.5">⚙️ ملاحظة تقنية:</span>
+                                                        <p className="text-gray-400 text-xs leading-relaxed" dir="auto">{shot.technicalNote}</p>
                                                     </div>
                                                 )}
                                             </div>
-                                        ))}
-                                    </div>
+                                        </div>
+                                    ))}
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
 
-                        <div className="grid grid-cols-2 gap-4 mb-6">
-                            <button onClick={() => setInternalView('storyboard')} className="bg-gray-900 border border-gray-700 hover:border-emerald-500 p-4 rounded-xl transition-all">
-                                <div className="text-3xl mb-1">🎞️</div>
-                                <div className="text-white font-bold">تصفح الستوري بورد</div>
-                            </button>
-                            <button
-                                onClick={handleFinish}
-                                disabled={isSaving}
-                                className={`p-4 rounded-xl transition-all border ${savedSuccessfully
-                                    ? 'bg-emerald-900/40 border-emerald-500 text-emerald-400'
-                                    : 'bg-gray-900 border-gray-700 hover:border-blue-500'
-                                    }`}
-                            >
-                                {isSaving ? (
-                                    <>
-                                        <div className="text-3xl mb-1 animate-spin">⌛️</div>
-                                        <div className="text-gray-400 font-bold text-sm">جاري الحفظ...</div>
-                                    </>
-                                ) : savedSuccessfully ? (
-                                    <>
-                                        <div className="text-3xl mb-1">✅</div>
-                                        <div className="font-bold text-sm">تم الحفظ - الذهاب للمكتبة</div>
-                                    </>
-                                ) : (
-                                    <>
-                                        <div className="text-3xl mb-1">💾</div>
-                                        <div className="text-white font-bold text-sm">حفظ الحملة بشكل دائم</div>
-                                    </>
-                                )}
-                            </button>
-                        </div>
+                        {/* Save button */}
+                        <button
+                            onClick={handleFinish}
+                            disabled={isSaving}
+                            className={`w-full p-4 rounded-2xl font-bold text-lg transition-all border ${savedSuccessfully
+                                ? 'bg-emerald-900/40 border-emerald-500 text-emerald-400'
+                                : 'bg-emerald-600 hover:bg-emerald-700 border-transparent text-white'
+                                }`}
+                        >
+                            {isSaving ? '⌛ جاري الحفظ...' : savedSuccessfully ? '✅ تم الحفظ — الذهاب للمكتبة' : '💾 حفظ الحملة الكاملة في المكتبة'}
+                        </button>
                     </div>
                 )}
 
@@ -257,24 +261,28 @@ export default function CreativeStudioHub({
                 {isAdvanced && (
                     <div className="mt-8 border-t border-gray-700 pt-8 animate-fade-in-up">
                         <h3 className="text-xl text-gray-400 mb-4 flex items-center gap-2">
-                            <span className="text-emerald-500">⚙️</span> Internal Engines (Advanced Mode)
+                            <span className="text-emerald-500">⚙️</span> الأدوات الداخلية المتقدمة
                         </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <button onClick={() => setInternalView('storyboard')} className="text-right bg-gray-800 hover:bg-gray-700 p-4 rounded-xl border border-gray-600 transition-colors">
                                 <div className="text-2xl mb-2">🎞️</div>
-                                <div className="font-bold text-md mb-1">Storyboard Studio</div>
+                                <div className="font-bold text-sm mb-1">استوديو الستوري بورد</div>
+                                <div className="text-xs text-gray-500">مشاهد بصرية مفصلة</div>
                             </button>
                             <button onClick={() => setInternalView('ugc')} className="text-right bg-gray-800 hover:bg-gray-700 p-4 rounded-xl border border-gray-600 transition-colors">
                                 <div className="text-2xl mb-2">🤳</div>
-                                <div className="font-bold text-md mb-1">UGC Studio</div>
+                                <div className="font-bold text-sm mb-1">استوديو UGC</div>
+                                <div className="text-xs text-gray-500">محتوى المؤثرين</div>
                             </button>
                             <button onClick={() => setInternalView('photoshoot')} className="text-right bg-gray-800 hover:bg-gray-700 p-4 rounded-xl border border-gray-600 transition-colors">
                                 <div className="text-2xl mb-2">📸</div>
-                                <div className="font-bold text-md mb-1">Photoshoot Director</div>
+                                <div className="font-bold text-sm mb-1">مدير التصوير</div>
+                                <div className="text-xs text-gray-500">صور احترافية للمنتج</div>
                             </button>
                             <button onClick={() => setInternalView('library')} className="text-right bg-gray-800 hover:bg-gray-700 p-4 rounded-xl border border-gray-600 transition-colors">
                                 <div className="text-2xl mb-2">📁</div>
-                                <div className="font-bold text-md mb-1">Content Library</div>
+                                <div className="font-bold text-sm mb-1">مكتبة المحتوى</div>
+                                <div className="text-xs text-gray-500">حملاتك المحفوظة</div>
                             </button>
                         </div>
                     </div>

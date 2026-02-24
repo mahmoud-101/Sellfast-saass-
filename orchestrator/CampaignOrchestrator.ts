@@ -106,10 +106,39 @@ JSON فقط بدون markdown.`,
                 });
                 return { success: true, data: { strategy: 'performance', pack } };
             } else {
-                // Route to Content/Brand Engine (formerly Plan Studio / Daily Pack)
-                const prompt = `Generate a 7-day social media content pack for ${context.productName}. Description: ${context.productDescription}. Dialect: ${context.dialect}. Focus on brand awareness.`;
-                const contentText = await askGemini(prompt, "You are a Social Media Content Strategist.");
-                const pack = contentText.split('\n\n').filter(p => p.trim().length > 10).slice(0, 7);
+                // Route to Content/Brand Engine — 7-day Arabic social plan
+                const contentPrompt = `أنت مخطط محتوى رقمي محترف متخصص في الأسواق العربية.
+
+اكتب خطة محتوى ٧ أيام بـ${context.dialect || 'اللهجة المصرية'} للمنتج التالي:
+المنتج: ${context.productName}
+الوصف: ${context.productDescription}
+السوق: ${context.targetMarket}
+
+أعطني JSON array بالضبط (٧ أيام):
+[
+  {
+    "day": "اليوم الأول",
+    "goal": "هدف البوست (جذب الانتباه / إثبات الفائدة / دليل اجتماعي / الإلحاح / إلخ)",
+    "platform": "أنسب منصة",
+    "hook": "جملة الجذب (Hook) — أول سطر يوقف المستخدم",
+    "body": "نص البوست الكامل بالعامية (عفوي، إنساني، غير رسمي، 60-120 كلمة)",
+    "cta": "الدعوة للتصرف",
+    "hashtags": ["وسم1", "وسم2", "وسم3"]
+  }
+]
+
+JSON فقط بدون markdown.`;
+                const contentText = await askGemini(contentPrompt, 'أنت مخطط محتوى محترف للسوشيال ميديا العربية.');
+                let pack: any[] = [];
+                try {
+                    pack = JSON.parse(contentText.replace(/```json|```/g, '').trim());
+                } catch {
+                    // Fallback: split into text blocks
+                    pack = contentText.split('\n\n').filter(p => p.trim().length > 10).slice(0, 7).map((p, i) => ({
+                        day: `اليوم ${i + 1}`,
+                        body: p.trim()
+                    }));
+                }
                 return { success: true, data: { strategy: 'content', pack } };
             }
         } catch (error: any) {
@@ -119,17 +148,82 @@ JSON فقط بدون markdown.`,
 
     /**
      * Run the Creative Studio phase.
-     * Auto-routes to Storyboard or UGC Engine.
+     * Returns: reelsScript (full voiceover text) + shots (technical shot list)
      */
     static async generateCreatives(context: ProductIntelligenceData, angle: string): Promise<OrchestrationResult> {
         try {
-            // Feed the winning angle into the Storyboard Director automatically
-            const prompt = `Product: ${context.productName}. Angle: ${angle}. Create a detailed video storyboard.`;
-            const storyboard = await generateStoryboardPlan([], prompt);
+            const dialect = context.dialect || 'اللهجة المصرية';
+            const product = context.productName || 'المنتج';
+            const desc = context.productDescription || '';
+
+            const [scriptResult, shotsResult] = await Promise.allSettled([
+
+                // ── 1. REELS SCRIPT: Full spoken voiceover text ──────────────────
+                askGemini(
+                    `أنت كاتب سكريبت محترف متخصص في إعلانات الريلز والتيك توك بالأسواق العربية.
+
+اكتب سكريبت ريلز إعلاني كامل بـ${dialect} للمنتج التالي:
+المنتج: ${product}
+الوصف: ${desc}
+الزاوية البيعية: ${angle}
+
+يجب أن يكون السكريبت:
+- مدته: 30-45 ثانية (60-90 كلمة تقريباً)
+- يبدأ بجملة Hook قوية تشد الانتباه في أول 3 ثواني
+- يُحدد مشكلة حقيقية يعانيها الجمهور
+- يقدم المنتج كالحل الأمثل بطريقة عفوية وغير مباشرة
+- يتضمن دليل اجتماعي مختصر (رقم أو شهادة)
+- ينتهي بـ CTA واضح وعاجل
+- الأسلوب: عفوي، محادثاتي، يشبه كلام الناس الحقيقي — مش إعلان رسمي
+- اكتبه كنص متصل (سكريبت صوتي) بدون ترقيم أو نقاط
+
+أعطني النص السكريبت فقط بدون شرح.`,
+                    'أنت كاتب سكريبت محترف لإعلانات السوشيال ميديا العربية.'
+                ),
+
+                // ── 2. SHOT LIST: Technical directions (not story scenes) ─────────
+                askGemini(
+                    `أنت مخرج فيديو محترف متخصص في إعلانات الريلز العمودية (9:16) للأسواق العربية.
+
+اكتب قائمة لقطات تقنية (Shot List) لإعلان ريلز عن:
+المنتج: ${product}
+الزاوية: ${angle}
+المدة الكلية: 30-45 ثانية
+
+أعطني JSON array بالضبط (8-10 لقطات):
+[
+  {
+    "shotNumber": 1,
+    "duration": "3 ثواني",
+    "shotType": "Close-up / Wide / Medium / Macro / Over-shoulder",
+    "action": "وصف دقيق لما يحدث في اللقطة من زاوية المخرج",
+    "textOnScreen": "النص أو التايتل اللي يظهر على الشاشة (فاضي لو مفيش)",
+    "technicalNote": "ملاحظة تقنية: الإضاءة، اللون، السرعة، التأثير"
+  }
+]
+
+JSON فقط بدون markdown.`,
+                    'أنت مخرج فيديو محترف متخصص في إعلانات رقمية للأسواق العربية.'
+                )
+            ]);
+
+            let reelsScript = '';
+            if (scriptResult.status === 'fulfilled') {
+                reelsScript = scriptResult.value.trim();
+            }
+
+            let shots: any[] = [];
+            if (shotsResult.status === 'fulfilled') {
+                try {
+                    shots = JSON.parse(shotsResult.value.replace(/```json|```/g, '').trim());
+                } catch {
+                    shots = [];
+                }
+            }
 
             return {
                 success: true,
-                data: { storyboard }
+                data: { reelsScript, shots }
             };
         } catch (error: any) {
             return { success: false, message: error.message };
