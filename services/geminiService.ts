@@ -418,35 +418,42 @@ export async function generateStoryboardPlan(i: any, ins: string): Promise<any[]
 
     parts.push({ text: promptText });
 
-    return executeWithRetry(async () => {
-        const ai = new GoogleGenAI({ apiKey: getApiKey() });
-        const res = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: { parts },
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.ARRAY,
-                    items: {
-                        type: Type.OBJECT,
-                        properties: {
-                            id: { type: Type.STRING },
-                            description: { type: Type.STRING },
-                            visualPrompt: { type: Type.STRING },
-                            cameraAngle: { type: Type.STRING },
-                            dialogue: { type: Type.STRING }
+    try {
+        return await executeWithRetry(async () => {
+            const ai = new GoogleGenAI({ apiKey: getApiKey() });
+            const res = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: { parts },
+                config: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: Type.ARRAY,
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                id: { type: Type.STRING },
+                                description: { type: Type.STRING },
+                                visualPrompt: { type: Type.STRING },
+                                cameraAngle: { type: Type.STRING },
+                                dialogue: { type: Type.STRING }
+                            }
                         }
                     }
                 }
+            });
+            try {
+                return JSON.parse(res.text || "[]");
+            } catch {
+                return [];
             }
         });
-
+    } catch (e) {
+        console.warn("[AI] generateStoryboardPlan falling back to OpenRouter", e);
+        const text = await askOpenRouter(promptText + "\n\nReturn ONLY a JSON array of 6 objects with: id, description, visualPrompt, cameraAngle, dialogue. JSON only, no markdown.", "You are an Elite Performance Creative Director for short-form vertical ads.");
         try {
-            return JSON.parse(res.text || "[]");
-        } catch {
-            return [];
-        }
-    });
+            return JSON.parse(text.replace(/```json|```/g, '').trim());
+        } catch { return []; }
+    }
 }
 export async function animateImageToVideo(i: any, p: string, a: string, cb: any): Promise<string> { return ""; }
 export async function fetchCurrentTrends(r: string, n: string): Promise<TrendItem[]> {
@@ -454,11 +461,12 @@ export async function fetchCurrentTrends(r: string, n: string): Promise<TrendIte
         const res = await askOpenRouter(`You are a social media trends analyst. Find the TOP 10 current viral trends in region: ${r}, niche: ${n}.
 
 Return ONLY a valid JSON array with this exact format:
-[{"id":"1","title":"Trend name","platform":"TikTok/Instagram/Twitter","description":"Brief description","viralScore":85,"relevance":"Why this is relevant to the niche","hookIdea":"A hook idea to use this trend"}]
+[{"topic":"Trend name in Arabic","relevance":"Why this matters for the niche (in Arabic)","contentIdea":"A specific content idea to capitalize on this trend (in Arabic)","viralHook":"A scroll-stopping hook line in Arabic"}]
 
-Return 10 items. JSON only, no markdown.`, "You are a viral trends analyst for Arabic social media markets.");
+Return exactly 10 items. JSON only, no markdown, no code blocks.`, "You are a viral trends analyst for Arabic social media markets. Always respond in Arabic.");
         try {
-            const parsed = JSON.parse(res.replace(/```json|```/g, '').trim());
+            const cleaned = res.replace(/```json|```/g, '').trim();
+            const parsed = JSON.parse(cleaned);
             return Array.isArray(parsed) ? parsed : [];
         } catch { return []; }
     } catch { return []; }
@@ -742,61 +750,64 @@ export async function generateVisualStrategy(data: {
         }
     }
 
-    return executeWithRetry(async () => {
-        const ai = new GoogleGenAI({ apiKey: getApiKey() });
-
-        const res = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-            config: {
-                systemInstruction,
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        intent: { type: Type.STRING },
-                        concepts: {
-                            type: Type.ARRAY,
-                            items: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    description: { type: Type.STRING },
-                                    angle: { type: Type.STRING },
-                                    framing: { type: Type.STRING },
-                                    expression: { type: Type.STRING },
-                                    lighting: { type: Type.STRING },
-                                    why: { type: Type.STRING },
-                                    solves: { type: Type.STRING }
+    try {
+        return await executeWithRetry(async () => {
+            const ai = new GoogleGenAI({ apiKey: getApiKey() });
+            const res = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: prompt,
+                config: {
+                    systemInstruction,
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: Type.OBJECT,
+                        properties: {
+                            intent: { type: Type.STRING },
+                            concepts: {
+                                type: Type.ARRAY,
+                                items: {
+                                    type: Type.OBJECT,
+                                    properties: {
+                                        description: { type: Type.STRING },
+                                        angle: { type: Type.STRING },
+                                        framing: { type: Type.STRING },
+                                        expression: { type: Type.STRING },
+                                        lighting: { type: Type.STRING },
+                                        why: { type: Type.STRING },
+                                        solves: { type: Type.STRING }
+                                    }
                                 }
-                            }
-                        },
-                        storyboard: {
-                            type: Type.ARRAY,
-                            items: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    frame: { type: Type.INTEGER },
-                                    scene: { type: Type.STRING },
-                                    shot: { type: Type.STRING },
-                                    movement: { type: Type.STRING },
-                                    text: { type: Type.STRING },
-                                    purpose: { type: Type.STRING }
+                            },
+                            storyboard: {
+                                type: Type.ARRAY,
+                                items: {
+                                    type: Type.OBJECT,
+                                    properties: {
+                                        frame: { type: Type.INTEGER },
+                                        scene: { type: Type.STRING },
+                                        shot: { type: Type.STRING },
+                                        movement: { type: Type.STRING },
+                                        text: { type: Type.STRING },
+                                        purpose: { type: Type.STRING }
+                                    }
                                 }
-                            }
+                            },
+                            guardrails: { type: Type.ARRAY, items: { type: Type.STRING } }
                         },
-                        guardrails: { type: Type.ARRAY, items: { type: Type.STRING } }
-                    },
-                    required: ["intent", "concepts", "storyboard", "guardrails"]
+                        required: ["intent", "concepts", "storyboard", "guardrails"]
+                    }
                 }
+            });
+            try {
+                return JSON.parse(res.text || "{}");
+            } catch {
+                throw new Error("فشل تحليل استجابة المحرك البصري");
             }
         });
-
-        try {
-            return JSON.parse(res.text || "{}");
-        } catch {
-            throw new Error("فشل تحليل استجابة المحرك البصري");
-        }
-    });
+    } catch (e) {
+        console.warn("[AI] generateVisualStrategy falling back to OpenRouter", e);
+        return await askOpenRouterJSON(prompt, systemInstruction);
+    }
 }
 
 export async function generateFullCampaignVisuals(strategy: string, angles: any[]): Promise<any> {
@@ -839,51 +850,54 @@ export async function generateFullCampaignVisuals(strategy: string, angles: any[
         }
     }
 
-    return executeWithRetry(async () => {
-        const ai = new GoogleGenAI({ apiKey: getApiKey() });
-
-        const res = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-            config: {
-                systemInstruction,
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        adSets: {
-                            type: Type.ARRAY,
-                            items: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    angle: { type: Type.STRING },
-                                    visualPrompt: { type: Type.STRING },
-                                    storyboard: {
-                                        type: Type.ARRAY,
-                                        items: {
-                                            type: Type.OBJECT,
-                                            properties: {
-                                                frame: { type: Type.INTEGER },
-                                                scene: { type: Type.STRING },
-                                                text: { type: Type.STRING }
+    try {
+        return await executeWithRetry(async () => {
+            const ai = new GoogleGenAI({ apiKey: getApiKey() });
+            const res = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: prompt,
+                config: {
+                    systemInstruction,
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: Type.OBJECT,
+                        properties: {
+                            adSets: {
+                                type: Type.ARRAY,
+                                items: {
+                                    type: Type.OBJECT,
+                                    properties: {
+                                        angle: { type: Type.STRING },
+                                        visualPrompt: { type: Type.STRING },
+                                        storyboard: {
+                                            type: Type.ARRAY,
+                                            items: {
+                                                type: Type.OBJECT,
+                                                properties: {
+                                                    frame: { type: Type.INTEGER },
+                                                    scene: { type: Type.STRING },
+                                                    text: { type: Type.STRING }
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
-                        }
-                    },
-                    required: ["adSets"]
+                        },
+                        required: ["adSets"]
+                    }
                 }
+            });
+            try {
+                return JSON.parse(res.text || "{}");
+            } catch {
+                throw new Error("فشل توليد الحملة البصرية");
             }
         });
-
-        try {
-            return JSON.parse(res.text || "{}");
-        } catch {
-            throw new Error("فشل توليد الحملة البصرية");
-        }
-    });
+    } catch (e) {
+        console.warn("[AI] generateFullCampaignVisuals falling back to OpenRouter", e);
+        return await askOpenRouterJSON(prompt, systemInstruction);
+    }
 }
 
 export async function generatePromptFromText(instructions: string): Promise<string> {
