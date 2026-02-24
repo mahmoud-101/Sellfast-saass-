@@ -3,6 +3,7 @@ import { useProductIntelligence } from '../../context/ProductIntelligenceContext
 import { CampaignOrchestrator } from '../../orchestrator/CampaignOrchestrator';
 import { useLoadingMessages, creativeStudioMessages } from '../../utils/useLoadingMessages';
 import { saveCampaign } from '../../lib/supabase';
+import AIProgressSteps, { CREATIVE_STEPS } from '../../components/AIProgressSteps';
 
 // Import existing internal tools
 import StoryboardStudio from '../../components/StoryboardStudio';
@@ -129,21 +130,32 @@ export default function CreativeStudioHub({
                         <p className="text-gray-400">لم يتم اختيار زاوية تسويقية بعد أو المنتج غير محدد. يرجى تمرير زاوية من Campaign Builder لإخراج المحتوى تلقائياً.</p>
                     )}
 
-                    <div className="pt-4 flex justify-end">
+                    <div className="pt-4 flex flex-col gap-4">
                         <button
                             onClick={runCreativeStudio}
                             disabled={isGenerating || !data.selectedAngle}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-xl transition-all disabled:opacity-50 flex items-center gap-2"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-xl transition-all disabled:opacity-50 flex items-center gap-2 self-end"
                         >
                             {isGenerating ? (
-                                <div className="flex flex-col items-center gap-3 py-2">
-                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                    <span className="text-sm text-emerald-300 animate-pulse">{loadingMessage}</span>
-                                </div>
+                                <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> جاري الإخراج...</>
                             ) : (
                                 <>🎬 ابدأ إخراج المحتوى المرئي</>
                             )}
                         </button>
+                        {isGenerating && (
+                            <div className="bg-gray-900 border border-emerald-500/20 rounded-2xl p-5">
+                                <div className="text-sm text-emerald-400 font-bold mb-4 flex items-center gap-2">
+                                    <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                                    يُبنى السيناريو المرئي الآن...
+                                </div>
+                                <AIProgressSteps
+                                    steps={CREATIVE_STEPS}
+                                    isActive={isGenerating}
+                                    accentColor="emerald"
+                                    message={loadingMessage}
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
 

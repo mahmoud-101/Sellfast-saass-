@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useProductIntelligence } from '../../context/ProductIntelligenceContext';
 import { CampaignOrchestrator } from '../../orchestrator/CampaignOrchestrator';
 import { useLoadingMessages, marketIntelligenceMessages } from '../../utils/useLoadingMessages';
+import AIProgressSteps, { MARKET_STEPS } from '../../components/AIProgressSteps';
 
 // Import existing internal tools to be used in advanced mode
 import TrendEngine from '../../components/TrendEngine';
@@ -167,21 +168,34 @@ export default function MarketIntelligenceHub({
                         />
                     </div>
 
-                    <div className="pt-4 flex justify-end">
+                    <div className="pt-4 flex flex-col gap-4">
                         <button
                             onClick={runSmartAnalysis}
                             disabled={isAnalyzing || !data.productName}
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition-all disabled:opacity-50 flex items-center gap-2"
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition-all disabled:opacity-50 flex items-center gap-2 self-end"
                         >
                             {isAnalyzing ? (
-                                <div className="flex flex-col items-center gap-3 py-2">
-                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                    <span className="text-sm text-blue-300 animate-pulse">{loadingMessage}</span>
-                                </div>
+                                <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> جاري التحليل...</>
                             ) : (
                                 <>🚀 تشغيل محركات التحليل الذكية</>
                             )}
                         </button>
+
+                        {/* AI Progress Steps */}
+                        {isAnalyzing && (
+                            <div className="bg-gray-900 border border-blue-500/20 rounded-2xl p-5">
+                                <div className="text-sm text-blue-400 font-bold mb-4 flex items-center gap-2">
+                                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                                    الذكاء الاصطناعي يعمل الآن...
+                                </div>
+                                <AIProgressSteps
+                                    steps={MARKET_STEPS}
+                                    isActive={isAnalyzing}
+                                    accentColor="blue"
+                                    message={loadingMessage}
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
 
