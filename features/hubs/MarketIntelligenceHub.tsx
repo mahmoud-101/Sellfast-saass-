@@ -32,6 +32,13 @@ export default function MarketIntelligenceHub({
     const [results, setResults] = useState<any>(null);
     const [editableTrends, setEditableTrends] = useState<string>('');
     const [editableStrategy, setEditableStrategy] = useState<string>('');
+
+    // Detailed Editable Analysis
+    const [targetAudience, setTargetAudience] = useState('');
+    const [mainUSP, setMainUSP] = useState('');
+    const [positioning, setPositioning] = useState('');
+    const [pricingStrategy, setPricingStrategy] = useState('');
+
     const { message: loadingMessage, start: startMessages, stop: stopMessages } = useLoadingMessages(marketIntelligenceMessages);
 
     const handleFileUpload = async (files: File[]) => {
@@ -89,6 +96,12 @@ export default function MarketIntelligenceHub({
             setEditableStrategy(typeof result.data.categoryAnalysis === 'string'
                 ? result.data.categoryAnalysis
                 : JSON.stringify(result.data.categoryAnalysis || '', null, 2));
+
+            const pa = result.data.productAnalysis || {};
+            setTargetAudience(pa.targetAudience || '');
+            setMainUSP(pa.mainUSP || '');
+            setPositioning(pa.positioning || '');
+            setPricingStrategy(pa.pricingStrategy || '');
 
             updateData({
                 marketTrends: result.data.trends,
@@ -279,48 +292,64 @@ export default function MarketIntelligenceHub({
                             {pa && (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {/* Target Audience */}
-                                    {pa.targetAudience && (
-                                        <div className="bg-purple-900/20 border border-purple-500/30 p-5 rounded-xl">
-                                            <div className="flex items-center gap-2 mb-3">
-                                                <span className="text-xl">👥</span>
-                                                <h4 className="text-purple-400 font-bold">الجمهور المستهدف</h4>
-                                            </div>
-                                            <p className="text-gray-300 text-sm leading-relaxed">{pa.targetAudience}</p>
+                                    <div className="bg-purple-900/20 border border-purple-500/30 p-5 rounded-xl">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <span className="text-xl">👥</span>
+                                            <h4 className="text-purple-400 font-bold">الجمهور المستهدف</h4>
                                         </div>
-                                    )}
+                                        <textarea
+                                            value={targetAudience}
+                                            onChange={(e) => setTargetAudience(e.target.value)}
+                                            className="w-full bg-transparent border-none p-0 text-gray-300 text-sm leading-relaxed resize-none focus:ring-0"
+                                            dir="auto"
+                                            rows={4}
+                                        />
+                                    </div>
 
                                     {/* Main USP */}
-                                    {pa.mainUSP && (
-                                        <div className="bg-yellow-900/20 border border-yellow-500/30 p-5 rounded-xl">
-                                            <div className="flex items-center gap-2 mb-3">
-                                                <span className="text-xl">⚡</span>
-                                                <h4 className="text-yellow-400 font-bold">نقطة البيع الفريدة (USP)</h4>
-                                            </div>
-                                            <p className="text-gray-300 text-sm leading-relaxed">{pa.mainUSP}</p>
+                                    <div className="bg-yellow-900/20 border border-yellow-500/30 p-5 rounded-xl">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <span className="text-xl">⚡</span>
+                                            <h4 className="text-yellow-400 font-bold">نقطة البيع الفريدة (USP)</h4>
                                         </div>
-                                    )}
+                                        <textarea
+                                            value={mainUSP}
+                                            onChange={(e) => setMainUSP(e.target.value)}
+                                            className="w-full bg-transparent border-none p-0 text-gray-300 text-sm leading-relaxed resize-none focus:ring-0"
+                                            dir="auto"
+                                            rows={4}
+                                        />
+                                    </div>
 
                                     {/* Positioning */}
-                                    {pa.positioning && (
-                                        <div className="bg-blue-900/20 border border-blue-500/30 p-5 rounded-xl">
-                                            <div className="flex items-center gap-2 mb-3">
-                                                <span className="text-xl">🏆</span>
-                                                <h4 className="text-blue-400 font-bold">التموضع التنافسي</h4>
-                                            </div>
-                                            <p className="text-gray-300 text-sm leading-relaxed">{pa.positioning}</p>
+                                    <div className="bg-blue-900/20 border border-blue-500/30 p-5 rounded-xl">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <span className="text-xl">🏆</span>
+                                            <h4 className="text-blue-400 font-bold">التموضع التنافسي</h4>
                                         </div>
-                                    )}
+                                        <textarea
+                                            value={positioning}
+                                            onChange={(e) => setPositioning(e.target.value)}
+                                            className="w-full bg-transparent border-none p-0 text-gray-300 text-sm leading-relaxed resize-none focus:ring-0"
+                                            dir="auto"
+                                            rows={4}
+                                        />
+                                    </div>
 
                                     {/* Pricing Strategy */}
-                                    {pa.pricingStrategy && (
-                                        <div className="bg-emerald-900/20 border border-emerald-500/30 p-5 rounded-xl">
-                                            <div className="flex items-center gap-2 mb-3">
-                                                <span className="text-xl">💰</span>
-                                                <h4 className="text-emerald-400 font-bold">استراتيجية التسعير</h4>
-                                            </div>
-                                            <p className="text-gray-300 text-sm leading-relaxed">{pa.pricingStrategy}</p>
+                                    <div className="bg-emerald-900/20 border border-emerald-500/30 p-5 rounded-xl">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <span className="text-xl">💰</span>
+                                            <h4 className="text-emerald-400 font-bold">استراتيجية التسعير</h4>
                                         </div>
-                                    )}
+                                        <textarea
+                                            value={pricingStrategy}
+                                            onChange={(e) => setPricingStrategy(e.target.value)}
+                                            className="w-full bg-transparent border-none p-0 text-gray-300 text-sm leading-relaxed resize-none focus:ring-0"
+                                            dir="auto"
+                                            rows={4}
+                                        />
+                                    </div>
                                 </div>
                             )}
 

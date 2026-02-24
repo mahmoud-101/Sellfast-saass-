@@ -276,6 +276,12 @@ export interface SavedCampaign {
     sales_angles?: any[];
     photoshoot_brief?: any;
 
+    // Versioning & Meta
+    version?: number;
+    status?: 'draft' | 'final' | 'active';
+    parent_id?: string;
+    original_analysis?: any; // To store the Market Intelligence results
+
     created_at?: string;
 }
 

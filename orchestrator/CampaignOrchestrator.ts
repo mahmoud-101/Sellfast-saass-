@@ -26,6 +26,37 @@ export interface OrchestrationResult {
 export class CampaignOrchestrator {
 
     /**
+     * Resiliently parse JSON from AI responses.
+     * Handles markdown blocks, trailing text, and malformed syntax.
+     */
+    static safeJsonParse(input: string, fallback: any = null): any {
+        if (!input) return fallback;
+        try {
+            // 1. Try direct parse
+            return JSON.parse(input.trim());
+        } catch {
+            try {
+                // 2. Extract content between first [ or { and last ] or }
+                const jsonMatch = input.match(/[\{\[].*[\}\]]/s);
+                if (jsonMatch) {
+                    const cleaned = jsonMatch[0].replace(/```json|```/g, '').trim();
+                    return JSON.parse(cleaned);
+                }
+            } catch {
+                // 3. Last ditch: clean common characters and retry
+                try {
+                    const superCleaned = input.replace(/```json|```/g, '').trim();
+                    return JSON.parse(superCleaned);
+                } catch {
+                    console.warn('[Orchestrator] Failed to parse AI JSON:', input);
+                    return fallback;
+                }
+            }
+        }
+        return fallback;
+    }
+
+    /**
      * Run the Market Intelligence phase.
      * Auto-routes to Trend Engine + Strategy Analysis based on context.
      */
@@ -63,17 +94,11 @@ JSON فقط بدون markdown.`,
                 fetchCurrentTrends(context.targetMarket, context.productName)
             ]);
 
-            // Parse product analysis
-            let parsedAnalysis: any = null;
-            if (productAnalysis.status === 'fulfilled') {
-                try {
-                    const cleaned = productAnalysis.value.replace(/```json|```/g, '').trim();
-                    parsedAnalysis = JSON.parse(cleaned);
-                } catch {
-                    // If JSON parsing fails, use raw text
-                    parsedAnalysis = { summary: productAnalysis.value };
-                }
-            }
+            // Resilient Parsing
+            let parsedAnalysis: any = this.safeJsonParse(
+                productAnalysis.status === 'fulfilled' ? productAnalysis.value : '',
+                { summary: 'حدث خطأ أثناء التحليل. يرجى المحاولة مرة أخرى.' }
+            );
 
             const trendData = trends.status === 'fulfilled' ? trends.value : [];
 
@@ -132,11 +157,9 @@ JSON فقط بدون markdown.`,
 
 JSON فقط بدون markdown.`;
                 const contentText = await askGemini(contentPrompt, 'أنت مخطط محتوى محترف للسوشيال ميديا العربية.');
-                let pack: any[] = [];
-                try {
-                    pack = JSON.parse(contentText.replace(/```json|```/g, '').trim());
-                } catch {
-                    // Fallback: split into text blocks
+                let pack = this.safeJsonParse(contentText, []);
+                if (!Array.isArray(pack) || pack.length === 0) {
+                    // Fallback to text blocks if parsing fails
                     pack = contentText.split('\n\n').filter(p => p.trim().length > 10).slice(0, 7).map((p, i) => ({
                         day: `اليوم ${i + 1}`,
                         body: p.trim()
@@ -275,18 +298,18 @@ JSON array: [{"angle":"الاسم","concept":"الفكرة","exampleHook":"مث�
             ),
         ]);
 
-        const parseJ = (r: PromiseSettledResult<string>) => {
-            if (r.status !== 'fulfilled') return null;
-            try { return JSON.parse(r.value.replace(/```json|```/g, '').trim()); } catch { return r.value; }
+        const parseJ = (r: PromiseSettledResult<string>, fallback: any = null) => {
+            if (r.status !== 'fulfilled') return fallback;
+            return this.safeJsonParse(r.value, fallback);
         };
 
         return {
             success: true,
             data: {
-                performanceAds: parseJ(adsR),
+                performanceAds: parseJ(adsR, []),
                 ugcScript: ugcR.status === 'fulfilled' ? ugcR.value.trim() : null,
-                viralHooks: parseJ(hooksR),
-                salesAngles: parseJ(anglesR),
+                viralHooks: parseJ(hooksR, []),
+                salesAngles: parseJ(anglesR, []),
             }
         };
     }
@@ -329,13 +352,12 @@ JSON: {"concept":"الفكرة البصرية","backgrounds":["خلفية 1","خ
             ),
         ]);
 
-        const parseJ = (r: PromiseSettledResult<string>) => {
-            if (r.status !== 'fulfilled') return null;
-            try { return JSON.parse(r.value.replace(/```json|```/g, '').trim()); } catch { return r.value; }
+        const parseJ = (r: PromiseSettledResult<string>, fallback: any = null) => {
+            if (r.status !== 'fulfilled') return fallback;
+            return this.safeJsonParse(r.value, fallback);
         };
 
-        let shots: any[] = [];
-        try { if (shotsR.status === 'fulfilled') shots = JSON.parse(shotsR.value.replace(/```json|```/g, '').trim()); } catch { shots = []; }
+        let shots: any[] = parseJ(shotsR, []);
 
         // --- NEW: Generate AI Visuals for the Creative Suite ---
         const productImages = context.productImages || [];
@@ -352,7 +374,7 @@ JSON: {"concept":"الفكرة البصرية","backgrounds":["خلفية 1","خ
         }));
 
         // 2. Generate a "Master Concept" image for the photoshoot
-        let photoshootWithImage = parseJ(photoR);
+        let photoshootWithImage = parseJ(photoR, { concept: 'لم يتم توليد بريف.', backgrounds: [], props: [], shots: [], colors: '', lighting: '' });
         if (photoshootWithImage && productImages.length > 0) {
             try {
                 const img = await generateImage(productImages, `Professional Product Photoshoot: ${photoshootWithImage.concept}. Lighting: ${photoshootWithImage.lighting}. Colors: ${photoshootWithImage.colors}. High-end commercial photography, 8k.`, null, "1:1");

@@ -36,6 +36,13 @@ export default function CreativeStudioHub({
     const [activeTab, setActiveTab] = useState<'script' | 'shots' | 'ugc' | 'photoshoot'>('script');
     const [isSaving, setIsSaving] = useState(false);
     const [savedSuccessfully, setSavedSuccessfully] = useState(false);
+
+    // Progressive Loading & Editable State
+    const [reelsScript, setReelsScript] = useState('');
+    const [shots, setShots] = useState<any[]>([]);
+    const [ugcScript, setUgcScript] = useState('');
+    const [photoshootBrief, setPhotoshootBrief] = useState<any>(null);
+
     const { message: loadingMessage, start: startMessages, stop: stopMessages } = useLoadingMessages(creativeStudioMessages);
 
     useEffect(() => {
@@ -48,12 +55,17 @@ export default function CreativeStudioHub({
     const runCreativeStudio = async () => {
         setIsGenerating(true);
         startMessages();
+        setSavedSuccessfully(false);
 
         const angle = data.selectedAngle || data.productName || 'حملة إعلانية للمنتج';
         const result = await CampaignOrchestrator.runAllCreativeTools(data, angle);
 
         if (result.success) {
             setResults(result.data);
+            setReelsScript(result.data.reelsScript || '');
+            setShots(result.data.shots || []);
+            setUgcScript(result.data.ugcScript || '');
+            setPhotoshootBrief(result.data.photoshootBrief || null);
         }
 
         setIsGenerating(false);
@@ -71,18 +83,15 @@ export default function CreativeStudioHub({
                 campaign_goal: data.campaignGoal || '',
                 selected_angle: data.selectedAngle || '',
 
-                // Creative Studio Results
-                reels_script: results.reelsScript || '',
-                shots: results.shots || [],
-                photoshoot_brief: results.photoshootBrief || null,
+                // Creative Studio Results (Using Edited State)
+                reels_script: reelsScript,
+                shots: shots,
+                photoshoot_brief: photoshootBrief,
+                ugc_script: ugcScript,
 
-                // UGC (Available in both hubs, prioritizing Creative Studio's output)
-                ugc_script: results.ugcScript || '',
-
-                // Note: Performance ads, hooks, and angles are typically generated in 
-                // the Campaign Builder phase. We could either pass them here or 
-                // expect them to be in the 'data' context if we stored them there.
-                // For now, we save what was generated in this hub.
+                // Enterprise Info
+                version: 1,
+                status: 'final'
             });
             setSavedSuccessfully(true);
             setIsSaving(false);
@@ -205,19 +214,13 @@ export default function CreativeStudioHub({
                             {/* ── سكريبت الريلز ── */}
                             {activeTab === 'script' && (
                                 <div className="p-5">
-                                    <div className="flex items-center justify-between mb-3">
-                                        <h4 className="text-emerald-400 font-bold flex items-center gap-2">
-                                            <span>🎙️</span> سكريبت الريلز — النص الصوتي الكامل
-                                        </h4>
-                                        <button onClick={() => navigator.clipboard.writeText(results.reelsScript || '')} className="text-xs text-gray-400 hover:text-white bg-gray-700 px-3 py-1.5 rounded-lg">📋 نسخ</button>
-                                    </div>
                                     <textarea
-                                        value={results.reelsScript || ''}
-                                        onChange={(e) => setResults((prev: any) => ({ ...prev, reelsScript: e.target.value }))}
+                                        value={reelsScript}
+                                        onChange={(e) => setReelsScript(e.target.value)}
                                         className="w-full bg-gray-900 border border-gray-600 rounded-xl px-4 py-3 text-white leading-loose text-base focus:ring-2 focus:ring-emerald-500 min-h-[200px]"
                                         dir="auto"
                                     />
-                                    <p className="text-xs text-gray-500 mt-2">قابل للتعديل — عدّل قبل التصوير</p>
+                                    <p className="text-xs text-emerald-500 mt-2 font-bold animate-pulse">🛠️ يمكنك التعديل مباشرة على النص أعلاه</p>
                                 </div>
                             )}
 
@@ -230,7 +233,7 @@ export default function CreativeStudioHub({
                                         <span className="text-xs text-gray-500 mr-auto">جاهزة للتصوير المباشر</span>
                                     </div>
                                     <div className="space-y-3">
-                                        {Array.isArray(results.shots) ? results.shots.map((shot: any, idx: number) => (
+                                        {Array.isArray(shots) && shots.length > 0 ? shots.map((shot: any, idx: number) => (
                                             <div key={idx} className="bg-gray-900 border border-gray-700 rounded-xl p-4">
                                                 <div className="flex items-center gap-3 mb-3 flex-wrap">
                                                     <span className="w-7 h-7 bg-emerald-600/20 border border-emerald-500/30 rounded-lg flex items-center justify-center text-emerald-400 font-black text-sm shrink-0">
@@ -249,13 +252,31 @@ export default function CreativeStudioHub({
                                                         {shot.action && (
                                                             <div>
                                                                 <span className="text-gray-500 text-xs block mb-0.5">الحركة والأكشن:</span>
-                                                                <p className="text-gray-200 leading-relaxed" dir="auto">{shot.action}</p>
+                                                                <textarea
+                                                                    value={shot.action}
+                                                                    onChange={(e) => {
+                                                                        const newShots = [...shots];
+                                                                        newShots[idx].action = e.target.value;
+                                                                        setShots(newShots);
+                                                                    }}
+                                                                    className="w-full bg-transparent border-none p-0 text-gray-200 leading-relaxed resize-none focus:ring-0"
+                                                                    dir="auto"
+                                                                />
                                                             </div>
                                                         )}
                                                         {shot.textOnScreen && (
                                                             <div className="bg-yellow-900/20 border border-yellow-500/30 px-3 py-2 rounded-lg">
                                                                 <span className="text-yellow-400 text-xs font-bold block mb-0.5">📝 نص على الشاشة:</span>
-                                                                <p className="text-yellow-100 text-sm font-semibold" dir="auto">{shot.textOnScreen}</p>
+                                                                <input
+                                                                    value={shot.textOnScreen}
+                                                                    onChange={(e) => {
+                                                                        const newShots = [...shots];
+                                                                        newShots[idx].textOnScreen = e.target.value;
+                                                                        setShots(newShots);
+                                                                    }}
+                                                                    className="w-full bg-transparent border-none p-0 text-yellow-100 text-sm font-semibold focus:ring-0"
+                                                                    dir="auto"
+                                                                />
                                                             </div>
                                                         )}
                                                         {shot.technicalNote && (
@@ -286,12 +307,12 @@ export default function CreativeStudioHub({
                                         <button onClick={() => navigator.clipboard.writeText(results.ugcScript || '')} className="text-xs text-gray-400 hover:text-white bg-gray-700 px-3 py-1.5 rounded-lg">📋 نسخ</button>
                                     </div>
                                     <textarea
-                                        value={results.ugcScript || ''}
-                                        onChange={(e) => setResults((prev: any) => ({ ...prev, ugcScript: e.target.value }))}
+                                        value={ugcScript}
+                                        onChange={(e) => setUgcScript(e.target.value)}
                                         className="w-full bg-gray-900 border border-gray-600 rounded-xl px-4 py-3 text-white leading-loose min-h-[220px] focus:ring-2 focus:ring-yellow-500"
                                         dir="auto"
                                     />
-                                    <p className="text-xs text-gray-500 mt-2">للاستخدام مع مؤثر حقيقي أو أفاتار AI (HeyGen, Synthesia)</p>
+                                    <p className="text-xs text-yellow-500 mt-2 font-bold animate-pulse">🛠️ سكريبت الـ UGC جاهز للتعديل</p>
                                 </div>
                             )}
 
@@ -301,58 +322,63 @@ export default function CreativeStudioHub({
                                     <h4 className="text-pink-400 font-bold flex items-center gap-2 mb-4">
                                         <span>📸</span> بريف التصوير الاحترافي
                                     </h4>
-                                    {results.photoshootBrief && typeof results.photoshootBrief === 'object' ? (
+                                    {photoshootBrief && typeof photoshootBrief === 'object' ? (
                                         <div className="space-y-4">
-                                            {results.photoshootBrief.concept && (
+                                            {photoshootBrief.concept && (
                                                 <div className="bg-gray-900 border border-gray-700 rounded-xl p-4 flex flex-col md:flex-row gap-6">
-                                                    {results.photoshootBrief.conceptImageUrl && (
+                                                    {photoshootBrief.conceptImageUrl && (
                                                         <div className="w-full md:w-64 h-64 shrink-0 rounded-2xl overflow-hidden border border-pink-500/30 shadow-2xl">
-                                                            <img src={results.photoshootBrief.conceptImageUrl} alt="Concept Preview" className="w-full h-full object-cover" />
+                                                            <img src={photoshootBrief.conceptImageUrl} alt="Concept Preview" className="w-full h-full object-cover" />
                                                         </div>
                                                     )}
                                                     <div className="flex-1">
                                                         <span className="text-pink-400 font-bold text-xs block mb-1">💡 الفكرة البصرية الكاملة</span>
-                                                        <p className="text-white text-lg leading-relaxed" dir="auto">{results.photoshootBrief.concept}</p>
+                                                        <textarea
+                                                            value={photoshootBrief.concept}
+                                                            onChange={(e) => setPhotoshootBrief({ ...photoshootBrief, concept: e.target.value })}
+                                                            className="w-full bg-transparent border-none p-0 text-white text-lg leading-relaxed resize-none focus:ring-0"
+                                                            dir="auto"
+                                                        />
                                                     </div>
                                                 </div>
                                             )}
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                {results.photoshootBrief.backgrounds && (
+                                                {photoshootBrief.backgrounds && (
                                                     <div className="bg-gray-900 border border-gray-700 rounded-xl p-4">
                                                         <span className="text-blue-400 font-bold text-xs block mb-2">🖼️ الخلفيات</span>
-                                                        <ul className="space-y-1">{results.photoshootBrief.backgrounds.map((b: string, i: number) => (
+                                                        <ul className="space-y-1">{photoshootBrief.backgrounds.map((b: string, i: number) => (
                                                             <li key={i} className="text-gray-300 text-sm" dir="auto">• {b}</li>
                                                         ))}</ul>
                                                     </div>
                                                 )}
-                                                {results.photoshootBrief.props && (
+                                                {photoshootBrief.props && (
                                                     <div className="bg-gray-900 border border-gray-700 rounded-xl p-4">
                                                         <span className="text-yellow-400 font-bold text-xs block mb-2">🎨 الإكسسوارات</span>
-                                                        <ul className="space-y-1">{results.photoshootBrief.props.map((p: string, i: number) => (
+                                                        <ul className="space-y-1">{photoshootBrief.props.map((p: string, i: number) => (
                                                             <li key={i} className="text-gray-300 text-sm" dir="auto">• {p}</li>
                                                         ))}</ul>
                                                     </div>
                                                 )}
                                                 <div className="bg-gray-900 border border-gray-700 rounded-xl p-4 space-y-2">
-                                                    {results.photoshootBrief.colors && (
+                                                    {photoshootBrief.colors && (
                                                         <div>
                                                             <span className="text-purple-400 font-bold text-xs block mb-1">🎨 لوحة الألوان</span>
-                                                            <p className="text-gray-300 text-sm" dir="auto">{results.photoshootBrief.colors}</p>
+                                                            <p className="text-gray-300 text-sm" dir="auto">{photoshootBrief.colors}</p>
                                                         </div>
                                                     )}
-                                                    {results.photoshootBrief.lighting && (
+                                                    {photoshootBrief.lighting && (
                                                         <div>
                                                             <span className="text-orange-400 font-bold text-xs block mb-1">💡 الإضاءة</span>
-                                                            <p className="text-gray-300 text-sm" dir="auto">{results.photoshootBrief.lighting}</p>
+                                                            <p className="text-gray-300 text-sm" dir="auto">{photoshootBrief.lighting}</p>
                                                         </div>
                                                     )}
                                                 </div>
                                             </div>
-                                            {results.photoshootBrief.shots && results.photoshootBrief.shots.length > 0 && (
+                                            {photoshootBrief.shots && photoshootBrief.shots.length > 0 && (
                                                 <div>
                                                     <span className="text-pink-400 font-bold text-xs block mb-2">📷 اللقطات المقترحة</span>
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                        {results.photoshootBrief.shots.map((s: any, i: number) => (
+                                                        {photoshootBrief.shots.map((s: any, i: number) => (
                                                             <div key={i} className="bg-gray-900 border border-gray-700 rounded-xl p-3">
                                                                 <div className="text-white font-bold text-sm mb-1">{s.name}</div>
                                                                 {s.setup && <p className="text-gray-400 text-xs" dir="auto">{s.setup}</p>}

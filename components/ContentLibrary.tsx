@@ -110,7 +110,10 @@ export function ContentLibrary({ userId }: ContentLibraryProps) {
                             <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">📁</div>
                             <h3 className="text-lg font-black text-white line-clamp-2 leading-tight mb-2">{camp.product_name}</h3>
                             <p className="text-slate-400 text-xs line-clamp-1">🎯 {camp.campaign_goal}</p>
-                            <p className="text-purple-400 text-[10px] font-bold mt-2 uppercase tracking-wider">{new Date(camp.created_at!).toLocaleDateString('ar-EG')}</p>
+                            <p className="text-purple-400 text-[10px] font-bold mt-2 uppercase tracking-wider">
+                                {new Date(camp.created_at!).toLocaleDateString('ar-EG')}
+                                {camp.version && <span className="mr-2 bg-white/10 px-1.5 py-0.5 rounded text-gray-300">V{camp.version}</span>}
+                            </p>
 
                             <div className="mt-auto flex gap-2">
                                 <button className="flex-1 bg-purple-500/20 hover:bg-purple-500 text-purple-300 hover:text-white text-[10px] font-bold py-2 rounded-xl transition-all">فتح المعاينة</button>

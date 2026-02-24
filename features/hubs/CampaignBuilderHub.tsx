@@ -32,6 +32,13 @@ export default function CampaignBuilderHub({
     const [isBuilding, setIsBuilding] = useState(false);
     const [results, setResults] = useState<any>(null);
     const [activeTab, setActiveTab] = useState<'ads' | 'ugc' | 'hooks' | 'angles'>('ads');
+
+    // Progressive Loading & Editable State
+    const [performanceAds, setPerformanceAds] = useState<any[]>([]);
+    const [ugcScript, setUgcScript] = useState('');
+    const [viralHooks, setViralHooks] = useState<any[]>([]);
+    const [salesAngles, setSalesAngles] = useState<any[]>([]);
+
     const { message: loadingMessage, start: startMessages, stop: stopMessages } = useLoadingMessages(campaignBuilderMessages);
 
     const runCampaignBuilder = async () => {
@@ -43,6 +50,11 @@ export default function CampaignBuilderHub({
 
         if (result.success) {
             setResults(result.data);
+            setPerformanceAds(result.data.performanceAds || []);
+            setUgcScript(result.data.ugcScript || '');
+            setViralHooks(result.data.viralHooks || []);
+            setSalesAngles(result.data.salesAngles || []);
+
             // Pick first angle for Creative Studio
             const firstAngle = Array.isArray(result.data.salesAngles) && result.data.salesAngles.length > 0
                 ? result.data.salesAngles[0].angle
@@ -192,23 +204,52 @@ export default function CampaignBuilderHub({
                                     <h4 className="text-purple-400 font-bold flex items-center gap-2">
                                         <span>📣</span> 3 إعلانات مباشرة جاهزة للنشر
                                     </h4>
-                                    {Array.isArray(results.performanceAds) ? results.performanceAds.map((ad: any, i: number) => (
-                                        <div key={i} className="bg-gray-900 border border-gray-700 rounded-xl p-4">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <span className="text-purple-300 font-bold text-sm">{ad.headline}</span>
-                                                <div className="flex items-center gap-2">
+                                    {performanceAds.map((ad: any, i: number) => (
+                                        <div key={i} className="bg-gray-900 border border-gray-700 rounded-xl p-4 space-y-2">
+                                            <div className="flex items-center justify-between mb-1">
+                                                <input
+                                                    value={ad.headline}
+                                                    onChange={(e) => {
+                                                        const newAds = [...performanceAds];
+                                                        newAds[i].headline = e.target.value;
+                                                        setPerformanceAds(newAds);
+                                                    }}
+                                                    className="bg-transparent border-none p-0 text-purple-300 font-bold text-sm focus:ring-0 w-full"
+                                                    dir="auto"
+                                                />
+                                                <div className="flex items-center gap-2 shrink-0">
                                                     {ad.format && <span className="text-xs text-gray-500 bg-gray-800 border border-gray-600 px-2 py-0.5 rounded">{ad.format}</span>}
-                                                    <button onClick={() => navigator.clipboard.writeText(`${ad.headline}\n\n${ad.body}\n\n${ad.cta}`)} className="text-xs text-gray-400 hover:text-white bg-gray-700 px-2 py-1 rounded">📋 نسخ</button>
+                                                    <button onClick={() => navigator.clipboard.writeText(`${ad.headline}\n\n${ad.body}\n\n${ad.cta}`)} className="text-xs text-gray-400 hover:text-white bg-gray-700 px-2 py-1 rounded">📋</button>
                                                 </div>
                                             </div>
-                                            <p className="text-gray-200 text-sm leading-relaxed" dir="auto">{ad.body}</p>
-                                            {ad.cta && <div className="mt-2 text-emerald-400 text-xs font-bold">👉 {ad.cta}</div>}
+                                            <textarea
+                                                value={ad.body}
+                                                onChange={(e) => {
+                                                    const newAds = [...performanceAds];
+                                                    newAds[i].body = e.target.value;
+                                                    setPerformanceAds(newAds);
+                                                }}
+                                                className="w-full bg-transparent border-none p-0 text-gray-200 text-sm leading-relaxed resize-none focus:ring-0"
+                                                dir="auto"
+                                                rows={3}
+                                            />
+                                            {ad.cta && (
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <span className="text-emerald-400 text-xs font-bold shrink-0">👉</span>
+                                                    <input
+                                                        value={ad.cta}
+                                                        onChange={(e) => {
+                                                            const newAds = [...performanceAds];
+                                                            newAds[i].cta = e.target.value;
+                                                            setPerformanceAds(newAds);
+                                                        }}
+                                                        className="bg-transparent border-none p-0 text-emerald-400 text-xs font-bold focus:ring-0 w-full"
+                                                        dir="auto"
+                                                    />
+                                                </div>
+                                            )}
                                         </div>
-                                    )) : (
-                                        <div className="text-gray-300 whitespace-pre-wrap text-sm leading-relaxed p-3 bg-gray-900 rounded-xl" dir="auto">
-                                            {typeof results.performanceAds === 'string' ? results.performanceAds : 'لم يتم توليد إعلانات.'}
-                                        </div>
-                                    )}
+                                    ))}
                                 </div>
                             )}
 
@@ -222,12 +263,12 @@ export default function CampaignBuilderHub({
                                         <button onClick={() => navigator.clipboard.writeText(results.ugcScript || '')} className="text-xs text-gray-400 hover:text-white bg-gray-700 px-3 py-1.5 rounded-lg">📋 نسخ</button>
                                     </div>
                                     <textarea
-                                        value={results.ugcScript || ''}
-                                        onChange={(e) => setResults((prev: any) => ({ ...prev, ugcScript: e.target.value }))}
+                                        value={ugcScript}
+                                        onChange={(e) => setUgcScript(e.target.value)}
                                         className="w-full bg-gray-900 border border-gray-600 rounded-xl px-4 py-3 text-white leading-loose min-h-[220px] focus:ring-2 focus:ring-yellow-500"
                                         dir="auto"
                                     />
-                                    <p className="text-xs text-gray-500 mt-2">قابل للتعديل — للاستخدام مع مؤثر حقيقي أو Avatar AI (HeyGen, Synthesia)</p>
+                                    <p className="text-xs text-yellow-500 mt-2 font-bold animate-pulse">🛠️ يمكنك تعديل السكريبت هنا قبل الانتقال للمرحلة التالية</p>
                                 </div>
                             )}
 
@@ -238,22 +279,27 @@ export default function CampaignBuilderHub({
                                         <span>🎣</span> 10 خطافات فيرال — أوقف التمرير من أول ثانية
                                     </h4>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        {Array.isArray(results.viralHooks) ? results.viralHooks.map((h: any, i: number) => (
+                                        {viralHooks.map((h: any, i: number) => (
                                             <div key={i} className="bg-gray-900 border border-gray-700 rounded-xl p-3">
                                                 <div className="flex items-start justify-between gap-2 mb-1">
-                                                    <p className="text-white font-bold text-sm leading-snug flex-1" dir="auto">"{h.hook}"</p>
+                                                    <textarea
+                                                        value={h.hook}
+                                                        onChange={(e) => {
+                                                            const newHooks = [...viralHooks];
+                                                            newHooks[i].hook = e.target.value;
+                                                            setViralHooks(newHooks);
+                                                        }}
+                                                        className="bg-transparent border-none p-0 text-white font-bold text-sm leading-snug flex-1 resize-none focus:ring-0"
+                                                        dir="auto"
+                                                        rows={2}
+                                                    />
                                                     <button onClick={() => navigator.clipboard.writeText(h.hook)} className="text-xs text-gray-500 hover:text-white shrink-0 bg-gray-800 px-2 py-1 rounded">📋</button>
                                                 </div>
                                                 <div className="flex gap-2 mt-1.5 flex-wrap">
                                                     {h.type && <span className="text-xs bg-pink-900/40 border border-pink-500/30 text-pink-300 px-2 py-0.5 rounded">{h.type}</span>}
-                                                    {h.why && <span className="text-xs text-gray-500 italic">{h.why}</span>}
                                                 </div>
                                             </div>
-                                        )) : (
-                                            <div className="col-span-2 text-gray-300 leading-relaxed text-sm whitespace-pre-wrap" dir="auto">
-                                                {typeof results.viralHooks === 'string' ? results.viralHooks : 'لم يتم توليد خطافات.'}
-                                            </div>
-                                        )}
+                                        ))}
                                     </div>
                                 </div>
                             )}
@@ -265,27 +311,40 @@ export default function CampaignBuilderHub({
                                         <span>🎯</span> 6 زوايا تسويقية — اختر زاوية للاستوديو الإبداعي
                                     </h4>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {Array.isArray(results.salesAngles) ? results.salesAngles.map((a: any, i: number) => (
+                                        {salesAngles.map((a: any, i: number) => (
                                             <div
                                                 key={i}
                                                 onClick={() => updateData({ selectedAngle: a.angle })}
                                                 className={`bg-gray-900 border rounded-xl p-4 cursor-pointer transition-all hover:border-blue-500 ${data.selectedAngle === a.angle ? 'border-blue-500 ring-1 ring-blue-500/30' : 'border-gray-700'}`}
                                             >
                                                 <div className="flex items-center justify-between mb-2">
-                                                    <span className="text-blue-300 font-bold text-sm">{a.angle}</span>
+                                                    <input
+                                                        value={a.angle}
+                                                        onChange={(e) => {
+                                                            const newAngles = [...salesAngles];
+                                                            newAngles[i].angle = e.target.value;
+                                                            setSalesAngles(newAngles);
+                                                        }}
+                                                        className="bg-transparent border-none p-0 text-blue-300 font-bold text-sm focus:ring-0 w-full"
+                                                        dir="auto"
+                                                    />
                                                     {data.selectedAngle === a.angle && (
-                                                        <span className="text-xs text-blue-400 bg-blue-900/40 px-2 py-0.5 rounded border border-blue-500/30">✓ مختارة</span>
+                                                        <span className="text-xs text-blue-400 bg-blue-900/40 px-2 py-0.5 rounded border border-blue-500/30 shrink-0">✓ مختارة</span>
                                                     )}
                                                 </div>
-                                                {a.concept && <p className="text-gray-400 text-xs leading-relaxed mb-1" dir="auto">{a.concept}</p>}
-                                                {a.exampleHook && <p className="text-gray-200 text-xs italic" dir="auto">"{a.exampleHook}"</p>}
-                                                {a.targetEmotion && <span className="text-xs text-purple-400 mt-1 block">🎭 {a.targetEmotion}</span>}
+                                                <textarea
+                                                    value={a.concept}
+                                                    onChange={(e) => {
+                                                        const newAngles = [...salesAngles];
+                                                        newAngles[i].concept = e.target.value;
+                                                        setSalesAngles(newAngles);
+                                                    }}
+                                                    className="w-full bg-transparent border-none p-0 text-gray-400 text-xs leading-relaxed mb-1 resize-none focus:ring-0"
+                                                    dir="auto"
+                                                    rows={2}
+                                                />
                                             </div>
-                                        )) : (
-                                            <div className="col-span-2 text-gray-300 text-sm leading-relaxed whitespace-pre-wrap" dir="auto">
-                                                {typeof results.salesAngles === 'string' ? results.salesAngles : 'لم يتم توليد زوايا.'}
-                                            </div>
-                                        )}
+                                        ))}
                                     </div>
                                 </div>
                             )}

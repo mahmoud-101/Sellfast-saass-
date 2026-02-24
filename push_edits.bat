@@ -1,41 +1,30 @@
 @echo off
+setlocal
 echo =====================================================
-echo   Sellfast AI - Output Quality + Creative Tools Fix
+echo   Sellfast AI - Enterprise Upgrade Deployment
 echo =====================================================
 echo.
-echo Changes in this batch:
+echo Preparing to push the following updates:
+echo  1. AI Resilience (safeJsonParse)
+echo  2. Full Interactivity (Editable Hubs)
+echo  3. AI Visuals (Shot/Concept Images)
+echo  4. Progressive Loading UX
+echo  5. Campaign Versioning (V1, V2)
 echo.
-echo  [FIX] Creative Studio - Output completely restructured:
-echo       Was: مشاهد قصة (storyboard scenes)
-echo       Now: سكريبت ريلز كامل + قائمة لقطات تقنية
-echo.
-echo  [+] سكريبت الريلز: نص صوتي كامل بالعامية
-echo       Hook, مشكلة, حل, دليل اجتماعي, CTA
-echo       قابل للتعديل + زر نسخ
-echo.
-echo  [+] قائمة اللقطات التقنية (Shot List):
-echo       نوع اللقطة, المدة, الأكشن, النص على الشاشة
-echo       ملاحظة تقنية للمخرج
-echo.
-echo  [FIX] أدوات الإخراج - ترجمة للعربية:
-echo       Storyboard Studio, UGC Studio, Photoshoot, Library
-echo.
-echo  [FIX] Campaign Builder - خطة المحتوى (٧ أيام):
-echo       Was: English generic text
-echo       Now: JSON عربي هيكلي (hook/body/CTA/hashtags)
-echo.
-echo  [FIX] Market Intelligence - جودة التحليل أحسن
-echo.
-cd /d "%~dp0"
+echo [1/3] Adding changes...
 git add .
-git commit -m "fix: reels script + shot list output, upgrade arabic ai prompts, translate creative tools"
+echo [2/3] Committing changes...
+git commit -m "feat: Enterprise Upgrade - Resilience, Interactivity, Visuals & Versioning"
+echo [3/3] Pushing to server...
 git push origin main
-
 echo.
 if %ERRORLEVEL% EQU 0 (
-    echo SUCCESS! Deploying to Vercel...
+    echo =====================================================
+    echo   SUCCESS! Your update is now live.
+    echo =====================================================
 ) else (
-    echo Error - check above.
+    echo =====================================================
+    echo   ERROR: Deployment failed. Please check your connection.
+    echo =====================================================
 )
-echo =====================================================
 pause
