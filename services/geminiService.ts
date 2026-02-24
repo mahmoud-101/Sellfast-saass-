@@ -15,10 +15,6 @@ const getApiKey = () => {
     if (!rawKeys) {
         try { rawKeys = process.env.GEMINI_API_KEY || process.env.API_KEY || ''; } catch (e) { }
     }
-    // Hardcoded fallback provided by user to bypass Vercel configuration issues
-    if (!rawKeys) {
-        rawKeys = 'AIzaSyA5bCepyZuQF3ZrIKVgu09v5K5DyoXJQ30';
-    }
     const keys = rawKeys.split(',').map((k: any) => k.trim()).filter((k: any) => k.length > 0);
     if (keys.length === 0) return '';
     return keys[Math.floor(Math.random() * keys.length)];
@@ -31,7 +27,16 @@ const getPerplexityKey = () => {
     return pKey;
 };
 
-const OPENROUTER_KEY = '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';
+/**
+ * OpenRouter Key: Loaded from environment variables for security.
+ * Set OPENROUTER_API_KEY or VITE_OPENROUTER_API_KEY in Vercel env vars.
+ */
+const getOpenRouterKey = () => {
+    let key = '';
+    try { key = (import.meta as any).env.VITE_OPENROUTER_API_KEY || ''; } catch (e) { }
+    if (!key) { try { key = process.env.OPENROUTER_API_KEY || ''; } catch (e) { } }
+    return key;
+};
 
 /**
  * OpenRouter Fallback: Uses OpenRouter API (OpenAI-compatible) as a powerful fallback
@@ -46,7 +51,7 @@ async function askOpenRouter(prompt: string, sys?: string): Promise<string> {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${OPENROUTER_KEY}`,
+            'Authorization': `Bearer ${getOpenRouterKey()}`,
             'HTTP-Referer': 'https://sellfast-saass-8qqf.vercel.app',
             'X-Title': 'Ebdaa Pro'
         },
