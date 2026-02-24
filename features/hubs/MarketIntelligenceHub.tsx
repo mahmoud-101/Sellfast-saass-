@@ -42,8 +42,25 @@ export default function MarketIntelligenceHub({
 
         if (result.success) {
             setResults(result.data);
-            setEditableTrends((result.data.trends || []).join('\n'));
-            setEditableStrategy(result.data.strategy || result.data.categoryAnalysis || '');
+
+            // Properly serialize TrendItem objects → readable Arabic text
+            const trends = result.data.trends || [];
+            const trendsText = trends.map((t: any) => {
+                if (typeof t === 'string') return t;
+                // TrendItem shape: {topic, relevance, contentIdea, viralHook}
+                const parts = [];
+                if (t.topic) parts.push(`📌 ${t.topic}`);
+                if (t.relevance) parts.push(`• ${t.relevance}`);
+                if (t.contentIdea) parts.push(`💡 ${t.contentIdea}`);
+                if (t.viralHook) parts.push(`🎣 ${t.viralHook}`);
+                return parts.join('\n');
+            }).join('\n\n');
+
+            setEditableTrends(trendsText);
+            setEditableStrategy(typeof result.data.categoryAnalysis === 'string'
+                ? result.data.categoryAnalysis
+                : JSON.stringify(result.data.categoryAnalysis || '', null, 2));
+
             updateData({
                 marketTrends: result.data.trends,
                 categoryAnalysis: result.data.categoryAnalysis
