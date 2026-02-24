@@ -69,8 +69,8 @@ export default function MarketIntelligenceHub({
     }
 
     return (
-        <div className="min-h-screen bg-gray-900 text-white p-8 ltr:pl-8 rtl:pr-8 ltr:md:pl-64 rtl:md:pr-64 pt-20">
-            <div className="max-w-4xl mx-auto space-y-8">
+        <div className="w-full space-y-8 animate-in fade-in duration-500" dir="rtl">
+            <div className="max-w-5xl mx-auto space-y-8">
 
                 {/* Header & Modes */}
                 <div className="flex justify-between items-center bg-gray-800 p-6 rounded-2xl border border-gray-700">

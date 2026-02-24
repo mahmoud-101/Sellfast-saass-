@@ -1,8 +1,7 @@
 import { ProductIntelligenceData } from '../context/ProductIntelligenceContext';
 import {
-    analyzeProductForCampaign,
     generatePerformanceAdPack,
-    generateSocialContentPack,
+    askGemini,
     generateStoryboardPlan,
     fetchCurrentTrends
 } from '../services/geminiService';
@@ -35,8 +34,8 @@ export class CampaignOrchestrator {
             const trends = await fetchCurrentTrends(context.targetMarket, context.productName);
 
             // 2. Perform deep category analysis (mimicking classic Marketing Studio / Strategy Engine)
-            const analysisPrompt = `Product: ${context.productName}\nDescription: ${context.productDescription}\nMarket: ${context.targetMarket}\n\nProvide a deep marketing analysis.`;
-            const categoryAnalysis = await analyzeProductForCampaign(analysisPrompt);
+            const analysisPrompt = `Product: ${context.productName}\nDescription: ${context.productDescription}\nMarket: ${context.targetMarket}\n\nProvide a deep marketing analysis including target audience, positioning, and 3 key USP angles.`;
+            const categoryAnalysis = await askGemini(analysisPrompt, "You are a Senior Product Marketing Analyst.");
 
             return {
                 success: true,
@@ -58,24 +57,21 @@ export class CampaignOrchestrator {
         try {
             if (context.campaignGoal === 'المبيعات والتحويلات' || context.campaignGoal === 'Sales') {
                 // Route to Performance Engine (formerly Performance Studio)
-                const pack = await generatePerformanceAdPack(
-                    context.productDescription,
-                    context.targetMarket,
-                    context.campaignGoal,
-                    'Facebook/TikTok',
-                    context.dialect,
-                    'Direct Response',
-                    'N/A' // Price
-                );
+                const pack = await generatePerformanceAdPack({
+                    productDescription: context.productDescription,
+                    targetMarket: context.targetMarket,
+                    campaignGoal: context.campaignGoal,
+                    platform: 'Facebook/TikTok',
+                    dialect: context.dialect,
+                    brandTone: 'Direct Response',
+                    sellingPrice: 'N/A'
+                });
                 return { success: true, data: { strategy: 'performance', pack } };
             } else {
                 // Route to Content/Brand Engine (formerly Plan Studio / Daily Pack)
-                const pack = await generateSocialContentPack(
-                    context.productName,
-                    context.productDescription,
-                    context.dialect,
-                    'Social Mix'
-                );
+                const prompt = `Generate a 7-day social media content pack for ${context.productName}. Description: ${context.productDescription}. Dialect: ${context.dialect}. Focus on brand awareness.`;
+                const contentText = await askGemini(prompt, "You are a Social Media Content Strategist.");
+                const pack = contentText.split('\n\n').filter(p => p.trim().length > 10).slice(0, 7);
                 return { success: true, data: { strategy: 'content', pack } };
             }
         } catch (error: any) {
@@ -90,8 +86,8 @@ export class CampaignOrchestrator {
     static async generateCreatives(context: ProductIntelligenceData, angle: string): Promise<OrchestrationResult> {
         try {
             // Feed the winning angle into the Storyboard Director automatically
-            const prompt = `Product: ${context.productName}. Angle: ${angle}. Create a video storyboard.`;
-            const storyboard = await generateStoryboardPlan(prompt);
+            const prompt = `Product: ${context.productName}. Angle: ${angle}. Create a detailed video storyboard.`;
+            const storyboard = await generateStoryboardPlan([], prompt);
 
             return {
                 success: true,
