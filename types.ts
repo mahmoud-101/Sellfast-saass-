@@ -27,8 +27,9 @@ export interface ProjectBase {
 export type AppView =
   | 'landing' | 'dashboard' | 'daily_pack' | 'photoshoot' | 'video_studio' | 'plan_studio'
   | 'branding_mockups' | 'strategy_engine' | 'trend_engine' | 'brand_kit' | 'pricing'
-  | 'suite_view' | 'power' | 'ads_studio' | 'faq' | 'privacy_policy' | 'terms_of_service'
-  | 'production_factory' | 'ugc_studio' | 'admin' | 'performance_studio' | 'content_library' | 'storyboard_studio';
+  | 'library' | 'auth' | 'suite_view' | 'power' | 'ads_studio' | 'faq' | 'privacy_policy' | 'terms_of_service'
+  | 'production_factory' | 'ugc_studio' | 'admin' | 'performance_studio' | 'content_library' | 'storyboard_studio'
+  | 'market_intelligence_hub' | 'campaign_builder_hub' | 'creative_studio_hub';
 
 export interface EliteChatMessage {
   role: 'user' | 'bot';
