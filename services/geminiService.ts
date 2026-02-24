@@ -31,6 +31,53 @@ const getPerplexityKey = () => {
     return pKey;
 };
 
+const OPENROUTER_KEY = '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';
+
+/**
+ * OpenRouter Fallback: Uses OpenRouter API (OpenAI-compatible) as a powerful fallback
+ * when Gemini hits rate limits. Supports all models via a single paid key.
+ */
+async function askOpenRouter(prompt: string, sys?: string): Promise<string> {
+    const messages: any[] = [];
+    if (sys) messages.push({ role: 'system', content: sys });
+    messages.push({ role: 'user', content: prompt });
+
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENROUTER_KEY}`,
+            'HTTP-Referer': 'https://sellfast-saass-8qqf.vercel.app',
+            'X-Title': 'Ebdaa Pro'
+        },
+        body: JSON.stringify({
+            model: 'google/gemini-2.5-flash',
+            messages,
+            temperature: 0.7,
+            max_tokens: 2048
+        })
+    });
+
+    if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`OpenRouter error ${res.status}: ${errText}`);
+    }
+
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content || '';
+}
+
+async function askOpenRouterJSON(prompt: string, sys?: string): Promise<any> {
+    const text = await askOpenRouter(prompt, sys);
+    try {
+        const jsonMatch = text.match(/```json\s*([\s\S]*?)```/) || text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) return JSON.parse(jsonMatch[1] || jsonMatch[0]);
+        return JSON.parse(text);
+    } catch {
+        return JSON.parse(text);
+    }
+}
+
 /**
  * Anti-Rate Limit & Timeout Wrapper
  * Automatically retries failed Gemini requests with exponential backoff to ensure "infinite" feeling
@@ -180,21 +227,26 @@ export async function askGemini(prompt: string, sys?: string): Promise<string> {
         }
     }
 
-    return executeWithRetry(async () => {
-        // Get fresh key on every retry
-        const ai = new GoogleGenAI({ apiKey: getApiKey() });
-        const res = await ai.models.generateContent({
-            model: SMART_MODEL,
-            contents: prompt,
-            config: {
-                systemInstruction: sys,
-                temperature: 0.7,
-                maxOutputTokens: 2048,
-                topK: 40
-            }
+    try {
+        return await executeWithRetry(async () => {
+            // Get fresh key on every retry
+            const ai = new GoogleGenAI({ apiKey: getApiKey() });
+            const res = await ai.models.generateContent({
+                model: SMART_MODEL,
+                contents: prompt,
+                config: {
+                    systemInstruction: sys,
+                    temperature: 0.7,
+                    maxOutputTokens: 2048,
+                    topK: 40
+                }
+            });
+            return res.text || "";
         });
-        return res.text || "";
-    });
+    } catch (e) {
+        console.warn("[AI Engine] Gemini exhausted, falling back to OpenRouter...", e);
+        return await askOpenRouter(prompt, sys);
+    }
 }
 
 export async function generateUGCScript(data: any): Promise<string> { return askGemini(`Generate viral UGC script for ${data.productSelling}`, "Expert Content Creator"); }
