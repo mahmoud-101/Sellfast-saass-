@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Upload, ChevronRight, Wand2, X, Plus, AlertCircle, RefreshCw, Smartphone, Film, Info } from 'lucide-react';
 import { StoryboardStudioProject, StoryboardScene, ImageFile } from '../types';
-import { generateStoryboardPlan } from '../services/geminiService';
+import { generateStoryboardPlan, generateImage } from '../services/geminiService';
 import { saveGeneratedAsset } from '../lib/supabase';
 
 interface Props {
@@ -64,12 +64,12 @@ const StoryboardStudio: React.FC<Props> = ({ project, setProject, onAutoGenerate
                 dialogue: p.dialogue,
                 image: null,
                 videoUrl: null,
-                isLoading: false,
+                isLoading: true, // Set to true to show image skeleton
                 isVideoLoading: false,
                 error: null
             }));
 
-            // Automatically save to Content Library
+            // Automatically save to Content Library (Plan saved first)
             await saveGeneratedAsset(userId, 'STORYBOARD_PLAN',
                 { plan_content: generatedScenes, instructions: project.customInstructions },
                 { type: 'AI_STORYBOARD' }
@@ -81,6 +81,24 @@ const StoryboardStudio: React.FC<Props> = ({ project, setProject, onAutoGenerate
                 isGeneratingPlan: false,
                 error: generatedScenes.length > 0 ? null : "Could not generate storyboard. Please try again."
             }));
+
+            // Background step: Generate actual images for each scene immediately
+            generatedScenes.forEach(async (scene) => {
+                try {
+                    const prompt = `Cinematic storyboard shot, professional advertising: ${scene.description}. Style: ${scene.visualPrompt}. High quality, photorealistic.`;
+                    const img = await generateImage(project.subjectImages, prompt, null, "9:16");
+                    setProject(s => ({
+                        ...s,
+                        scenes: s.scenes.map(sc => sc.id === scene.id ? { ...sc, image: img, isLoading: false } : sc)
+                    }));
+                } catch (e) {
+                    setProject(s => ({
+                        ...s,
+                        scenes: s.scenes.map(sc => sc.id === scene.id ? { ...sc, isLoading: false, error: 'Failed to draw scene' } : sc)
+                    }));
+                }
+            });
+
         } catch (err: any) {
             setProject(s => ({
                 ...s,
@@ -243,15 +261,26 @@ const StoryboardStudio: React.FC<Props> = ({ project, setProject, onAutoGenerate
                                             </h4>
                                             <CameraAngleBadge angle={scene.cameraAngle} />
                                         </div>
-                                        <div className="p-6 space-y-4">
-                                            <div>
-                                                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 block">الوصف البصري والعملي</span>
-                                                <p className="text-gray-300 text-sm leading-relaxed" dir="auto">{scene.description}</p>
-                                            </div>
-                                            <div>
-                                                <span className="text-xs font-bold text-yellow-500/70 uppercase tracking-wider mb-1 block">زاوية الكاميرا والمؤثرات</span>
-                                                <p className="text-yellow-500/90 text-sm leading-relaxed" dir="auto">{scene.visualPrompt}</p>
-                                            </div>
+                                        <div className="p-0">
+                                            {/* Generated Image or Skeleton */}
+                                            {scene.image ? (
+                                                <div className="w-full aspect-[9/16] bg-black relative">
+                                                    <img src={`data:${scene.image.mimeType};base64,${scene.image.base64}`} alt="Scene" className="w-full h-full object-cover" />
+                                                </div>
+                                            ) : (
+                                                <div className="w-full aspect-[9/16] bg-gray-800 animate-pulse flex items-center justify-center relative">
+                                                    {scene.isLoading ? (
+                                                        <div className="flex flex-col items-center gap-2">
+                                                            <div className="w-8 h-8 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
+                                                            <span className="text-yellow-500 text-xs font-bold">جاري رسم المشهد...</span>
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-red-500 text-xs font-bold">{scene.error || 'فشل في بناء الصورة'}</span>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="p-4 space-y-4">
                                             {scene.dialogue && (
                                                 <div className="bg-black/50 p-4 border border-white/5 rounded-xl relative">
                                                     <div className="absolute top-0 right-4 w-4 h-4 bg-[#1A1A1A] border-l border-b border-white/5 transform rotate-45 -translate-y-[9px]"></div>

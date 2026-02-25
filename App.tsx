@@ -46,6 +46,7 @@ import MarketIntelligenceHub from './features/hubs/MarketIntelligenceHub';
 import CampaignBuilderHub from './features/hubs/CampaignBuilderHub';
 import CreativeStudioHub from './features/hubs/CreativeStudioHub';
 import LaunchBriefHub from './features/hubs/LaunchBriefHub';
+import ProductionFactoryHub from './features/hubs/ProductionFactoryHub';
 import OnboardingModal, { shouldShowOnboarding } from './components/OnboardingModal';
 
 const LOGO_IMAGE_URL = "https://i.ibb.co/MDrpHPzS/Artboard-1.png";
@@ -176,6 +177,17 @@ export default function App() {
       color: 'from-orange-500 to-red-600',
       tools: [
         { id: 'launch_brief_hub', label: 'دخول غرفة التحكم والإطلاق', icon: '🎯' }
+      ]
+    },
+    {
+      id: 'production_factory',
+      title: 'مصنع الإنتاج الشامل',
+      level: 'خط الإنتاج الفعلي',
+      desc: 'تحويل الحملات والنصوص المكتوبة إلى صور، صوتيات، وفيديوهات جاهزة بضغطة زر.',
+      icon: '🏭',
+      color: 'from-blue-600 to-cyan-600',
+      tools: [
+        { id: 'production_factory', label: 'دخول مصنع الإنتاج', icon: '⚙️' }
       ]
     }
   ];
@@ -394,6 +406,14 @@ export default function App() {
             view === 'launch_brief_hub' && userId && (
               <LaunchBriefHub
                 setView={setView}
+                userId={userId}
+              />
+            )
+          }
+
+          {
+            view === 'production_factory' && userId && (
+              <ProductionFactoryHub
                 userId={userId}
               />
             )
