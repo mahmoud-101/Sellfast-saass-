@@ -1,7 +1,7 @@
 @echo off
 echo Pushing updates...
 git add .
-git commit -m "Fix: Add html2canvas to package.json for Vercel build + Phase 8+9 Performance Engine"
+git commit -m "Phase 10: Refactored App.tsx and LandingPage formatting to Performance-First Ad Engine"
 git push origin main
 echo Done!
 pause
