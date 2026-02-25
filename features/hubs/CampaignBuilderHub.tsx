@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { useProductIntelligence } from '../../context/ProductIntelligenceContext';
 import { CampaignOrchestrator } from '../../orchestrator/CampaignOrchestrator';
 import { useLoadingMessages, campaignBuilderMessages } from '../../utils/useLoadingMessages';
@@ -8,6 +8,9 @@ import AIProgressSteps, { CAMPAIGN_STEPS } from '../../components/AIProgressStep
 import AdContentFactory from '../../components/AdContentFactory';
 import PowerStudio from '../../components/PowerStudio';
 import PlanStudio from '../../components/PlanStudio';
+
+// Lazy-load Performance Engine Panel (code-split, heavy)
+const PerformancePanel = lazy(() => import('../performance/PerformancePanel'));
 
 export default function CampaignBuilderHub({
     setView,
@@ -26,6 +29,7 @@ export default function CampaignBuilderHub({
 }) {
     const { data, updateData } = useProductIntelligence();
     const [isAdvanced, setIsAdvanced] = useState(false);
+    const [isPerformanceMode, setIsPerformanceMode] = useState(false);
     const [internalView, setInternalView] = useState<'hub' | 'performance' | 'power' | 'plan'>('hub');
 
     // Smart Mode State
@@ -109,11 +113,42 @@ export default function CampaignBuilderHub({
                         <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">🚀 مصنع الحملات الإعلانية</h1>
                         <p className="text-gray-400 mt-2">كل الأدوات تشتغل مع بعض — إعلانات، UGC، خطافات، وزوايا دفعة واحدة.</p>
                     </div>
-                    <label className="flex items-center gap-2 cursor-pointer opacity-50 hover:opacity-100 transition-opacity">
-                        <input type="checkbox" checked={isAdvanced} onChange={(e) => setIsAdvanced(e.target.checked)} className="w-4 h-4 text-purple-500 bg-gray-700 border-gray-600 rounded focus:ring-purple-600" />
-                        <span className="text-xs select-none">أدوات الخبراء</span>
-                    </label>
+                    <div className="flex flex-col gap-2 items-end">
+                        {/* Performance Mode Toggle */}
+                        <label className="flex items-center gap-2.5 cursor-pointer select-none group">
+                            <span className="text-xs font-black text-orange-400 group-hover:text-orange-300 transition-colors">🔥 وضع الأداء العالي</span>
+                            <div
+                                onClick={() => setIsPerformanceMode(p => !p)}
+                                className={`relative w-11 h-6 rounded-full transition-all cursor-pointer ${isPerformanceMode
+                                        ? 'bg-gradient-to-r from-orange-500 to-red-500 shadow-[0_0_12px_rgba(249,115,22,0.4)]'
+                                        : 'bg-gray-700'
+                                    }`}
+                            >
+                                <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${isPerformanceMode ? 'translate-x-5' : 'translate-x-0.5'
+                                    }`} />
+                            </div>
+                        </label>
+                        {/* Expert Tools Toggle */}
+                        <label className="flex items-center gap-2 cursor-pointer opacity-50 hover:opacity-100 transition-opacity">
+                            <input type="checkbox" checked={isAdvanced} onChange={(e) => setIsAdvanced(e.target.checked)} className="w-4 h-4 text-purple-500 bg-gray-700 border-gray-600 rounded focus:ring-purple-600" />
+                            <span className="text-xs select-none">أدوات الخبراء</span>
+                        </label>
+                    </div>
                 </div>
+
+                {/* ── Performance Engine Panel (injected when toggled) ── */}
+                {isPerformanceMode && (
+                    <div className="bg-gray-900 border border-orange-500/20 rounded-3xl p-6 shadow-[0_0_30px_rgba(249,115,22,0.08)] animate-in fade-in slide-in-from-top-4 duration-300">
+                        <Suspense fallback={
+                            <div className="flex items-center justify-center h-48 text-orange-400 text-sm animate-pulse gap-3">
+                                <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+                                جاري تحميل محرك الأداء...
+                            </div>
+                        }>
+                            <PerformancePanel />
+                        </Suspense>
+                    </div>
+                )}
 
                 {/* Campaign Goal Selection + Run Button */}
                 <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700 space-y-6">
