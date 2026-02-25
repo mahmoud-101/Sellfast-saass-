@@ -5,7 +5,7 @@
  * Does NOT fetch data — accepts a product description and settings.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import type {
     Market,
     PriceTier,
@@ -19,6 +19,7 @@ import { runAngleEngine } from './engine/AngleEngine';
 import { runAdVariationEngine } from './engine/AdVariationEngine';
 import { runLayoutGenerator } from './engine/LayoutGenerator';
 import AdRenderer from './renderer/AdRenderer';
+import AdCreativeCanvas from './renderer/AdCreativeCanvas';
 
 // ─── Form State ──────────────────────────────────────────────────────────────
 interface FormState {
@@ -109,6 +110,20 @@ const PerformancePanel: React.FC = () => {
     const [activeIdx, setActiveIdx] = useState(0);
     const [exportedUrl, setExportedUrl] = useState<string | null>(null);
     const [exportedTab, setExportedTab] = useState<number | null>(null);
+
+    // Product image for visual creative
+    const [productImageSrc, setProductImageSrc] = useState<string | null>(null);
+    const [creativeTab, setCreativeTab] = useState<'template' | 'visual'>('template');
+    const imgInputRef = useRef<HTMLInputElement>(null);
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const url = URL.createObjectURL(file);
+        if (productImageSrc) URL.revokeObjectURL(productImageSrc);
+        setProductImageSrc(url);
+        setCreativeTab('visual');
+    };
 
     const setField = <K extends keyof FormState>(key: K, value: FormState[K]) =>
         setForm((f) => ({ ...f, [key]: value }));
@@ -282,8 +297,8 @@ const PerformancePanel: React.FC = () => {
                                 key={i}
                                 onClick={() => setActiveIdx(i)}
                                 className={`px-4 py-2 rounded-xl text-sm font-black transition-all flex items-center gap-2 ${activeIdx === i
-                                        ? 'bg-white/10 text-white border border-white/20'
-                                        : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                    ? 'bg-white/10 text-white border border-white/20'
+                                    : 'text-slate-400 hover:text-white hover:bg-white/5'
                                     }`}
                             >
                                 {v.angle.coreLabel}
@@ -377,20 +392,82 @@ const PerformancePanel: React.FC = () => {
 
                             {/* Right: Creative Preview */}
                             <div className="flex flex-col gap-4">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">معاينة الكريتف</p>
-                                <AdRenderer
-                                    layoutData={layoutData}
-                                    onExported={handleExported}
-                                />
-                                {exportedUrl && exportedTab === activeIdx && (
-                                    <a
-                                        href={exportedUrl}
-                                        download={`sellfast_ad_${activeVariant.angle.type}.png`}
-                                        className="w-full py-2.5 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/20 text-emerald-400 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 text-center"
-                                        onClick={() => { setTimeout(() => URL.revokeObjectURL(exportedUrl!), 60000); }}
+                                {/* Sub-tabs: Template vs Visual Creative */}
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setCreativeTab('template')}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all ${creativeTab === 'template' ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-white'
+                                            }`}
                                     >
-                                        ⬇️ تحميل الصورة المُصدَّرة
-                                    </a>
+                                        🎨 كريتف نصي
+                                    </button>
+                                    <button
+                                        onClick={() => { setCreativeTab('visual'); imgInputRef.current?.click(); }}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 ${creativeTab === 'visual' ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30' : 'text-slate-400 hover:text-white'
+                                            }`}
+                                    >
+                                        📸 كريتف بصري {productImageSrc ? '✅' : '(ارفع صورة المنتج)'}
+                                    </button>
+                                    <input
+                                        ref={imgInputRef}
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={handleImageUpload}
+                                    />
+                                </div>
+
+                                {/* Template-based preview */}
+                                {creativeTab === 'template' && layoutData && (
+                                    <>
+                                        <AdRenderer
+                                            layoutData={layoutData}
+                                            onExported={handleExported}
+                                        />
+                                        {exportedUrl && exportedTab === activeIdx && (
+                                            <a
+                                                href={exportedUrl}
+                                                download={`sellfast_ad_${activeVariant.angle.type}.png`}
+                                                className="w-full py-2.5 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/20 text-emerald-400 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 text-center"
+                                                onClick={() => { setTimeout(() => URL.revokeObjectURL(exportedUrl!), 60000); }}
+                                            >
+                                                ⬇️ تحميل الصورة المُصدَّرة
+                                            </a>
+                                        )}
+                                    </>
+                                )}
+
+                                {/* Visual (photo + copy) creative */}
+                                {creativeTab === 'visual' && (
+                                    <>
+                                        {productImageSrc ? (
+                                            <AdCreativeCanvas
+                                                variant={activeVariant}
+                                                productImageSrc={productImageSrc}
+                                                onExported={(url) => {
+                                                    setExportedUrl(url);
+                                                    setExportedTab(activeIdx);
+                                                }}
+                                            />
+                                        ) : (
+                                            <button
+                                                onClick={() => imgInputRef.current?.click()}
+                                                className="w-full min-h-[320px] rounded-2xl border-2 border-dashed border-orange-500/30 bg-orange-500/5 flex flex-col items-center justify-center gap-3 hover:bg-orange-500/10 transition-colors cursor-pointer"
+                                            >
+                                                <span className="text-5xl">📸</span>
+                                                <p className="text-orange-300 font-black text-sm">ارفع صورة المنتج</p>
+                                                <p className="text-slate-500 text-xs">سيتم وضع النص الإعلاني عليها تلقائياً</p>
+                                            </button>
+                                        )}
+                                        {productImageSrc && (
+                                            <button
+                                                onClick={() => imgInputRef.current?.click()}
+                                                className="w-full py-2 text-xs text-slate-400 hover:text-white transition-colors flex items-center justify-center gap-2"
+                                            >
+                                                🔄 تغيير صورة المنتج
+                                            </button>
+                                        )}
+                                    </>
                                 )}
                             </div>
                         </div>
