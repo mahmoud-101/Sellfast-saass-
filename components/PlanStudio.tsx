@@ -85,11 +85,29 @@ const PlanStudio: React.FC<Props> = ({ project, setProject, onBridgeToPhotoshoot
         setProject(s => ({ ...s, isGeneratingPlan: true, error: null }));
         try {
             const plan = await generateCampaignPlan(project.productImages, project.prompt, project.targetMarket, project.dialect);
-            const ideas: PlanIdea[] = plan.map((p: any) => ({ ...p, image: null, isLoadingImage: false, imageError: null }));
+            const ideas: PlanIdea[] = plan.map((p: any) => ({ ...p, image: null, isLoadingImage: true, imageError: null }));
 
             await saveGeneratedAsset(userId, 'CAMPAIGN_PLAN', { plan_content: JSON.stringify(plan) }, { prompt: project.prompt, market: project.targetMarket });
 
             setProject(s => ({ ...s, ideas, isGeneratingPlan: false }));
+
+            // Background step: Generate actual images for each post idea
+            ideas.forEach(async (idea) => {
+                try {
+                    const scenePrompt = `Social media creative for ${project.targetMarket}. Context: ${idea.visualPrompt}. Tone: ${idea.tov}. Highly aesthetic advertisement, professional lighting.`;
+                    const img = await generateImage(project.productImages, scenePrompt, null, "1:1");
+                    setProject(s => ({
+                        ...s,
+                        ideas: s.ideas.map(i => i.id === idea.id ? { ...i, image: img, isLoadingImage: false } : i)
+                    }));
+                } catch (e) {
+                    setProject(s => ({
+                        ...s,
+                        ideas: s.ideas.map(i => i.id === idea.id ? { ...i, isLoadingImage: false, imageError: 'فشل في توليد الصورة' } : i)
+                    }));
+                }
+            });
+
         } catch (err) { setProject(s => ({ ...s, isGeneratingPlan: false, error: "فشل إنشاء الخطة" })); }
     };
 
@@ -148,10 +166,40 @@ const PlanStudio: React.FC<Props> = ({ project, setProject, onBridgeToPhotoshoot
                 {project.ideas.length > 0 && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {project.ideas.map((idea, idx) => (
-                            <div key={idea.id} className="bg-white/5 rounded-[2.5rem] p-8 border border-white/5 space-y-4 hover:border-[#FFD700]/30 transition-all group">
-                                <span className="px-4 py-1.5 bg-[#FFD700] text-black rounded-full text-[10px] font-black uppercase">Day 0{idx + 1}</span>
+                            <div key={idea.id} className="bg-white/5 rounded-[2.5rem] p-8 border border-white/5 flex flex-col gap-4 hover:border-[#FFD700]/30 transition-all group">
+                                <span className="px-4 py-1.5 bg-[#FFD700] text-black w-max rounded-full text-[10px] font-black uppercase">Day 0{idx + 1}</span>
                                 <h4 className="text-xl font-black text-white">{idea.tov}</h4>
-                                <p className="text-xs text-slate-400 leading-relaxed italic line-clamp-4">"{idea.caption}"</p>
+                                <p className="text-sm text-slate-300 leading-relaxed italic border-b border-white/5 pb-4">"{idea.caption}"</p>
+
+                                <div className="w-full aspect-square rounded-[1.5rem] overflow-hidden relative shadow-lg bg-black">
+                                    {idea.image ? (
+                                        <div className="relative group/img w-full h-full">
+                                            <img src={`data:${idea.image.mimeType};base64,${idea.image.base64}`} alt="Post Image" className="w-full h-full object-cover border border-white/10 rounded-[1.5rem]" />
+                                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center rounded-[1.5rem] backdrop-blur-sm">
+                                                <button
+                                                    onClick={() => window.dispatchEvent(new CustomEvent('openImageEditor', { detail: idea.image }))}
+                                                    className="bg-[#FFD700] text-black px-6 py-3 rounded-xl font-black text-sm hover:scale-105 transition-all shadow-[0_0_20px_rgba(255,215,0,0.3)] flex items-center gap-2"
+                                                >
+                                                    <span>✏️</span> تعديل وتصميم
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="w-full h-full flex flex-col items-center justify-center bg-white/5 animate-pulse absolute inset-0 text-center gap-3">
+                                            {idea.isLoadingImage ? (
+                                                <>
+                                                    <div className="w-8 h-8 border-4 border-[#FFD700] border-t-transparent flex items-center justify-center rounded-full animate-spin shadow-[0_0_15px_rgba(255,215,0,0.5)]"></div>
+                                                    <span className="text-[#FFD700] text-xs font-bold tracking-widest">جاري رسم البوست...</span>
+                                                </>
+                                            ) : (
+                                                <span className="text-red-500 text-xs font-bold">{idea.imageError || 'تعذر توليد الصورة'}</span>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                                {idea.prompt && (
+                                    <p className="text-[10px] text-slate-500 font-bold opacity-60 mt-2">✨ {idea.prompt}</p>
+                                )}
                             </div>
                         ))}
                     </div>

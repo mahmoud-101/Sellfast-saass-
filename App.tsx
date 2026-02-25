@@ -13,7 +13,8 @@ import {
   UGCStudioProject,
   PerformanceStudioProject,
   EliteScriptProject,
-  StoryboardStudioProject
+  StoryboardStudioProject,
+  VoiceOverStudioProject
 } from './types';
 import { supabase } from './lib/supabase';
 
@@ -40,6 +41,9 @@ import UGCStudio from './components/UGCStudio';
 import AdminDashboard from './components/AdminDashboard';
 import { ContentLibrary } from './components/ContentLibrary';
 import StoryboardStudio from './components/StoryboardStudio';
+import VoiceOverStudio from './components/VoiceOverStudio';
+import ImageEditorModal from './components/ImageEditorModal';
+import { ImageFile } from './types';
 
 import { ProductIntelligenceProvider } from './context/ProductIntelligenceContext';
 import MarketIntelligenceHub from './features/hubs/MarketIntelligenceHub';
@@ -56,6 +60,7 @@ export default function App() {
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeScriptContext, setActiveScriptContext] = useState('');
+  const [globalEditingImage, setGlobalEditingImage] = useState<ImageFile | null>(null);
   const [session, setSession] = useState<any>(null);
   const [isGuest, setIsGuest] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -69,7 +74,17 @@ export default function App() {
       setSession(session);
     });
 
-    return () => subscription.unsubscribe();
+    // Global Image Editor Listener
+    const handleOpenEditor = (e: Event) => {
+      const customEvent = e as CustomEvent<ImageFile>;
+      setGlobalEditingImage(customEvent.detail);
+    };
+    window.addEventListener('openImageEditor', handleOpenEditor);
+
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener('openImageEditor', handleOpenEditor);
+    };
   }, []);
 
   const userId = session?.user?.id || (isGuest ? 'guest' : null);
@@ -130,6 +145,10 @@ export default function App() {
     id: 'story-1', name: 'Storyboard Studio', subjectImages: [], customInstructions: '', isUploading: false, isGeneratingPlan: false, error: null, scenes: [], gridImage: null, aspectRatio: '9:16'
   });
 
+  const [voiceOverProject, setVoiceOverProject] = useState<VoiceOverStudioProject>({
+    id: 'vo-1', name: 'استوديو التعليق الصوتي', text: '', styleInstructions: '', selectedVoice: 'shaker', isLoading: false, isPlaying: false, error: null, generatedAudio: null, history: []
+  });
+
   const bridgeToPlan = (context: string) => { setPlanStudio(prev => ({ ...prev, prompt: context })); setView('plan_studio'); };
   const bridgeToVideo = (script: string) => { setActiveScriptContext(script); setView('video_studio'); };
   const bridgeToPhotoshoot = (context: string) => { setPhotoshootProject(prev => ({ ...prev, customStylePrompt: context })); setView('photoshoot'); };
@@ -188,6 +207,28 @@ export default function App() {
       color: 'from-blue-600 to-cyan-600',
       tools: [
         { id: 'production_factory', label: 'دخول مصنع الإنتاج', icon: '⚙️' }
+      ]
+    },
+    {
+      id: 'plan_studio',
+      title: 'استوديو خطة المحتوى',
+      level: 'السوشيال ميديا',
+      desc: 'بناء 9 بوستات متكاملة وتوليد صورها الاحترافية بضغطة زر لنشرها فوراً.',
+      icon: '🗓️',
+      color: 'from-blue-600 to-indigo-600',
+      tools: [
+        { id: 'plan_studio', label: 'دخول استوديو الخطة', icon: '📝' }
+      ]
+    },
+    {
+      id: 'voiceover_studio',
+      title: 'استوديو التعليق الصوتي',
+      level: 'الصوتيات',
+      desc: 'توليد واستنساخ أصوات ذكاء اصطناعي بلهجات متعددة ونبرات واقعية.',
+      icon: '🎙️',
+      color: 'from-green-500 to-emerald-600',
+      tools: [
+        { id: 'voiceover_studio', label: 'دخول استوديو الصوت', icon: '🔊' }
       ]
     }
   ];
@@ -433,6 +474,7 @@ export default function App() {
           {view === 'photoshoot' && userId && <PhotoshootDirector project={photoshootProject} setProject={setPhotoshootProject} userId={userId} />}
           {view === 'strategy_engine' && userId && <MarketingStudio project={marketingProject} setProject={setMarketingProject} onBridgeToPlan={bridgeToPlan} userId={userId} />}
           {view === 'video_studio' && userId && <VideoStudio userId={userId} refreshCredits={() => { }} initialScript={activeScriptContext} />}
+          {view === 'voiceover_studio' && userId && <VoiceOverStudio project={voiceOverProject} setProject={setVoiceOverProject} userId={userId} refreshCredits={() => { }} />}
           {view === 'plan_studio' && userId && <PlanStudio project={planStudio} setProject={setPlanStudio} onBridgeToPhotoshoot={bridgeToPhotoshoot} userId={userId} />}
           {view === 'storyboard_studio' && userId && <StoryboardStudio project={storyboardProject} setProject={setStoryboardProject} onAutoGenerateVideo={(id, prompt) => bridgeToVideo(prompt || '')} userId={userId} />}
           {view === 'brand_kit' && userId && <BrandKitManager userId={userId} onBack={() => setView('dashboard')} />}
@@ -452,6 +494,7 @@ export default function App() {
         <ChatWidget />
         <WhatsAppButton />
         {isPricingOpen && userId && <PricingModal userId={userId} onClose={() => setIsPricingOpen(false)} />}
+        {globalEditingImage && <ImageEditorModal image={globalEditingImage} onClose={() => setGlobalEditingImage(null)} />}
       </div>
     </ProductIntelligenceProvider>
   );

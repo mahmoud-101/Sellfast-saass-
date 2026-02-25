@@ -225,10 +225,22 @@ export default function ProductionFactoryHub({ userId }: ProductionFactoryHubPro
                                                     </div>
 
                                                     {asset.type.includes('image') || asset.type === 'storyboard' || asset.type === 'photoshoot' ? (
-                                                        <div className="aspect-[9/16] bg-black rounded-xl overflow-hidden relative">
+                                                        <div className="aspect-[9/16] bg-black rounded-xl overflow-hidden relative group/prod-img">
                                                             <img src={asset.url} alt={asset.description} className="w-full h-full object-cover" />
                                                             <div className="absolute bottom-0 w-full bg-gradient-to-t from-black to-transparent p-4">
                                                                 <p className="text-white text-xs font-bold line-clamp-2">{asset.description}</p>
+                                                            </div>
+                                                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/prod-img:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+                                                                <button
+                                                                    onClick={() => {
+                                                                        const mimeType = asset.url.split(';')[0].split(':')[1];
+                                                                        const base64 = asset.url.split(',')[1];
+                                                                        window.dispatchEvent(new CustomEvent('openImageEditor', { detail: { mimeType, base64 } }));
+                                                                    }}
+                                                                    className="bg-blue-500 text-white px-4 py-2 rounded-xl font-bold text-sm hover:scale-105 transition-transform flex items-center gap-2"
+                                                                >
+                                                                    <span>✏️</span> تعديل الصورة
+                                                                </button>
                                                             </div>
                                                         </div>
                                                     ) : asset.type === 'voiceover' ? (

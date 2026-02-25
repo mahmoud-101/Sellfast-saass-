@@ -29,7 +29,7 @@ export type AppView =
   | 'branding_mockups' | 'strategy_engine' | 'trend_engine' | 'brand_kit' | 'pricing'
   | 'library' | 'auth' | 'suite_view' | 'power' | 'ads_studio' | 'faq' | 'privacy_policy' | 'terms_of_service'
   | 'production_factory' | 'ugc_studio' | 'admin' | 'performance_studio' | 'content_library' | 'storyboard_studio'
-  | 'market_intelligence_hub' | 'campaign_builder_hub' | 'creative_studio_hub' | 'launch_brief_hub';
+  | 'market_intelligence_hub' | 'campaign_builder_hub' | 'creative_studio_hub' | 'launch_brief_hub' | 'voiceover_studio';
 
 export interface EliteChatMessage {
   role: 'user' | 'bot';
@@ -72,7 +72,7 @@ export interface DailyPackProject extends ProjectBase {
 }
 
 export interface PlanIdea {
-  id: string; tov: string; caption: string; schedule: string; scenario: string; image: ImageFile | null; isLoadingImage: boolean; imageError: string | null;
+  id: string; tov: string; caption: string; schedule: string; scenario: string; image: ImageFile | null; isLoadingImage: boolean; imageError: string | null; visualPrompt?: string; prompt?: string;
 }
 
 export interface PlanStudioProject extends ProjectBase {

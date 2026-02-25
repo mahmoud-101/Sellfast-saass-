@@ -264,8 +264,16 @@ const StoryboardStudio: React.FC<Props> = ({ project, setProject, onAutoGenerate
                                         <div className="p-0">
                                             {/* Generated Image or Skeleton */}
                                             {scene.image ? (
-                                                <div className="w-full aspect-[9/16] bg-black relative">
+                                                <div className="w-full aspect-[9/16] bg-black relative group/scene-img">
                                                     <img src={`data:${scene.image.mimeType};base64,${scene.image.base64}`} alt="Scene" className="w-full h-full object-cover" />
+                                                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/scene-img:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+                                                        <button
+                                                            onClick={() => window.dispatchEvent(new CustomEvent('openImageEditor', { detail: scene.image }))}
+                                                            className="bg-yellow-500 text-black px-4 py-2 rounded-xl font-bold text-sm hover:scale-105 transition-transform flex items-center gap-2"
+                                                        >
+                                                            <span>✏️</span> تعديل الصورة
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             ) : (
                                                 <div className="w-full aspect-[9/16] bg-gray-800 animate-pulse flex items-center justify-center relative">
