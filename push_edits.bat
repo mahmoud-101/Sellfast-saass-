@@ -1,7 +1,7 @@
 @echo off
-echo 🚀 Starting Deployment Process...
+echo Pushing updates...
 git add .
-git commit -m "Implement Phase 8+9: High-Performance Ecom Ad Engine + Visual Ad Creative Builder (product image + copy composite)"
+git commit -m "Fix: Add html2canvas to package.json for Vercel build + Phase 8+9 Performance Engine"
 git push origin main
-echo ✅ Deployment Complete!
+echo Done!
 pause
