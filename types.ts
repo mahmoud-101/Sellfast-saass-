@@ -28,8 +28,8 @@ export type AppView =
   | 'landing' | 'dashboard' | 'daily_pack' | 'photoshoot' | 'video_studio' | 'plan_studio'
   | 'branding_mockups' | 'strategy_engine' | 'trend_engine' | 'brand_kit' | 'pricing'
   | 'library' | 'auth' | 'suite_view' | 'power' | 'ads_studio' | 'faq' | 'privacy_policy' | 'terms_of_service'
-  | 'production_factory' | 'ugc_studio' | 'admin' | 'performance_studio' | 'content_library' | 'storyboard_studio'
-  | 'market_intelligence_hub' | 'campaign_builder_hub' | 'creative_studio_hub' | 'launch_brief_hub' | 'voiceover_studio';
+  | 'admin' | 'performance_studio' | 'content_library' | 'storyboard_studio'
+  | 'market_intelligence_hub' | 'campaign_builder_hub' | 'creative_studio_hub' | 'launch_brief_hub' | 'voiceover_studio' | 'dynamic_ads';
 
 export interface EliteChatMessage {
   role: 'user' | 'bot';
@@ -435,4 +435,30 @@ export interface EliteScriptProject extends ProjectBase {
   isGenerating: boolean;
   step: number;
   error: string | null;
+}
+
+export interface DynamicPromptStyle {
+  id: number;
+  styleName: string;
+  styleDescription: string;
+  dynamicPrompt: string;
+  requiredVariables: string[];
+}
+
+export interface DynamicAdsResult {
+  id: string;
+  styleName: string;
+  image: ImageFile | null;
+  isLoading: boolean;
+  error: string | null;
+}
+
+export interface DynamicAdsStudioProject extends ProjectBase {
+  productImages: ImageFile[];
+  selectedStyleId: number | null;
+  variableValues: Record<string, string>;
+  isGenerating: boolean;
+  isUploading: boolean;
+  error: string | null;
+  results: DynamicAdsResult[];
 }

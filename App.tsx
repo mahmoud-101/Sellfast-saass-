@@ -43,7 +43,8 @@ import { ContentLibrary } from './components/ContentLibrary';
 import StoryboardStudio from './components/StoryboardStudio';
 import VoiceOverStudio from './components/VoiceOverStudio';
 import ImageEditorModal from './components/ImageEditorModal';
-import { ImageFile } from './types';
+import DynamicAdsStudio from './components/DynamicAdsStudio';
+import { ImageFile, DynamicAdsStudioProject } from './types';
 
 import { ProductIntelligenceProvider } from './context/ProductIntelligenceContext';
 import MarketIntelligenceHub from './features/hubs/MarketIntelligenceHub';
@@ -149,6 +150,10 @@ export default function App() {
     id: 'vo-1', name: 'استوديو التعليق الصوتي', text: '', styleInstructions: '', selectedVoice: 'shaker', isLoading: false, isPlaying: false, error: null, generatedAudio: null, history: []
   });
 
+  const [dynamicAdsProject, setDynamicAdsProject] = useState<DynamicAdsStudioProject>({
+    id: 'dyn-1', name: 'قوالب ديناميكية', productImages: [], selectedStyleId: null, variableValues: {}, isGenerating: false, isUploading: false, error: null, results: []
+  });
+
   const bridgeToPlan = (context: string) => { setPlanStudio(prev => ({ ...prev, prompt: context })); setView('plan_studio'); };
   const bridgeToVideo = (script: string) => { setActiveScriptContext(script); setView('video_studio'); };
   const bridgeToPhotoshoot = (context: string) => { setPhotoshootProject(prev => ({ ...prev, customStylePrompt: context })); setView('photoshoot'); };
@@ -199,6 +204,7 @@ export default function App() {
               <>
                 <div className="hidden md:flex items-center gap-2 bg-white/5 p-1 rounded-2xl border border-white/5">
                   <button onClick={() => { setView('campaign_builder_hub'); setActiveScriptContext(''); }} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'campaign_builder_hub' ? 'bg-orange-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}>🔥 محرك الإعلانات</button>
+                  <button onClick={() => setView('dynamic_ads')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'dynamic_ads' ? 'bg-blue-500 text-white shadow-[0_0_15px_rgba(59,130,246,0.5)]' : 'text-slate-400 hover:text-white'}`}>✨ قوالب ديناميكية</button>
                   <button onClick={() => setView('brand_kit')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'brand_kit' ? 'bg-orange-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}>🎨 هويتي</button>
                   <button onClick={() => setView('content_library')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'content_library' ? 'bg-orange-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}>📚 الإعلانات المحفوظة</button>
                   <button onClick={() => setView('admin')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'admin' ? 'bg-orange-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}>⚙️ الإدارة</button>
@@ -237,6 +243,12 @@ export default function App() {
                   className={`w-full p-4 rounded-2xl text-right font-black ${view === 'brand_kit' ? 'bg-orange-500 text-black' : 'bg-white/5 text-white'}`}
                 >
                   🎨 هويتي
+                </button>
+                <button
+                  onClick={() => { setView('dynamic_ads'); setIsMenuOpen(false); }}
+                  className={`w-full p-4 rounded-2xl text-right font-black ${view === 'dynamic_ads' ? 'bg-blue-500 text-white' : 'bg-white/5 text-white'}`}
+                >
+                  ✨ قوالب ديناميكية
                 </button>
                 <button
                   onClick={() => { setView('content_library'); setIsMenuOpen(false); }}
@@ -291,6 +303,7 @@ export default function App() {
           {view === 'terms_of_service' && userId && <LegalPages type="terms" onBack={() => setView('campaign_builder_hub')} />}
           {view === 'content_library' && userId && <ContentLibrary userId={userId} />}
           {view === 'admin' && userId && <AdminDashboard />}
+          {view === 'dynamic_ads' && userId && <DynamicAdsStudio project={dynamicAdsProject} setProject={setDynamicAdsProject} userId={userId} />}
         </div>
 
         <Footer onNavigate={setView} onOpenPricing={() => setIsPricingOpen(true)} />
