@@ -37,15 +37,15 @@ export interface AdCard {
 }
 
 export interface ProductFormData {
-  productName: string
+  productName?: string
   productDescription: string
   price: string
-  mainBenefit: string
-  mainPain: string
-  uniqueDifferentiator: string
-  market: string
-  awarenessLevel: string
-  competitionLevel: string
+  mainBenefit?: string
+  mainPain?: string
+  uniqueDifferentiator?: string
+  market?: string
+  awarenessLevel?: string
+  competitionLevel?: string
   imageFile: File | null
   referenceImageFile: File | null
 }

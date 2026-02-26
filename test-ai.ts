@@ -1,5 +1,5 @@
 import { loadEnv } from 'vite';
-import { executeWithRetry, askGemini } from './services/geminiService';
+import { askGemini } from './services/geminiService';
 import { GoogleGenAI } from '@google/genai';
 
 async function runTest() {

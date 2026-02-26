@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+
 import { Upload, ChevronRight, Wand2, X, Plus, AlertCircle, RefreshCw, Smartphone, Film, Info } from 'lucide-react';
 import { StoryboardStudioProject, StoryboardScene, ImageFile } from '../types';
 import { generateStoryboardPlan, generateImage } from '../services/geminiService';

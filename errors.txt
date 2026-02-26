@@ -1,0 +1,4 @@
+components/StoryboardStudio.tsx(2,24): error TS2307: Cannot find module 'framer-motion' or its corresponding type declarations.
+features/performance/engine/ResponseAnalyzer.ts(161,5): error TS2322: Type '{ id: string; angle: any; style: CardStyle; badgeLabel: string; badgeEmoji: string; primaryText: string; headline: string; description: string; hooks: [string, string, string]; adPost: string; ... 4 more ...; imagePrompt: string; }' is not assignable to type 'AdCard & { imagePrompt: string; }'.
+  Property 'imageStyleName' is missing in type '{ id: string; angle: any; style: CardStyle; badgeLabel: string; badgeEmoji: string; primaryText: string; headline: string; description: string; hooks: [string, string, string]; adPost: string; ... 4 more ...; imagePrompt: string; }' but required in type 'AdCard'.
+test-ai.ts(2,10): error TS2459: Module '"./services/geminiService"' declares 'executeWithRetry' locally, but it is not exported.

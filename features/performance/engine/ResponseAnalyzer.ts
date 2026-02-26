@@ -174,6 +174,7 @@ function createFallbackAd(style: CardStyle, index: number): AdCard & { imageProm
         imageUrl: null,
         isLoading: false,
         imagePrompt: buildFallbackImagePrompt(style),
+        imageStyleName: '',
     }
 }
 

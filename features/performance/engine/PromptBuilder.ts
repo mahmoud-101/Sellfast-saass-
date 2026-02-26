@@ -185,10 +185,8 @@ export function buildAdPrompt(data: ProductFormData): string {
 بناءً على معلومات المنتج الآتية، قم بتوليد 5 إعلانات كاملة ومختلفة تماماً (زاوية لكل إعلان).
 
 معلومات المنتج:
-الاسم: ${data.productName}
-الوصف: ${data.productDescription}
+الوصف والألم والفوائد (تفاصيل المنتج): ${data.productDescription}
 السعر: ${data.price}
-السوق أو الجمهور: ${data.market} - الوعي والمنافسة: ${data.awarenessLevel} / ${data.competitionLevel}
 
 ${LANGUAGE_RULES}
 

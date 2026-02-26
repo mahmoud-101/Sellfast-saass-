@@ -151,7 +151,7 @@ export default function App() {
   });
 
   const [dynamicAdsProject, setDynamicAdsProject] = useState<DynamicAdsStudioProject>({
-    id: 'dyn-1', name: 'قوالب ديناميكية', productImages: [], selectedStyleId: null, variableValues: {}, isGenerating: false, isUploading: false, error: null, results: []
+    id: 'dyn-1', name: 'قوالب ديناميكية', productImages: [], selectedStyleId: null, variableValues: {}, isGenerating: false, isUploading: false, error: null, results: [], autoFillDescription: '', isAutoFilling: false
   });
 
   const bridgeToPlan = (context: string) => { setPlanStudio(prev => ({ ...prev, prompt: context })); setView('plan_studio'); };
