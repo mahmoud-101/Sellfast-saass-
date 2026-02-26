@@ -912,3 +912,57 @@ export async function generateFullCampaignVisuals(strategy: string, angles: any[
 export async function generatePromptFromText(instructions: string): Promise<string> {
     return askGemini(`Create a detailed professional prompt for an AI image generator from these instructions: ${instructions}.`, "Expert Prompt Engineer");
 }
+
+export async function autoFillDynamicVariables(
+    productDescription: string,
+    styleName: string,
+    styleDescription: string,
+    requiredVariables: string[]
+): Promise<Record<string, string>> {
+    const prompt = `
+  You are an expert AI Ad Creative Director.
+  You are given a product description and a goal to generate the required creative variables for a specific visual template.
+
+  PRODUCT DESCRIPTION:
+  ${productDescription}
+
+  TARGET STYLE:
+  ${styleName} (${styleDescription})
+
+  REQUIRED VARIABLES TO FILL:
+  ${JSON.stringify(requiredVariables)}
+
+  INSTRUCTIONS:
+  1. For each required variable, generate a highly descriptive and creative English (or Arabic if explicitly asked by the variable name, e.g., 'Main_Arabic_Headline') value that perfectly fits the Product and the Target Style.
+  2. The values should be concise but highly descriptive (e.g., for [Surface_Material] use "polished white marble", for [Color_Theme] use "luxurious gold and deep navy").
+  3. Ensure the Arabic text for headlines/CTAs is catchy, marketing-focused, perfectly written in Egyptian Arabic or Modern Standard Arabic depending on context, and WITHOUT any quotes.
+
+  OUTPUT STRICTLY AS JSON in the following format:
+  {
+    "variable_name_1": "value_1",
+    "variable_name_2": "value_2"
+  }
+  `;
+
+    const systemInstruction = "You are a highly precise Creative Director AI. Output JSON only.";
+
+    try {
+        const res = await executeWithRetry(async () => {
+            const ai = new GoogleGenAI({ apiKey: getApiKey() });
+            const result = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: prompt,
+                config: {
+                    systemInstruction,
+                    responseMimeType: "application/json",
+                }
+            });
+            return JSON.parse(result.text || "{}");
+        });
+        return res;
+    } catch (e) {
+        console.warn("Failed to auto fill dynamic variables via Gemini, falling back to OpenRouter", e);
+        return await askOpenRouterJSON(prompt, systemInstruction);
+    }
+}
+

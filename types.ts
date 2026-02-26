@@ -456,9 +456,11 @@ export interface DynamicAdsResult {
 export interface DynamicAdsStudioProject extends ProjectBase {
   productImages: ImageFile[];
   selectedStyleId: number | null;
+  autoFillDescription: string;
   variableValues: Record<string, string>;
   isGenerating: boolean;
   isUploading: boolean;
+  isAutoFilling: boolean;
   error: string | null;
   results: DynamicAdsResult[];
 }
