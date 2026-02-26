@@ -30,6 +30,9 @@ export interface AdCard {
   ctaButton: string
   hookScore: number
   imageUrl: string | null
+  imagePrompt: string
+  imageStyleName: string
+  generatedImageUrl?: string
   isLoading: boolean
 }
 

@@ -15,8 +15,7 @@ import type {
 import type { GenerationResult, AdCard as AdCardType, ProductFormData } from './types/ad.types';
 import { buildAdPrompt } from './engine/PromptBuilder';
 import { parseGeminiResponse } from './engine/ResponseAnalyzer';
-import { askGemini } from '../../services/geminiService';
-import AdCreativeCanvas from './renderer/AdCreativeCanvas';
+import { askGemini, generateImage } from '../../services/geminiService';
 
 // ─── Loading State Component ──────────────────────────────────────────────────
 const STEPS = [
@@ -159,8 +158,21 @@ const AdCard: React.FC<{ variant: AdCardType, productImageSrc: string, index: nu
             </div>
 
             {/* 1. Image */}
-            <div className="w-full max-w-sm mx-auto mt-6">
-                <AdCreativeCanvas variant={variant} productImageSrc={productImageSrc} />
+            <div className="w-full max-w-sm mx-auto mt-6 relative rounded-2xl overflow-hidden aspect-[4/5] border border-white/10 bg-black/40">
+                {variant.isLoading ? (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm z-10 transition-opacity duration-300">
+                        <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+                        <p className="text-[10px] font-black tracking-widest text-orange-400 animate-pulse text-center px-4 leading-relaxed uppercase">
+                            جاري تصميم الصورة بأسلوب<br />
+                            <span className="text-white">({variant.imageStyleName})</span>
+                        </p>
+                    </div>
+                ) : null}
+                {variant.generatedImageUrl ? (
+                    <img src={variant.generatedImageUrl} alt="Generated Ad" className="w-full h-full object-cover animate-in fade-in duration-700" />
+                ) : (
+                    <img src={productImageSrc} alt="Fallback Ad" className="w-full h-full object-cover opacity-50 grayscale" />
+                )}
             </div>
 
             <div className="space-y-5 mt-2">
@@ -234,8 +246,18 @@ const PerformancePanel: React.FC = () => {
     const setField = <K extends keyof FormState>(key: K, value: FormState[K]) =>
         setForm((f) => ({ ...f, [key]: value }));
 
+    const getBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = error => reject(error);
+        });
+    };
+
     const handleGenerate = async () => {
-        if (!form.productName.trim() || !form.mainBenefit.trim() || !productImageSrc) return;
+        const file = imgInputRef.current?.files?.[0];
+        if (!form.productName.trim() || !form.mainBenefit.trim() || !productImageSrc || !file) return;
         setIsGenerating(true);
         setIsIntelligenceOpen(false); // Reset accordion state
         setAdSet(null);
@@ -249,7 +271,7 @@ const PerformancePanel: React.FC = () => {
             ageRange: '20-45', // Fixed assumption or can be added to the form later
             category: 'أخرى',
             budget: 'مفتوحة للنمو',
-            imageFile: null as any, // This would need to be handled if actual file upload to AI is needed
+            imageFile: file,
             productUrl: ''
         };
 
@@ -257,29 +279,44 @@ const PerformancePanel: React.FC = () => {
             // Build prompt
             const prompt = buildAdPrompt(productData);
 
-            let generationResult: GenerationResult | null = null;
+            // Only ask Gemini for the text parts first.
+            const aiResult = await askGemini(prompt, "You are a senior Meta Ad buyer and copywriter expert in the Egyptian and Gulf markets.");
+            const parsed = parseGeminiResponse(aiResult);
 
-            // Start waiting period
-            const animationPromise = new Promise<void>(resolve => {
-                setTimeout(() => { resolve(); }, 10500); // 10.5 secs
+            // Set initial AdSet with loading state for images
+            setAdSet(parsed);
+            setIsGenerating(false);
+
+            // Now, parallel fetch exactly the generated image for each style
+            const base64Data = (await getBase64(file)).split(',')[1];
+            const productImage = { base64: base64Data, mimeType: file.type, name: file.name };
+
+            parsed.ads.forEach(async (ad, index) => {
+                try {
+                    const generatedImage = await generateImage([productImage], ad.imagePrompt, null, "3:4");
+                    const finalUrl = `data:${generatedImage.mimeType};base64,${generatedImage.base64}`;
+
+                    setAdSet(prev => {
+                        if (!prev) return prev;
+                        const newAds = [...prev.ads];
+                        newAds[index] = { ...newAds[index], generatedImageUrl: finalUrl, isLoading: false };
+                        return { ...prev, ads: newAds };
+                    });
+                } catch (imgError) {
+                    console.error("Failed to generate image for ad", index, imgError);
+                    setAdSet(prev => {
+                        if (!prev) return prev;
+                        const newAds = [...prev.ads];
+                        newAds[index] = { ...newAds[index], isLoading: false };
+                        return { ...prev, ads: newAds };
+                    });
+                }
             });
 
-            // Parallel AI fetch
-            const aiPromise = async () => {
-                const aiResult = await askGemini(prompt, "You are a senior Meta Ad buyer and copywriter expert in the Egyptian and Gulf markets.");
-                generationResult = parseGeminiResponse(aiResult);
-            };
-
-            await Promise.all([animationPromise, aiPromise()]);
-
-            if (generationResult) {
-                setAdSet(generationResult);
-            }
         } catch (error) {
             console.error("Error generating ads:", error);
-            // Show alert in actual implementation or handle fallback gracefully
-        } finally {
             setIsGenerating(false);
+            // Show alert in actual implementation or handle fallback gracefully
         }
     };
 

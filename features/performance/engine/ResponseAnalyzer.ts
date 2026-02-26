@@ -11,11 +11,11 @@ export const CARD_STYLES: Record<CardStyle, {
     button: string;
     border: string;
 }> = {
-    pain: { bg: '#1a0a0a', badge: '#dc2626', button: '#ef4444', border: '#7f1d1d' },
-    compare: { bg: '#0a0f1a', badge: '#2563eb', button: '#3b82f6', border: '#1e3a8a' },
-    bold: { bg: '#0f0a1a', badge: '#7c3aed', button: '#8b5cf6', border: '#4c1d95' },
-    transform: { bg: '#0a1a0f', badge: '#16a34a', button: '#22c55e', border: '#14532d' },
-    urgency: { bg: '#1a0f0a', badge: '#ea580c', button: '#f97316', border: '#7c2d12' },
+    aida: { bg: '#0a0f1a', badge: '#3b82f6', button: '#2563eb', border: '#1e3a8a' }, // أزرق احترافي
+    pas: { bg: '#1a0a0a', badge: '#dc2626', button: '#ef4444', border: '#7f1d1d' }, // أحمر طارئ
+    bab: { bg: '#0f0a1a', badge: '#8b5cf6', button: '#7c3aed', border: '#4c1d95' }, // بنفسجي للتحول
+    fab: { bg: '#0a1a0f', badge: '#22c55e', button: '#16a34a', border: '#14532d' }, // أخضر للجودة
+    '4u': { bg: '#1a0f0a', badge: '#ea580c', button: '#f97316', border: '#7c2d12' }, // برتقالي للإلحاح
 };
 
 export function parseGeminiResponse(rawText: string): GenerationResult {
