@@ -11,12 +11,11 @@ import type {
     PriceTier,
     AwarenessLevel,
     CompetitionLevel,
-    ProductPerformanceProfile,
-    PerformanceAdSet,
-    PerformanceAdVariant,
 } from './types';
-import { runAngleEngine } from './engine/AngleEngine';
-import { runAdVariationEngine } from './engine/AdVariationEngine';
+import type { GenerationResult, AdCard as AdCardType, ProductFormData } from './types/ad.types';
+import { buildAdPrompt } from './engine/PromptBuilder';
+import { parseGeminiResponse } from './engine/ResponseAnalyzer';
+import { askGemini } from '../../services/geminiService';
 import AdCreativeCanvas from './renderer/AdCreativeCanvas';
 
 // ─── Loading State Component ──────────────────────────────────────────────────
@@ -151,12 +150,12 @@ const Select = <T extends string>({
 );
 
 // ─── Ad Card Component ────────────────────────────────────────────────────────
-const AdCard: React.FC<{ variant: PerformanceAdVariant, productImageSrc: string, index: number }> = ({ variant, productImageSrc, index }) => {
+const AdCard: React.FC<{ variant: AdCardType, productImageSrc: string, index: number }> = ({ variant, productImageSrc, index }) => {
     return (
         <div className="bg-white/5 border border-white/10 rounded-3xl p-6 flex flex-col gap-6 shadow-xl relative overflow-hidden">
             {/* Angle Name Badge */}
-            <div className="absolute top-0 right-0 bg-orange-500 text-black text-xs font-black px-4 py-1.5 rounded-bl-xl z-10 shadow-lg">
-                إعلان {index + 1}: {variant.angle.coreLabel}
+            <div className="absolute top-0 right-0 bg-orange-500 text-black text-xs font-black px-4 py-1.5 rounded-bl-xl z-10 shadow-lg flex items-center gap-1">
+                <span>{variant.badgeEmoji}</span> إعلان {index + 1}: {variant.badgeLabel}
             </div>
 
             {/* 1. Image */}
@@ -168,26 +167,26 @@ const AdCard: React.FC<{ variant: PerformanceAdVariant, productImageSrc: string,
                 {/* 2. Primary Text */}
                 <div>
                     <p className="text-[10px] font-black uppercase text-orange-400 mb-1 flex items-center gap-1"><span>📝</span> النص الرئيسي (Primary Text)</p>
-                    <p className="text-sm text-slate-200 leading-relaxed bg-black/20 p-3 rounded-xl border border-white/5">{variant.bodyExpanded}</p>
+                    <p className="text-sm text-slate-200 leading-relaxed bg-black/20 p-3 rounded-xl border border-white/5">{variant.primaryText}</p>
                 </div>
 
                 {/* 3. Headline */}
                 <div>
                     <p className="text-[10px] font-black uppercase text-orange-400 mb-1 flex items-center gap-1"><span>🔤</span> العنوان (Headline)</p>
-                    <p className="text-xl font-black text-white bg-black/20 p-3 rounded-xl border border-white/5">{variant.primaryHook}</p>
+                    <p className="text-xl font-black text-white bg-black/20 p-3 rounded-xl border border-white/5">{variant.headline}</p>
                 </div>
 
                 {/* 4. Description */}
                 <div>
                     <p className="text-[10px] font-black uppercase text-orange-400 mb-1 flex items-center gap-1"><span>📄</span> الوصف (Description)</p>
-                    <p className="text-sm text-slate-300 bg-black/20 p-3 rounded-xl border border-white/5">{variant.bodyShort}</p>
+                    <p className="text-sm text-slate-300 bg-black/20 p-3 rounded-xl border border-white/5">{variant.description}</p>
                 </div>
 
                 {/* 5. Hooks */}
                 <div>
                     <p className="text-[10px] font-black uppercase text-orange-400 mb-2 flex items-center gap-1"><span>🪝</span> الهوكات المتاحة للاختبار</p>
                     <ul className="list-disc list-inside flex flex-col gap-1.5 text-sm text-slate-200 bg-black/20 p-3 rounded-xl border border-white/5">
-                        {variant.hookVariations.slice(0, 3).map((hook, i) => (
+                        {variant.hooks.map((hook, i) => (
                             <li key={i}>{hook}</li>
                         ))}
                     </ul>
@@ -198,14 +197,14 @@ const AdCard: React.FC<{ variant: PerformanceAdVariant, productImageSrc: string,
                     <div className="flex items-center justify-between mb-3">
                         <p className="text-[11px] font-black uppercase text-emerald-400 flex items-center gap-1"><span>📢</span> البوست الإعلاني الكامل</p>
                         <button
-                            onClick={() => navigator.clipboard.writeText(`${variant.primaryHook}\n\n${variant.bodyExpanded}\n\n${variant.cta.primary}`)}
+                            onClick={() => navigator.clipboard.writeText(variant.adPost)}
                             className="text-xs bg-emerald-500/20 text-emerald-400 px-4 py-2 rounded-xl hover:bg-emerald-500/30 transition-colors font-bold shadow-md active:scale-95 flex items-center gap-2"
                         >
                             📋 نسخ البوست
                         </button>
                     </div>
                     <div className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap font-sans relative selection:bg-emerald-500/30">
-                        {`${variant.primaryHook}\n\n${variant.bodyExpanded}\n\n${variant.cta.primary}`}
+                        {variant.adPost}
                     </div>
                 </div>
             </div>
@@ -216,7 +215,7 @@ const AdCard: React.FC<{ variant: PerformanceAdVariant, productImageSrc: string,
 // ─── Main Panel ───────────────────────────────────────────────────────────────
 const PerformancePanel: React.FC = () => {
     const [form, setForm] = useState<FormState>(INITIAL_FORM);
-    const [adSet, setAdSet] = useState<PerformanceAdSet | null>(null);
+    const [adSet, setAdSet] = useState<GenerationResult | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [isIntelligenceOpen, setIsIntelligenceOpen] = useState(false);
 
@@ -235,29 +234,52 @@ const PerformancePanel: React.FC = () => {
     const setField = <K extends keyof FormState>(key: K, value: FormState[K]) =>
         setForm((f) => ({ ...f, [key]: value }));
 
-    const handleGenerate = () => {
+    const handleGenerate = async () => {
         if (!form.productName.trim() || !form.mainBenefit.trim() || !productImageSrc) return;
         setIsGenerating(true);
         setIsIntelligenceOpen(false); // Reset accordion state
         setAdSet(null);
 
-        // Pre-compute the ad set immediately to catch errors early
+        // Map form to ProductFormData
+        const productData: ProductFormData = {
+            productName: form.productName,
+            price: form.priceTier === 'budget' ? 'اقتصادي' : form.priceTier === 'mid' ? 'متوسط' : 'غالي / مميز', // simplified adaptation
+            mainBenefit: form.mainBenefit,
+            audience: form.market === 'egypt' ? 'مصريين' : form.market === 'gulf' ? 'خلايجة' : 'عرب',
+            ageRange: '20-45', // Fixed assumption or can be added to the form later
+            category: 'أخرى',
+            budget: 'مفتوحة للنمو',
+            imageFile: null as any, // This would need to be handled if actual file upload to AI is needed
+            productUrl: ''
+        };
+
         try {
-            const profile: ProductPerformanceProfile = { ...form };
-            const angles = runAngleEngine(profile);
-            const result = runAdVariationEngine(profile, angles);
+            // Build prompt
+            const prompt = buildAdPrompt(productData);
 
-            // Wait for the animation to complete (10.5 seconds as defined in STEPS)
-            // then set the adSet and turn off the generating state together
-            setTimeout(() => {
-                setAdSet(result);
-                setIsGenerating(false);
-            }, 10500);
+            let generationResult: GenerationResult | null = null;
 
+            // Start waiting period
+            const animationPromise = new Promise<void>(resolve => {
+                setTimeout(() => { resolve(); }, 10500); // 10.5 secs
+            });
+
+            // Parallel AI fetch
+            const aiPromise = async () => {
+                const aiResult = await askGemini(prompt, "You are a senior Meta Ad buyer and copywriter expert in the Egyptian and Gulf markets.");
+                generationResult = parseGeminiResponse(aiResult);
+            };
+
+            await Promise.all([animationPromise, aiPromise()]);
+
+            if (generationResult) {
+                setAdSet(generationResult);
+            }
         } catch (error) {
             console.error("Error generating ads:", error);
+            // Show alert in actual implementation or handle fallback gracefully
+        } finally {
             setIsGenerating(false);
-            // In a real app we'd set an error state here, for now we just exit loading state safely.
         }
     };
 
@@ -415,7 +437,7 @@ const PerformancePanel: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2 gap-8">
-                        {adSet.variants.map((v, idx) => (
+                        {adSet.ads.map((v, idx) => (
                             <AdCard key={idx} variant={v} productImageSrc={productImageSrc} index={idx} />
                         ))}
                     </div>
@@ -438,40 +460,40 @@ const PerformancePanel: React.FC = () => {
                                 <div className="space-y-4">
                                     <h4 className="text-sm font-bold text-white mb-2">📊 تموضع السوق والمنافسة</h4>
                                     <div className="bg-white/5 p-4 rounded-xl border border-white/10 text-sm text-slate-300">
-                                        <p><span className="text-orange-400 font-bold">السوق: </span>{form.market === 'egypt' ? 'مصري 🇪🇬' : form.market === 'gulf' ? 'خليجي 🇸🇦' : 'الشرق الأوسط 🌍'}</p>
-                                        <p><span className="text-orange-400 font-bold">شريحة السعر: </span>{form.priceTier === 'budget' ? 'اقتصادي (يبحث عن التوفير)' : form.priceTier === 'mid' ? 'متوسط (توازن القيمة والسعر)' : 'بريميوم (يبحث عن الجودة والمكانة)'}</p>
-                                        <p><span className="text-orange-400 font-bold">مستوى الوعي: </span>{form.awarenessLevel === 'cold' ? 'بارد (يحتاج شرح وتوعية)' : form.awarenessLevel === 'warm' ? 'دافئ (يحتاج إثبات)' : 'حار (جاهز للشراء فوراً)'}</p>
+                                        <p><span className="text-orange-400 font-bold">السوق المتوقع للنتيجة: </span>{adSet.advancedAnalysis.market}</p>
+                                        <p><span className="text-orange-400 font-bold">شريحة السعر المستهدفة: </span>{adSet.advancedAnalysis.priceSegment}</p>
+                                        <p><span className="text-orange-400 font-bold">مستوى وعي العميل الأفضل: </span>{adSet.advancedAnalysis.awareness}</p>
                                     </div>
 
-                                    <h4 className="text-sm font-bold text-white mt-6 mb-2">🎯 نقطة البيع الفريدة (USP)</h4>
+                                    <h4 className="text-sm font-bold text-white mt-6 mb-2">🎯 نقطة البيع الفريدة (USP) كما فهمها الذكاء</h4>
                                     <div className="bg-white/5 p-4 rounded-xl border border-white/10 text-sm text-slate-300 leading-relaxed font-semibold">
-                                        "{form.uniqueDifferentiator || form.mainBenefit}"
+                                        "{adSet.advancedAnalysis.usp}"
                                     </div>
                                 </div>
 
                                 <div className="space-y-4">
-                                    <h4 className="text-sm font-bold text-white mb-2">📈 قوة الهوكات المولدة</h4>
+                                    <h4 className="text-sm font-bold text-white mb-2">📈 قوة الهوكات وتقييم الذكاء الاصطناعي</h4>
                                     <div className="space-y-3">
-                                        {adSet.variants.map((v, i) => (
-                                            <div key={i} className="flex flex-col gap-1 bg-white/5 p-3 rounded-xl border border-white/10">
+                                        {adSet.advancedAnalysis.hooksAnalysis.map((analysisItem, i) => (
+                                            <div key={i} className="flex flex-col gap-2 bg-white/5 p-3 rounded-xl border border-white/10">
                                                 <div className="flex justify-between items-center text-xs">
-                                                    <span className="text-slate-300">{v.angle.coreLabel}</span>
-                                                    <span className={`font-black ${v.confidenceScore >= 85 ? 'text-emerald-400' : v.confidenceScore >= 70 ? 'text-yellow-400' : 'text-red-400'}`}>
-                                                        {v.confidenceScore}% ثقة
+                                                    <span className="text-slate-300 font-bold">{analysisItem.angle.replace('_', ' ')}</span>
+                                                    <span className={`font-black ${analysisItem.score >= 70 ? 'text-emerald-400' : analysisItem.score >= 55 ? 'text-yellow-400' : 'text-red-400'}`}>
+                                                        {analysisItem.score}/100 🎯
                                                     </span>
                                                 </div>
                                                 <div className="w-full h-1.5 bg-black/50 rounded-full overflow-hidden">
                                                     <div
                                                         className="h-full rounded-full"
                                                         style={{
-                                                            width: `${v.confidenceScore}%`,
-                                                            background: v.confidenceScore >= 85 ? '#10B981' : v.confidenceScore >= 70 ? '#FBBF24' : '#EF4444'
+                                                            width: `${analysisItem.score}%`,
+                                                            background: analysisItem.score >= 70 ? '#10B981' : analysisItem.score >= 55 ? '#FBBF24' : '#EF4444'
                                                         }}
                                                     />
                                                 </div>
-                                                {v.hookScore.wasEnhanced && (
-                                                    <p className="text-[10px] text-yellow-500 mt-1">✨ تم تعزيز الهوك تلقائياً عبر AI</p>
-                                                )}
+                                                <p className="text-[10px] text-yellow-500 mt-1 leading-relaxed border-t border-white/5 pt-1.5">
+                                                    💡 <strong>توصية الذكاء: </strong> {analysisItem.tip}
+                                                </p>
                                             </div>
                                         ))}
                                     </div>

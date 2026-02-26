@@ -6,10 +6,10 @@
  */
 
 import React, { useRef, useCallback, useState } from 'react';
-import type { PerformanceAdVariant } from '../types';
+import type { AdCard } from '../types/ad.types';
 
 interface Props {
-    variant: PerformanceAdVariant;
+    variant: AdCard;
     productImageSrc: string; // data URL or object URL
     onExported?: (objectUrl: string) => void;
 }
@@ -22,10 +22,10 @@ const ANGLE_CONFIG: Record<string, {
     textPosition: 'top' | 'bottom';
 }> = {
     pain: { gradient: 'linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(180,20,20,0.6) 100%)', badgeColor: '#EF4444', badgeText: '⚠️ مشكلة حقيقية', textPosition: 'bottom' },
-    comparison: { gradient: 'linear-gradient(180deg, rgba(10,40,100,0.85) 0%, rgba(0,0,0,0.7) 100%)', badgeColor: '#3B82F6', badgeText: '⚡ الفرق واضح', textPosition: 'bottom' },
-    bold_claim: { gradient: 'linear-gradient(180deg, rgba(0,0,0,0.7) 0%,  rgba(120,80,0,0.8) 100%)', badgeColor: '#F59E0B', badgeText: '🔥 ضمان النتيجة', textPosition: 'bottom' },
-    transformation: { gradient: 'linear-gradient(180deg, rgba(0,60,40,0.8) 0%, rgba(0,0,0,0.75) 100%)', badgeColor: '#10B981', badgeText: '✨ التحول الحقيقي', textPosition: 'bottom' },
-    urgency: { gradient: 'linear-gradient(180deg, rgba(0,0,0,0.6) 0%,  rgba(150,50,0,0.9) 100%)', badgeColor: '#F97316', badgeText: '⏰ عرض محدود', textPosition: 'bottom' },
+    compare: { gradient: 'linear-gradient(180deg, rgba(10,40,100,0.85) 0%, rgba(0,0,0,0.7) 100%)', badgeColor: '#3B82F6', badgeText: '⚡ الفرق واضح', textPosition: 'bottom' },
+    bold: { gradient: 'linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(120,80,0,0.8) 100%)', badgeColor: '#F59E0B', badgeText: '🔥 ضمان النتيجة', textPosition: 'bottom' },
+    transform: { gradient: 'linear-gradient(180deg, rgba(0,60,40,0.8) 0%, rgba(0,0,0,0.75) 100%)', badgeColor: '#10B981', badgeText: '✨ التحول الحقيقي', textPosition: 'bottom' },
+    urgency: { gradient: 'linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(150,50,0,0.9) 100%)', badgeColor: '#F97316', badgeText: '⏰ عرض محدود', textPosition: 'bottom' },
 };
 
 const AdCreativeCanvas: React.FC<Props> = ({ variant, productImageSrc, onExported }) => {
@@ -34,7 +34,7 @@ const AdCreativeCanvas: React.FC<Props> = ({ variant, productImageSrc, onExporte
     const [isExporting, setIsExporting] = useState(false);
     const [exportReady, setExportReady] = useState(false);
 
-    const config = ANGLE_CONFIG[variant.angle.type] ?? ANGLE_CONFIG.bold_claim;
+    const config = ANGLE_CONFIG[variant.style] ?? ANGLE_CONFIG.bold;
     const accentColor = config.badgeColor;
 
     const handleExport = useCallback(async () => {
@@ -122,12 +122,12 @@ const AdCreativeCanvas: React.FC<Props> = ({ variant, productImageSrc, onExporte
                                 textShadow: '0 2px 12px rgba(0,0,0,0.9)',
                             }}
                         >
-                            {variant.primaryHook}
+                            {variant.headline}
                         </p>
 
                         {/* Bullets (top 2 only) */}
                         <div className="flex flex-col gap-1.5">
-                            {variant.bullets.slice(0, 2).map((b, i) => (
+                            {variant.hooks.slice(0, 2).map((h, i) => (
                                 <div key={i} className="flex items-center justify-end gap-2">
                                     <p
                                         className="text-white/90 text-right font-semibold"
@@ -136,7 +136,7 @@ const AdCreativeCanvas: React.FC<Props> = ({ variant, productImageSrc, onExporte
                                             textShadow: '0 1px 8px rgba(0,0,0,0.9)',
                                         }}
                                     >
-                                        {b}
+                                        {h}
                                     </p>
                                     <span
                                         className="text-xs w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-black font-black"
@@ -157,14 +157,14 @@ const AdCreativeCanvas: React.FC<Props> = ({ variant, productImageSrc, onExporte
                             }}
                         >
                             <p className="text-black font-black text-center" style={{ fontSize: 'clamp(13px, 3.5vw, 16px)' }}>
-                                {variant.cta.primary}
+                                {variant.ctaButton}
                             </p>
                         </div>
                     </div>
 
-                    {/* Confidence watermark */}
+                    {/* Score watermark */}
                     <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-sm rounded-lg px-2 py-1">
-                        <p className="text-white text-[10px] font-black">{variant.confidenceScore}% ثقة</p>
+                        <p className="text-white text-[10px] font-black">{variant.hookScore}% قوة الهوك</p>
                     </div>
                 </div>
             </div>
