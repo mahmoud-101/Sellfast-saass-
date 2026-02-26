@@ -13,8 +13,8 @@ import type {
     CompetitionLevel,
 } from './types';
 import type { GenerationResult, AdCard as AdCardType, ProductFormData } from './types/ad.types';
-import { buildAdPrompt } from './engine/PromptBuilder';
-import { parseGeminiResponse } from './engine/ResponseAnalyzer';
+import { buildAdPrompt } from '@/lib/prompts';
+import { parseGeminiResponse, isValidResult } from '@/lib/analyzer';
 import { askGemini, generateImage } from '../../services/geminiService';
 
 // ─── Loading State Component ──────────────────────────────────────────────────
@@ -263,7 +263,7 @@ const PerformancePanel: React.FC = () => {
         setAdSet(null);
 
         // Map form to ProductFormData
-        const productData: ProductFormData = {
+        const formData: ProductFormData = {
             productName: form.productName,
             price: form.priceTier === 'budget' ? 'اقتصادي' : form.priceTier === 'mid' ? 'متوسط' : 'غالي / مميز', // simplified adaptation
             mainBenefit: form.mainBenefit,
@@ -277,11 +277,15 @@ const PerformancePanel: React.FC = () => {
 
         try {
             // Build prompt
-            const prompt = buildAdPrompt(productData);
+            const prompt = buildAdPrompt(formData);
 
             // Only ask Gemini for the text parts first.
-            const aiResult = await askGemini(prompt, "You are a senior Meta Ad buyer and copywriter expert in the Egyptian and Gulf markets.");
-            const parsed = parseGeminiResponse(aiResult);
+            const rawText = await askGemini(prompt, "You are a senior Meta Ad buyer and copywriter expert in the Egyptian and Gulf markets.");
+            const parsed = parseGeminiResponse(rawText);
+
+            if (!isValidResult(parsed)) {
+                throw new Error("Invalid response from analyzer");
+            }
 
             // Set initial AdSet with loading state for images
             setAdSet(parsed);
