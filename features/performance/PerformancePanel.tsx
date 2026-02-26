@@ -13,8 +13,8 @@ import type {
     CompetitionLevel,
 } from './types';
 import type { GenerationResult, AdCard as AdCardType, ProductFormData } from './types/ad.types';
-import { buildAdPrompt } from '@/lib/prompts';
-import { parseGeminiResponse, isValidResult } from '@/lib/analyzer';
+import { buildAdPrompt } from './engine/PromptBuilder';
+import { parseGeminiResponse, isValidResult } from './engine/ResponseAnalyzer';
 import { askGemini, generateImage } from '../../services/geminiService';
 
 // ─── Loading State Component ──────────────────────────────────────────────────
