@@ -38,15 +38,16 @@ export interface AdCard {
 
 export interface ProductFormData {
   productName: string
-  price: string
+  productDescription: string
+  priceTier: string
   mainBenefit: string
-  audience: string
-  category: 'ملابس' | 'تجميل' | 'أدوات منزلية' | 'أخرى'
-  ageRange: string
-  budget: string
+  mainPain: string
+  uniqueDifferentiator: string
+  market: string
+  awarenessLevel: string
+  competitionLevel: string
   imageFile: File | null
   referenceImageFile: File | null
-  productUrl: string
 }
 
 export interface AdvancedAnalysis {

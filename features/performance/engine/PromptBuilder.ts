@@ -168,32 +168,22 @@ urgency → صورة scarcity وحركة: dynamic movement, POV shot, warm urgen
 // ─── Main Prompt Builder ──────────────────────────────────────────────────────
 export function buildAdPrompt(product: ProductFormData): string {
 
-  const categoryContext: Record<string, string> = {
-    'ملابس': 'منتج ملابس وفاشيون — ركز على الشكل والإحساس والـ style',
-    'تجميل': 'منتج تجميل وعناية — ركز على النتيجة المرئية والثقة بالنفس',
-    'أدوات منزلية': 'أداة منزلية — ركز على سهولة الحياة وتوفير الوقت والجهد',
-    'أخرى': 'منتج عام — ركز على الفايدة الأساسية وحل المشكلة',
-  }
-
-  const priceContext = Number(product.price) < 200
-    ? `سعر اقتصادي (${product.price} جنيه) — ركز على القيمة والتوفير مقارنة بالبدائل`
-    : Number(product.price) < 500
-      ? `سعر متوسط (${product.price} جنيه) — وازن بين الجودة والسعر المعقول`
-      : `سعر مرتفع (${product.price} جنيه) — بيع التجربة والهوية والنتيجة المضمونة مش السعر`
-
   return `
 أنت "محرك إبداع برو" — أعلى محرك كتابة إعلانات في السوق العربي.
-بتكتب إعلانات أداء للفيسبوك والإنستغرام للسوق المصري.
+بتكتب إعلانات أداء للفيسبوك والإنستغرام.
 
 ══════════════════════
-بيانات المنتج:
+بيانات المنتج التفصيلية لخبراء الـ Media Buying:
 ══════════════════════
 الاسم: ${product.productName}
-السعر: ${product.price} جنيه — ${priceContext}
-الفايدة الرئيسية: ${product.mainBenefit}
-الجمهور: ${product.audience}، عمر ${product.ageRange}
-الفئة: ${product.category} — ${categoryContext[product.category] || categoryContext['أخرى']}
-الميزانية اليومية: ${product.budget} جنيه
+الوصف: ${product.productDescription}
+السعر والتموضع: ${product.priceTier}
+الفايدة الرئيسية (Main Benefit): ${product.mainBenefit}
+نقطة الألم المركزية (Main Pain): ${product.mainPain}
+الميزة التنافسية (USP): ${product.uniqueDifferentiator}
+السوق المستهدف: ${product.market}
+مرحلة وعي الجمهور (Awareness Level): ${product.awarenessLevel}
+حجم المنافسة (Competition): ${product.competitionLevel}
 
 ${LANGUAGE_RULES}
 

@@ -272,15 +272,16 @@ const PerformancePanel: React.FC = () => {
         // Map form to ProductFormData
         const formData: ProductFormData = {
             productName: form.productName,
-            price: form.priceTier === 'budget' ? 'اقتصادي' : form.priceTier === 'mid' ? 'متوسط' : 'غالي / مميز', // simplified adaptation
+            productDescription: form.productDescription,
             mainBenefit: form.mainBenefit,
-            audience: form.market === 'egypt' ? 'مصريين' : form.market === 'gulf' ? 'خلايجة' : 'عرب',
-            ageRange: '20-45', // Fixed assumption or can be added to the form later
-            category: 'أخرى',
-            budget: 'مفتوحة للنمو',
+            mainPain: form.mainPain,
+            uniqueDifferentiator: form.uniqueDifferentiator,
+            market: form.market === 'egypt' ? 'السوق المصري' : form.market === 'gulf' ? 'السوق الخليجي' : 'عالمي',
+            priceTier: form.priceTier === 'budget' ? 'اقتصادي (سعر تنافسي)' : form.priceTier === 'mid' ? 'متوسط (قيمة مقابل سعر)' : 'غالي (Premium)',
+            awarenessLevel: form.awarenessLevel === 'cold' ? 'بارد (لا يعرف المشكلة أو الحل)' : form.awarenessLevel === 'warm' ? 'دافئ (يعرف المشكلة ويبحث عن حل)' : 'حار (جاهز للشراء)',
+            competitionLevel: form.competitionLevel === 'low' ? 'منخفضة' : form.competitionLevel === 'medium' ? 'متوسطة' : 'عالية جداً شرسة',
             imageFile: file,
             referenceImageFile: refFile,
-            productUrl: ''
         };
 
         try {
@@ -424,71 +425,93 @@ const PerformancePanel: React.FC = () => {
                     />
                 </div>
 
-                <div className="md:col-span-2 border-t border-white/10 my-2" />
+                <div className="md:col-span-2 border-t border-white/5 my-4" />
 
-                <div className="md:col-span-2">
-                    <label className="text-sm text-white font-black mb-2 block">2. تفاصيل المنتج</label>
+                {/* ── Group 1: Product Core ── */}
+                <div className="md:col-span-2 mb-2">
+                    <div className="flex items-center gap-2 mb-1">
+                        <span className="text-orange-500 text-lg">📦</span>
+                        <h3 className="text-lg text-white font-black">2. أساسيات المنتج (Product Core)</h3>
+                    </div>
+                    <p className="text-xs text-slate-400">تفاصيل المنتج الأساسية لبناء الكوبي.</p>
                 </div>
 
-                {/* Product Name */}
                 <div className="flex flex-col gap-1.5 md:col-span-2">
                     <label className="text-xs text-slate-400 font-bold">اسم المنتج / الخدمة *</label>
                     <input
                         type="text"
                         value={form.productName}
                         onChange={(e) => setField('productName', e.target.value)}
-                        placeholder="مثال: كريم تبييض متقدم"
-                        className="bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-orange-500/60 transition-colors"
+                        placeholder="مثال: كريم تبييض متقدم / كورس لغة إنجليزية"
+                        className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-orange-500/60 transition-colors shadow-inner"
                     />
                 </div>
 
-                {/* Main Benefit */}
                 <div className="flex flex-col gap-1.5 md:col-span-2">
-                    <label className="text-xs text-slate-400 font-bold">المنتج مميز في إيه؟ (الفائدة الرئيسية) *</label>
+                    <label className="text-xs text-slate-400 font-bold">وصف المنتج (Product Description) *</label>
+                    <textarea
+                        value={form.productDescription}
+                        onChange={(e) => setField('productDescription', e.target.value)}
+                        placeholder="اكتب وصف مختصر لمنتجك، بيعمل إيه وبيتكون من إيه؟"
+                        rows={2}
+                        className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-orange-500/60 transition-colors shadow-inner resize-none"
+                    />
+                </div>
+
+                <div className="flex flex-col gap-1.5 md:col-span-2">
+                    <label className="text-xs text-slate-400 font-bold">المنتج مميز في إيه؟ (Main Benefit / Hook) *</label>
                     <input
                         type="text"
                         value={form.mainBenefit}
                         onChange={(e) => setField('mainBenefit', e.target.value)}
-                        placeholder="مثال: بشرة مشرقة في 7 أيام"
-                        className="bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-orange-500/60 transition-colors"
+                        placeholder="النتيجة النهائية اللي العميل عايزها (مثال: بشرة مشرقة في 7 أيام)"
+                        className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-orange-500/60 transition-colors shadow-inner"
                     />
                 </div>
 
-                {/* Main Pain */}
                 <div className="flex flex-col gap-1.5">
-                    <label className="text-xs text-slate-400 font-bold">إيه المشكلة اللي بيحلها؟</label>
+                    <label className="text-xs text-slate-400 font-bold">مُسكن الألم (Main Pain Point) *</label>
                     <input
                         type="text"
                         value={form.mainPain}
                         onChange={(e) => setField('mainPain', e.target.value)}
-                        placeholder="مثال: البشرة الداكنة والبهتان"
-                        className="bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-orange-500/60 transition-colors"
+                        placeholder="المشكلة اللي بتأرق العميل (مثال: الإحراج من الهالات السوداء)"
+                        className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-orange-500/60 transition-colors shadow-inner"
                     />
                 </div>
 
-                {/* Unique Differentiator */}
                 <div className="flex flex-col gap-1.5">
-                    <label className="text-xs text-slate-400 font-bold">الميزة التنافسية (ضمان/ميزة)</label>
+                    <label className="text-xs text-slate-400 font-bold">الميزة التنافسية للبراند (USP & Offer)</label>
                     <input
                         type="text"
                         value={form.uniqueDifferentiator}
                         onChange={(e) => setField('uniqueDifferentiator', e.target.value)}
-                        placeholder="مثال: الوحيد بـ 3 مواد نادرة"
-                        className="bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-orange-500/60 transition-colors"
+                        placeholder="عرض خاص، ضمان، شحن مجاني، أو تركيبة فريدة"
+                        className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-orange-500/60 transition-colors shadow-inner"
                     />
                 </div>
 
-                {/* Selects */}
-                <Select<Market> label="السوق" value={form.market} onChange={(v) => setField('market', v)} options={[{ value: 'egypt', label: '🇪🇬 مصر' }, { value: 'gulf', label: '🇸🇦 الخليج' }, { value: 'mena', label: '🌍 MENA' }]} />
-                <Select<PriceTier> label="شريحة السعر" value={form.priceTier} onChange={(v) => setField('priceTier', v)} options={[{ value: 'budget', label: '💰 اقتصادي' }, { value: 'mid', label: '💎 متوسط' }, { value: 'premium', label: '🏆 غالي' }]} />
-                <Select<AwarenessLevel> label="تفاعل الجمهور" value={form.awarenessLevel} onChange={(v) => setField('awarenessLevel', v)} options={[{ value: 'cold', label: '🧊 بارد (لا يعرفون)' }, { value: 'warm', label: '🌡️ دافئ (يعرفون)' }, { value: 'hot', label: '🔥 حار (جاهزين للشراء)' }]} />
-                <Select<CompetitionLevel> label="المنافسة" value={form.competitionLevel} onChange={(v) => setField('competitionLevel', v)} options={[{ value: 'low', label: '🟢 ضعيفة' }, { value: 'medium', label: '🟡 متوسطة' }, { value: 'high', label: '🔴 عالية' }]} />
+                <div className="md:col-span-2 border-t border-white/5 my-4" />
+
+                {/* ── Group 2: Market Dynamics ── */}
+                <div className="md:col-span-2 mb-2">
+                    <div className="flex items-center gap-2 mb-1">
+                        <span className="text-blue-500 text-lg">🌍</span>
+                        <h3 className="text-lg text-white font-black">3. ديناميكية السوق (Market Dynamics)</h3>
+                    </div>
+                    <p className="text-xs text-slate-400">توجيهات لضبط نبرة وصوت الإعلان (Tone of Voice).</p>
+                </div>
+
+                <Select<Market> label="السوق المستهدف (Market)" value={form.market} onChange={(v) => setField('market', v)} options={[{ value: 'egypt', label: '🇪🇬 السوق المصري' }, { value: 'gulf', label: '🇸🇦 السوق الخليجي' }, { value: 'mena', label: '🌍 عالمي (عربي فصحى/أبيض)' }]} />
+                <Select<PriceTier> label="تموضع السعر (Price Tier)" value={form.priceTier} onChange={(v) => setField('priceTier', v)} options={[{ value: 'budget', label: '💰 اقتصادي (سعر تنافسي)' }, { value: 'mid', label: '💎 متوسط (قيمة مقابل سعر)' }, { value: 'premium', label: '🏆 غالي (Brand Premium)' }]} />
+                <Select<AwarenessLevel> label="وعي الجمهور (Awareness)" value={form.awarenessLevel} onChange={(v) => setField('awarenessLevel', v)} options={[{ value: 'cold', label: '🧊 بارد (لا يعرف المشكلة)' }, { value: 'warm', label: '🌡️ دافئ (عارف المشكلة وبيدور)' }, { value: 'hot', label: '🔥 حار (جاهز يشتري حالا)' }]} />
+                <Select<CompetitionLevel> label="المنافسة (Competition)" value={form.competitionLevel} onChange={(v) => setField('competitionLevel', v)} options={[{ value: 'low', label: '🟢 منخفضة (Blue Ocean)' }, { value: 'medium', label: '🟡 متوسطة (عادية)' }, { value: 'high', label: '🔴 شرسة جداً (Red Ocean)' }]} />
 
                 {/* Generate Button */}
                 <div className="md:col-span-2 mt-4">
                     <button
                         onClick={handleGenerate}
-                        disabled={isGenerating || !form.productName.trim() || !form.mainBenefit.trim() || !productImageSrc}
+                        disabled={isGenerating || !form.productName.trim() || !form.productDescription.trim() || !form.mainBenefit.trim() || !form.mainPain.trim() || !productImageSrc}
                         className="w-full py-5 rounded-2xl font-black text-lg text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110 active:scale-95 flex items-center justify-center gap-3 shadow-[0_10px_30px_-10px_rgba(249,115,22,0.5)]"
                         style={{ background: isGenerating ? '#374151' : 'linear-gradient(to right, #F97316, #EF4444)' }}
                     >
@@ -501,9 +524,9 @@ const PerformancePanel: React.FC = () => {
                             <>🚀 أنشئ 5 إعلانات أداء مبيعات جاهزة الآن</>
                         )}
                     </button>
-                    {(!productImageSrc || !form.productName.trim() || !form.mainBenefit.trim()) && (
+                    {(!productImageSrc || !form.productName.trim() || !form.productDescription.trim() || !form.mainBenefit.trim() || !form.mainPain.trim()) && (
                         <p className="text-center text-orange-400 text-xs mt-3 bg-orange-500/10 py-2 rounded-lg border border-orange-500/20">
-                            * الرجاء إرفاق الصورة واسم المنتج والفائدة الرئيسية للمتابعة
+                            * الرجاء إكمال جميع الحقول الأساسية (الاسم، الوصف، الفائدة، الألم، والصورة) للمتابعة
                         </p>
                     )}
                 </div>
