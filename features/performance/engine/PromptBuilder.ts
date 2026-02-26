@@ -177,7 +177,7 @@ export function buildAdPrompt(product: ProductFormData): string {
 ══════════════════════
 الاسم: ${product.productName}
 الوصف: ${product.productDescription}
-السعر والتموضع: ${product.priceTier}
+السعر: ${product.price}
 الفايدة الرئيسية (Main Benefit): ${product.mainBenefit}
 نقطة الألم المركزية (Main Pain): ${product.mainPain}
 الميزة التنافسية (USP): ${product.uniqueDifferentiator}

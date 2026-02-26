@@ -102,8 +102,8 @@ interface FormState {
     mainBenefit: string;
     mainPain: string;
     uniqueDifferentiator: string;
+    price: string;
     market: Market;
-    priceTier: PriceTier;
     awarenessLevel: AwarenessLevel;
     competitionLevel: CompetitionLevel;
 }
@@ -114,8 +114,8 @@ const INITIAL_FORM: FormState = {
     mainBenefit: '',
     mainPain: '',
     uniqueDifferentiator: '',
+    price: '',
     market: 'egypt',
-    priceTier: 'mid',
     awarenessLevel: 'cold',
     competitionLevel: 'medium',
 };
@@ -277,7 +277,7 @@ const PerformancePanel: React.FC = () => {
             mainPain: form.mainPain,
             uniqueDifferentiator: form.uniqueDifferentiator,
             market: form.market === 'egypt' ? 'السوق المصري' : form.market === 'gulf' ? 'السوق الخليجي' : 'عالمي',
-            priceTier: form.priceTier === 'budget' ? 'اقتصادي (سعر تنافسي)' : form.priceTier === 'mid' ? 'متوسط (قيمة مقابل سعر)' : 'غالي (Premium)',
+            price: form.price,
             awarenessLevel: form.awarenessLevel === 'cold' ? 'بارد (لا يعرف المشكلة أو الحل)' : form.awarenessLevel === 'warm' ? 'دافئ (يعرف المشكلة ويبحث عن حل)' : 'حار (جاهز للشراء)',
             competitionLevel: form.competitionLevel === 'low' ? 'منخفضة' : form.competitionLevel === 'medium' ? 'متوسطة' : 'عالية جداً شرسة',
             imageFile: file,
@@ -459,6 +459,17 @@ const PerformancePanel: React.FC = () => {
                 </div>
 
                 <div className="flex flex-col gap-1.5 md:col-span-2">
+                    <label className="text-xs text-slate-400 font-bold">سعر المنتج (Price) *</label>
+                    <input
+                        type="text"
+                        value={form.price}
+                        onChange={(e) => setField('price', e.target.value)}
+                        placeholder="مثال: 350 جنيه"
+                        className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-orange-500/60 transition-colors shadow-inner"
+                    />
+                </div>
+
+                <div className="flex flex-col gap-1.5 md:col-span-2">
                     <label className="text-xs text-slate-400 font-bold">المنتج مميز في إيه؟ (Main Benefit / Hook) *</label>
                     <input
                         type="text"
@@ -503,7 +514,6 @@ const PerformancePanel: React.FC = () => {
                 </div>
 
                 <Select<Market> label="السوق المستهدف (Market)" value={form.market} onChange={(v) => setField('market', v)} options={[{ value: 'egypt', label: '🇪🇬 السوق المصري' }, { value: 'gulf', label: '🇸🇦 السوق الخليجي' }, { value: 'mena', label: '🌍 عالمي (عربي فصحى/أبيض)' }]} />
-                <Select<PriceTier> label="تموضع السعر (Price Tier)" value={form.priceTier} onChange={(v) => setField('priceTier', v)} options={[{ value: 'budget', label: '💰 اقتصادي (سعر تنافسي)' }, { value: 'mid', label: '💎 متوسط (قيمة مقابل سعر)' }, { value: 'premium', label: '🏆 غالي (Brand Premium)' }]} />
                 <Select<AwarenessLevel> label="وعي الجمهور (Awareness)" value={form.awarenessLevel} onChange={(v) => setField('awarenessLevel', v)} options={[{ value: 'cold', label: '🧊 بارد (لا يعرف المشكلة)' }, { value: 'warm', label: '🌡️ دافئ (عارف المشكلة وبيدور)' }, { value: 'hot', label: '🔥 حار (جاهز يشتري حالا)' }]} />
                 <Select<CompetitionLevel> label="المنافسة (Competition)" value={form.competitionLevel} onChange={(v) => setField('competitionLevel', v)} options={[{ value: 'low', label: '🟢 منخفضة (Blue Ocean)' }, { value: 'medium', label: '🟡 متوسطة (عادية)' }, { value: 'high', label: '🔴 شرسة جداً (Red Ocean)' }]} />
 
@@ -511,7 +521,7 @@ const PerformancePanel: React.FC = () => {
                 <div className="md:col-span-2 mt-4">
                     <button
                         onClick={handleGenerate}
-                        disabled={isGenerating || !form.productName.trim() || !form.productDescription.trim() || !form.mainBenefit.trim() || !form.mainPain.trim() || !productImageSrc}
+                        disabled={isGenerating || !form.productName.trim() || !form.productDescription.trim() || !form.price.trim() || !form.mainBenefit.trim() || !form.mainPain.trim() || !productImageSrc}
                         className="w-full py-5 rounded-2xl font-black text-lg text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110 active:scale-95 flex items-center justify-center gap-3 shadow-[0_10px_30px_-10px_rgba(249,115,22,0.5)]"
                         style={{ background: isGenerating ? '#374151' : 'linear-gradient(to right, #F97316, #EF4444)' }}
                     >
@@ -524,9 +534,9 @@ const PerformancePanel: React.FC = () => {
                             <>🚀 أنشئ 5 إعلانات أداء مبيعات جاهزة الآن</>
                         )}
                     </button>
-                    {(!productImageSrc || !form.productName.trim() || !form.productDescription.trim() || !form.mainBenefit.trim() || !form.mainPain.trim()) && (
+                    {(!productImageSrc || !form.productName.trim() || !form.productDescription.trim() || !form.price.trim() || !form.mainBenefit.trim() || !form.mainPain.trim()) && (
                         <p className="text-center text-orange-400 text-xs mt-3 bg-orange-500/10 py-2 rounded-lg border border-orange-500/20">
-                            * الرجاء إكمال جميع الحقول الأساسية (الاسم، الوصف، الفائدة، الألم، والصورة) للمتابعة
+                            * الرجاء إكمال جميع الحقول الأساسية (الاسم، الوصف، السعر، الفائدة، الألم، والصورة) للمتابعة
                         </p>
                     )}
                 </div>

@@ -39,7 +39,7 @@ export interface AdCard {
 export interface ProductFormData {
   productName: string
   productDescription: string
-  priceTier: string
+  price: string
   mainBenefit: string
   mainPain: string
   uniqueDifferentiator: string
