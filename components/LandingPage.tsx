@@ -36,11 +36,14 @@ const LandingPage: React.FC<{ onGetStarted: () => void }> = ({ onGetStarted }) =
                     </h1>
 
                     <p className="text-lg md:text-2xl text-slate-400 max-w-2xl mx-auto font-medium leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
-                        حوّل منتجك إلى 5 إعلانات أداء جاهزين للاختبار. مدعوم بفنيات الـ Performance Marketing للسوق المصري والعربي.
+                        حوّل منتجك إلى 5 إعلانات أداء جاهزين للاختبار. مدعوم بخاصية <span className="text-white font-black">نسخ الستايل (Reference Image)</span> ودمج <span className="text-white font-black">روح الـ UGC والتصوير العفوي</span> لزيادة المبيعات في السوق المصري والعربي.
                     </p>
 
-                    <div className="text-sm text-slate-500 font-bold mb-8 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-400">
-                        مثالي لـ: (الملابس، منتجات التجميل، الأدوات المنزلية، الدروبشيبينج)
+                    <div className="text-sm text-slate-500 font-bold mb-8 flex flex-wrap justify-center gap-3 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-400">
+                        <span className="bg-white/5 px-3 py-1.5 rounded-full border border-white/10 text-orange-400/80">👕 أزياء</span>
+                        <span className="bg-white/5 px-3 py-1.5 rounded-full border border-white/10 text-orange-400/80">💄 تجميل وعناية</span>
+                        <span className="bg-white/5 px-3 py-1.5 rounded-full border border-white/10 text-orange-400/80">🏠 أدوات منزلية</span>
+                        <span className="bg-white/5 px-3 py-1.5 rounded-full border border-white/10 text-orange-400/80">📦 دروبشيبينج</span>
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-5 justify-center pt-8 animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-500">
@@ -54,9 +57,9 @@ const LandingPage: React.FC<{ onGetStarted: () => void }> = ({ onGetStarted }) =
                 <section className="w-full border-y border-white/5 bg-black/50 py-20 mt-20 backdrop-blur-md">
                     <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-10 text-center">
                         {[
-                            { val: "+10,000", label: "مسوق محترف" },
-                            { val: "3 Seconds", label: "سرعة التنفيذ" },
-                            { val: "4K UHD", label: "جودة الفيديوهات" },
+                            { val: "5 ستايلات", label: "في ضغطة واحدة" },
+                            { val: "UGC Mix", label: "واقعية وعفوية" },
+                            { val: "Style Match", label: "نسخ نفس الروح" },
                             { val: "+500K", label: "محتوى تم إنشاؤه" }
                         ].map((stat, idx) => (
                             <div key={idx} className="space-y-3 p-6 rounded-3xl hover:bg-white/5 transition-colors">

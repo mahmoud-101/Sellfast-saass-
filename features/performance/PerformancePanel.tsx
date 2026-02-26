@@ -151,73 +151,67 @@ const Select = <T extends string>({
 // ─── Ad Card Component ────────────────────────────────────────────────────────
 const AdCard: React.FC<{ variant: AdCardType, productImageSrc: string, index: number }> = ({ variant, productImageSrc, index }) => {
     return (
-        <div className="bg-white/5 border border-white/10 rounded-3xl p-6 flex flex-col gap-6 shadow-xl relative overflow-hidden">
+        <div className="bg-[#0f1219] border border-white/10 rounded-3xl p-6 flex flex-col gap-6 shadow-2xl relative overflow-hidden group hover:border-orange-500/30 transition-colors">
             {/* Angle Name Badge */}
-            <div className="absolute top-0 right-0 bg-orange-500 text-black text-xs font-black px-4 py-1.5 rounded-bl-xl z-10 shadow-lg flex items-center gap-1">
+            <div className="absolute top-0 right-0 bg-gradient-to-l from-orange-600 to-orange-400 text-black text-xs font-black px-4 py-1.5 rounded-bl-xl z-20 shadow-lg flex items-center gap-1">
                 <span>{variant.badgeEmoji}</span> إعلان {index + 1}: {variant.badgeLabel}
             </div>
 
             {/* 1. Image */}
-            <div className="w-full max-w-sm mx-auto mt-6 relative rounded-2xl overflow-hidden aspect-[4/5] border border-white/10 bg-black/40">
+            <div className="w-full relative rounded-2xl overflow-hidden aspect-square border border-white/5 bg-black/40 group-hover:border-orange-500/20 transition-colors">
                 {variant.isLoading ? (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm z-10 transition-opacity duration-300">
-                        <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-3"></div>
-                        <p className="text-[10px] font-black tracking-widest text-orange-400 animate-pulse text-center px-4 leading-relaxed uppercase">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-md z-10 transition-opacity duration-300">
+                        <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                        <p className="text-[11px] font-black tracking-widest text-orange-400 animate-pulse text-center px-4 leading-relaxed uppercase">
                             جاري تصميم الصورة بأسلوب<br />
-                            <span className="text-white">({variant.imageStyleName})</span>
+                            <span className="text-white mt-1 block">({variant.imageStyleName})</span>
                         </p>
                     </div>
                 ) : null}
                 {variant.generatedImageUrl ? (
-                    <img src={variant.generatedImageUrl} alt="Generated Ad" className="w-full h-full object-cover animate-in fade-in duration-700" />
+                    <img src={variant.generatedImageUrl} alt="Generated Ad" className="w-full h-full object-cover animate-in fade-in zoom-in-95 duration-700" />
                 ) : (
-                    <img src={productImageSrc} alt="Fallback Ad" className="w-full h-full object-cover opacity-50 grayscale" />
+                    <img src={productImageSrc} alt="Fallback Ad" className="w-full h-full object-cover opacity-60 grayscale blur-[2px] scale-105" />
                 )}
             </div>
 
-            <div className="space-y-5 mt-2">
-                {/* 2. Primary Text */}
-                <div>
-                    <p className="text-[10px] font-black uppercase text-orange-400 mb-1 flex items-center gap-1"><span>📝</span> النص الرئيسي (Primary Text)</p>
-                    <p className="text-sm text-slate-200 leading-relaxed bg-black/20 p-3 rounded-xl border border-white/5">{variant.primaryText}</p>
-                </div>
-
-                {/* 3. Headline */}
-                <div>
-                    <p className="text-[10px] font-black uppercase text-orange-400 mb-1 flex items-center gap-1"><span>🔤</span> العنوان (Headline)</p>
-                    <p className="text-xl font-black text-white bg-black/20 p-3 rounded-xl border border-white/5">{variant.headline}</p>
-                </div>
-
-                {/* 4. Description */}
-                <div>
-                    <p className="text-[10px] font-black uppercase text-orange-400 mb-1 flex items-center gap-1"><span>📄</span> الوصف (Description)</p>
-                    <p className="text-sm text-slate-300 bg-black/20 p-3 rounded-xl border border-white/5">{variant.description}</p>
-                </div>
-
-                {/* 5. Hooks */}
-                <div>
-                    <p className="text-[10px] font-black uppercase text-orange-400 mb-2 flex items-center gap-1"><span>🪝</span> الهوكات المتاحة للاختبار</p>
-                    <ul className="list-disc list-inside flex flex-col gap-1.5 text-sm text-slate-200 bg-black/20 p-3 rounded-xl border border-white/5">
-                        {variant.hooks.map((hook, i) => (
-                            <li key={i}>{hook}</li>
-                        ))}
-                    </ul>
-                </div>
-
-                {/* 6. Ad Post (Copy-paste ready) */}
-                <div className="bg-black/40 rounded-2xl p-4 border border-emerald-500/20 shadow-inner">
-                    <div className="flex items-center justify-between mb-3">
-                        <p className="text-[11px] font-black uppercase text-emerald-400 flex items-center gap-1"><span>📢</span> البوست الإعلاني الكامل</p>
-                        <button
-                            onClick={() => navigator.clipboard.writeText(variant.adPost)}
-                            className="text-xs bg-emerald-500/20 text-emerald-400 px-4 py-2 rounded-xl hover:bg-emerald-500/30 transition-colors font-bold shadow-md active:scale-95 flex items-center gap-2"
-                        >
-                            📋 نسخ البوست
-                        </button>
-                    </div>
-                    <div className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap font-sans relative selection:bg-emerald-500/30">
+            <div className="space-y-6 flex-1 flex flex-col">
+                {/* 2. Ad Post (Copy-paste ready) */}
+                <div className="bg-white/5 rounded-2xl p-5 border border-white/5 flex-1 relative rtl group-hover:bg-white/10 transition-colors">
+                    <p className="text-[11px] font-black uppercase text-orange-400/80 mb-4 flex items-center gap-1.5"><span className="text-sm">📝</span> الكوبي الإعلاني (متوافق مع الذوق العام)</p>
+                    <div className="text-sm text-slate-300 leading-loose whitespace-pre-wrap font-sans font-medium">
                         {variant.adPost}
                     </div>
+                </div>
+
+                {/* Buttons Action Bar */}
+                <div className="flex flex-col gap-3 pt-2">
+                    <div className="grid grid-cols-2 gap-3">
+                        <button
+                            onClick={() => navigator.clipboard.writeText(variant.adPost)}
+                            className="bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white px-4 py-3 rounded-xl transition-all font-bold shadow-sm active:scale-95 flex items-center justify-center gap-2 border border-emerald-500/20 hover:border-emerald-500 text-sm"
+                        >
+                            <span>📋</span> نسخ الإعلان
+                        </button>
+                        <button
+                            onClick={() => {
+                                const a = document.createElement("a");
+                                a.href = variant.generatedImageUrl || productImageSrc;
+                                a.download = `ad-${index + 1}-image.jpg`;
+                                a.click();
+                            }}
+                            className="bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white px-4 py-3 rounded-xl transition-all font-bold shadow-sm active:scale-95 flex items-center justify-center gap-2 border border-blue-500/20 hover:border-blue-500 text-sm"
+                        >
+                            <span>⬇️</span> تحميل الصورة
+                        </button>
+                    </div>
+
+                    <button
+                        onClick={() => alert("سيتم تفعيل ميزة إعادة توليد هذا الإعلان قريباً!")}
+                        className="w-full bg-orange-500/10 text-orange-400 hover:bg-orange-500 hover:text-black px-4 py-3 rounded-xl transition-all font-bold shadow-sm active:scale-95 flex items-center justify-center gap-2 border border-orange-500/20 hover:border-orange-500 text-sm mt-1"
+                    >
+                        <span>🔄</span> إعادة توليد الإعلان والحصول على تصميم جديد
+                    </button>
                 </div>
             </div>
         </div>

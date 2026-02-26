@@ -264,6 +264,10 @@ export async function generateFinalContentScript(topic: string, type: string): P
 export async function generateImage(productImages: ImageFile[], prompt: string, styleImages: ImageFile[] | null = null, aspectRatio: string = "1:1"): Promise<ImageFile> {
     const parts: Part[] = productImages.map(img => ({ inlineData: { data: img.base64, mimeType: img.mimeType } }));
 
+    if (styleImages && styleImages.length > 0) {
+        styleImages.forEach(img => parts.push({ inlineData: { data: img.base64, mimeType: img.mimeType } }));
+    }
+
     // Apply "Master Prompt" spices and structure
     const enhancedPrompt = `
     ${prompt}
