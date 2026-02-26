@@ -5,7 +5,7 @@
  * and a simplified Results Grid showing 5 specific outputs per ad.
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import type {
     Market,
     PriceTier,
