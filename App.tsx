@@ -268,7 +268,7 @@ export default function App() {
         </nav>
 
         <div className="w-full max-w-7xl flex-grow p-6 z-10 pt-10">
-          {view === 'landing' && <LandingPage onGetStarted={() => setView('campaign_builder_hub')} />}
+          {view === 'landing' && <LandingPage onGetStarted={() => { setView('campaign_builder_hub'); setIsGuest(true); }} />}
 
           {view !== 'landing' && !userId && <Auth onGuestLogin={() => setIsGuest(true)} />}
 
