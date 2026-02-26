@@ -63,15 +63,15 @@ const PerformanceLoadingState: React.FC = () => {
                     return (
                         <div key={index} className="flex items-center gap-4">
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 font-bold text-sm ${isPassed ? 'bg-emerald-500 text-black' :
-                                    isActive ? 'bg-orange-500 text-black shadow-[0_0_15px_rgba(249,115,22,0.5)] scale-110' :
-                                        'bg-white/5 text-slate-500'
+                                isActive ? 'bg-orange-500 text-black shadow-[0_0_15px_rgba(249,115,22,0.5)] scale-110' :
+                                    'bg-white/5 text-slate-500'
                                 }`}>
                                 {isPassed ? '✓' : index + 1}
                             </div>
                             <div className="flex-1">
                                 <p className={`font-bold transition-all duration-300 ${isPassed ? 'text-slate-300' :
-                                        isActive ? 'text-orange-400 text-lg' :
-                                            'text-slate-600'
+                                    isActive ? 'text-orange-400 text-lg' :
+                                        'text-slate-600'
                                     }`}>
                                     {step.title}
                                 </p>
@@ -238,16 +238,27 @@ const PerformancePanel: React.FC = () => {
     const handleGenerate = () => {
         if (!form.productName.trim() || !form.mainBenefit.trim() || !productImageSrc) return;
         setIsGenerating(true);
+        setIsIntelligenceOpen(false); // Reset accordion state
         setAdSet(null);
 
-        // Run engines in a microtask to keep UI responsive
-        setTimeout(() => {
+        // Pre-compute the ad set immediately to catch errors early
+        try {
             const profile: ProductPerformanceProfile = { ...form };
             const angles = runAngleEngine(profile);
             const result = runAdVariationEngine(profile, angles);
-            setAdSet(result);
+
+            // Wait for the animation to complete (10.5 seconds as defined in STEPS)
+            // then set the adSet and turn off the generating state together
+            setTimeout(() => {
+                setAdSet(result);
+                setIsGenerating(false);
+            }, 10500);
+
+        } catch (error) {
+            console.error("Error generating ads:", error);
             setIsGenerating(false);
-        }, 10500); // 10.5 seconds to allow the loading animation to complete
+            // In a real app we'd set an error state here, for now we just exit loading state safely.
+        }
     };
 
     return (
