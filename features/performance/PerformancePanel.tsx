@@ -235,12 +235,24 @@ const PerformancePanel: React.FC = () => {
     const [productImageSrc, setProductImageSrc] = useState<string | null>(null);
     const imgInputRef = useRef<HTMLInputElement>(null);
 
+    // Reference image (UGC style)
+    const [referenceImageSrc, setReferenceImageSrc] = useState<string | null>(null);
+    const refImgInputRef = useRef<HTMLInputElement>(null);
+
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
         const url = URL.createObjectURL(file);
         if (productImageSrc) URL.revokeObjectURL(productImageSrc);
         setProductImageSrc(url);
+    };
+
+    const handleRefImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const url = URL.createObjectURL(file);
+        if (referenceImageSrc) URL.revokeObjectURL(referenceImageSrc);
+        setReferenceImageSrc(url);
     };
 
     const setField = <K extends keyof FormState>(key: K, value: FormState[K]) =>
@@ -257,6 +269,7 @@ const PerformancePanel: React.FC = () => {
 
     const handleGenerate = async () => {
         const file = imgInputRef.current?.files?.[0];
+        const refFile = refImgInputRef.current?.files?.[0] || null;
         if (!form.productName.trim() || !form.mainBenefit.trim() || !productImageSrc || !file) return;
         setIsGenerating(true);
         setIsIntelligenceOpen(false); // Reset accordion state
@@ -272,6 +285,7 @@ const PerformancePanel: React.FC = () => {
             category: 'أخرى',
             budget: 'مفتوحة للنمو',
             imageFile: file,
+            referenceImageFile: refFile,
             productUrl: ''
         };
 
@@ -295,9 +309,15 @@ const PerformancePanel: React.FC = () => {
             const base64Data = (await getBase64(file)).split(',')[1];
             const productImage = { base64: base64Data, mimeType: file.type, name: file.name };
 
+            let referenceImages = null;
+            if (refFile) {
+                const refBase64Data = (await getBase64(refFile)).split(',')[1];
+                referenceImages = [{ base64: refBase64Data, mimeType: refFile.type, name: refFile.name }];
+            }
+
             parsed.ads.forEach(async (ad, index) => {
                 try {
-                    const generatedImage = await generateImage([productImage], ad.imagePrompt, null, "3:4");
+                    const generatedImage = await generateImage([productImage], ad.imagePrompt, referenceImages, "3:4");
                     const finalUrl = `data:${generatedImage.mimeType};base64,${generatedImage.base64}`;
 
                     setAdSet(prev => {
@@ -343,8 +363,8 @@ const PerformancePanel: React.FC = () => {
             {/* ── Input Form ────────────────────────────────────────────── */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-white/5 border border-white/10 rounded-3xl p-6 shadow-2xl">
 
-                {/* ── Image Upload (Required) ── */}
-                <div className="md:col-span-2">
+                {/* ── Image Uploads ── */}
+                <div className="md:col-span-1">
                     <label className="text-sm text-white font-black mb-2 block">1. صورة المنتج الأساسية (مطلوبة) *</label>
                     {productImageSrc ? (
                         <div className="relative w-full h-48 rounded-2xl overflow-hidden border-2 border-orange-500/50 group">
@@ -364,8 +384,8 @@ const PerformancePanel: React.FC = () => {
                             className="w-full h-48 rounded-2xl border-2 border-dashed border-orange-500/50 bg-orange-500/5 flex flex-col items-center justify-center gap-3 hover:bg-orange-500/10 transition-colors"
                         >
                             <span className="text-5xl">📸</span>
-                            <p className="text-orange-300 font-black">أضف صورة المنتج هنا</p>
-                            <p className="text-slate-400 text-xs">يفضل صورة مربعة وعالية الجودة</p>
+                            <p className="text-orange-300 font-black">أضف صورة المنتج</p>
+                            <p className="text-slate-400 text-xs">مطلوبة لبناء الإعلان</p>
                         </button>
                     )}
                     <input
@@ -374,6 +394,39 @@ const PerformancePanel: React.FC = () => {
                         accept="image/*"
                         className="hidden"
                         onChange={handleImageUpload}
+                    />
+                </div>
+
+                <div className="md:col-span-1">
+                    <label className="text-sm text-slate-300 font-bold mb-2 flex items-center gap-2 block">صورة ريفرانس (اختياري) <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded-full">ستايل أو ملامح</span></label>
+                    {referenceImageSrc ? (
+                        <div className="relative w-full h-48 rounded-2xl overflow-hidden border-2 border-slate-500/50 group">
+                            <img src={referenceImageSrc} alt="Reference Preview" className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <button
+                                    onClick={() => refImgInputRef.current?.click()}
+                                    className="bg-white text-black px-6 py-2 rounded-xl font-bold shadow-xl"
+                                >
+                                    تغيير الريفرانس
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <button
+                            onClick={() => refImgInputRef.current?.click()}
+                            className="w-full h-48 rounded-2xl border-2 border-dashed border-slate-500/50 bg-white/5 flex flex-col items-center justify-center gap-3 hover:bg-white/10 transition-colors"
+                        >
+                            <span className="text-5xl opacity-50">🖼️</span>
+                            <p className="text-slate-300 font-bold">UGC أو Photoshoot ريفرانس</p>
+                            <p className="text-slate-500 text-xs">يساعد الذكاء الاصطناعي في فهم المود المطلوب</p>
+                        </button>
+                    )}
+                    <input
+                        ref={refImgInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleRefImageUpload}
                     />
                 </div>
 

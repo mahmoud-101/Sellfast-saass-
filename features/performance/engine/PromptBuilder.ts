@@ -147,23 +147,22 @@ adPost structure:
 // ─── Image Prompt Builder لكل زاوية ──────────────────────────────────────────
 const IMAGE_PROMPT_RULES = `
 ══════════════════════════════════
-قواعد الـ imagePrompt:
+قواعد الـ imagePrompt (UGC + Photoshoot Mix):
 ══════════════════════════════════
-كل إعلان ليه imagePrompt بالإنجليزية — تفصيلي وتجاري.
+كل إعلان ليه imagePrompt بالإنجليزية — تفصيلي وتجاري ومزيج بين الـ UGC والاحترافية.
+يجب دمج لقطات الفوتوشوت النظيفة مع واقعية المحتوى العفوي (UGC) لتبدو الصور أقل تكلفاً، طبيعية، وأكثر ملاءمة للسوشيال ميديا.
 الـ imagePrompt لازم يعكس الزاوية البيعية مش بس المنتج:
 
-pain → صورة تعبّر عن الألم والإحباط قبل الحل: dark moody lighting، تعبير وجه إحباط، environment فوضوية
-compare → صورة مقارنة أو before/after: split composition، clean vs messy، clear visual contrast
-bold → صورة confidence وقوة: dramatic lighting، bold colors، product hero shot، strong shadows  
-transform → صورة سعادة وتحول: warm golden lighting، genuine smile، glowing skin/environment
-urgency → صورة scarcity وحركة: countdown feel، limited items، dynamic composition، warm urgent tones
+pain → صورة تعبّر عن الألم والإحباط: candid smartphone shot, messy everyday background, dark moody lighting, genuine frustrated expression
+compare → صورة مقارنة أو before/after: split composition, raw UGC style vs clean style, clear visual contrast, authentic lighting
+bold → صورة confidence وقوة: dynamic low angle, striking confident pose, premium lifestyle mixed with authentic texture, soft flash  
+transform → صورة سعادة وتحول: warm natural window lighting, genuine spontaneous smile, candid real-life moment, photorealistic UGC
+urgency → صورة scarcity وحركة: dynamic movement, POV shot, warm urgent tones, slightly imperfect framing for authenticity
 
 كل imagePrompt يتضمن:
 1. Main subject (المنتج + الشخص أو البيئة)
 2. Emotional tone (مرتبط بالزاوية)
-3. Lighting style
-4. Camera angle
-5. "Commercial photography, photorealistic, 8K, Egyptian market"
+3. Camera details: "High-end UGC style, taken with iPhone 14 Pro, relatable everyday environment, natural lighting, candid smartphone photography feel mixed with commercial clarity, photorealistic, 8K, Egyptian market"
 `
 
 // ─── Main Prompt Builder ──────────────────────────────────────────────────────
@@ -177,30 +176,30 @@ export function buildAdPrompt(product: ProductFormData): string {
   }
 
   const priceContext = Number(product.price) < 200
-    ?\`سعر اقتصادي (\${product.price} جنيه) — ركز على القيمة والتوفير مقارنة بالبدائل\`
+    ? `سعر اقتصادي (${product.price} جنيه) — ركز على القيمة والتوفير مقارنة بالبدائل`
     : Number(product.price) < 500
-    ? \`سعر متوسط (\${product.price} جنيه) — وازن بين الجودة والسعر المعقول\`
-    : \`سعر مرتفع (\${product.price} جنيه) — بيع التجربة والهوية والنتيجة المضمونة مش السعر\`
+      ? `سعر متوسط (${product.price} جنيه) — وازن بين الجودة والسعر المعقول`
+      : `سعر مرتفع (${product.price} جنيه) — بيع التجربة والهوية والنتيجة المضمونة مش السعر`
 
-  return \`
+  return `
 أنت "محرك إبداع برو" — أعلى محرك كتابة إعلانات في السوق العربي.
 بتكتب إعلانات أداء للفيسبوك والإنستغرام للسوق المصري.
 
 ══════════════════════
 بيانات المنتج:
 ══════════════════════
-الاسم: \${product.productName}
-السعر: \${product.price} جنيه — \${priceContext}
-الفايدة الرئيسية: \${product.mainBenefit}
-الجمهور: \${product.audience}، عمر \${product.ageRange}
-الفئة: \${product.category} — \${categoryContext[product.category] || categoryContext['أخرى']}
-الميزانية اليومية: \${product.budget} جنيه
+الاسم: ${product.productName}
+السعر: ${product.price} جنيه — ${priceContext}
+الفايدة الرئيسية: ${product.mainBenefit}
+الجمهور: ${product.audience}، عمر ${product.ageRange}
+الفئة: ${product.category} — ${categoryContext[product.category] || categoryContext['أخرى']}
+الميزانية اليومية: ${product.budget} جنيه
 
-\${LANGUAGE_RULES}
+${LANGUAGE_RULES}
 
-\${ANGLE_FORMULAS}
+${ANGLE_FORMULAS}
 
-\${IMAGE_PROMPT_RULES}
+${IMAGE_PROMPT_RULES}
 
 ══════════════════════
 مهم جداً قبل الكتابة:
@@ -211,7 +210,7 @@ export function buildAdPrompt(product: ProductFormData): string {
 4. الـ hookScore تقييم حقيقي من 0-100 — مش كلهم 70
 5. الـ imagePrompt لكل إعلان يعكس الـ emotional tone بتاع الزاوية
 
-ارجع بـ JSON فقط — بدون أي كلام أو markdown أو \\\`\\\`\\\`:
+ارجع بـ JSON فقط — بدون أي كلام أو markdown أو \`\`\`:
 {
   "ads": [
     {
@@ -319,5 +318,5 @@ export function buildAdPrompt(product: ProductFormData): string {
     ]
   }
 }
-\`
+`
 }

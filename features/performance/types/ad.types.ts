@@ -45,6 +45,7 @@ export interface ProductFormData {
   ageRange: string
   budget: string
   imageFile: File | null
+  referenceImageFile: File | null
   productUrl: string
 }
 
