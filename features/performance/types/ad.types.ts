@@ -10,11 +10,11 @@ export type AdAngle =
   | 'الزخم_والإلحاح'
 
 export type CardStyle =
-  | 'pain'       // أحمر داكن — تأثير الألم
-  | 'compare'    // أزرق — الفارق المقاس
-  | 'bold'       // بنفسجي — الادعاء الجريء
-  | 'transform'  // أخضر — التحول والنتيجة
-  | 'urgency'    // برتقالي — الزخم والإلحاح
+  | 'pain'
+  | 'compare'
+  | 'bold'
+  | 'transform'
+  | 'urgency'
 
 export interface AdCard {
   id: string
