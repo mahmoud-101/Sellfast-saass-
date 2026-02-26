@@ -1,15 +1,6 @@
-import React, { useState, lazy, Suspense } from 'react';
-import { useProductIntelligence } from '../../context/ProductIntelligenceContext';
-import { CampaignOrchestrator } from '../../orchestrator/CampaignOrchestrator';
-import { useLoadingMessages, campaignBuilderMessages } from '../../utils/useLoadingMessages';
-import AIProgressSteps, { CAMPAIGN_STEPS } from '../../components/AIProgressSteps';
+import React, { Suspense, lazy } from 'react';
 
-// Import existing internal tools
-import AdContentFactory from '../../components/AdContentFactory';
-import PowerStudio from '../../components/PowerStudio';
-import PlanStudio from '../../components/PlanStudio';
-
-// Lazy-load Performance Engine Panel (code-split, heavy)
+// Lazy-load Performance Engine Panel
 const PerformancePanel = lazy(() => import('../performance/PerformancePanel'));
 
 export default function CampaignBuilderHub({
@@ -19,408 +10,18 @@ export default function CampaignBuilderHub({
     powerProject, setPowerProject,
     planProject, setPlanProject,
     bridgeToVideo, bridgeToPhotoshoot
-}: {
-    setView: (view: any) => void,
-    userId: string,
-    performanceProject: any, setPerformanceProject: any,
-    powerProject: any, setPowerProject: any,
-    planProject: any, setPlanProject: any,
-    bridgeToVideo: any, bridgeToPhotoshoot: any
-}) {
-    const { data, updateData } = useProductIntelligence();
-    const [isAdvanced, setIsAdvanced] = useState(false);
-    const [isPerformanceMode, setIsPerformanceMode] = useState(false);
-    const [internalView, setInternalView] = useState<'hub' | 'performance' | 'power' | 'plan'>('hub');
-
-    // Smart Mode State
-    const [isBuilding, setIsBuilding] = useState(false);
-    const [results, setResults] = useState<any>(null);
-    const [activeTab, setActiveTab] = useState<'ads' | 'ugc' | 'hooks' | 'angles'>('ads');
-
-    // Progressive Loading & Editable State
-    const [performanceAds, setPerformanceAds] = useState<any[]>([]);
-    const [ugcScript, setUgcScript] = useState('');
-    const [viralHooks, setViralHooks] = useState<any[]>([]);
-    const [salesAngles, setSalesAngles] = useState<any[]>([]);
-
-    const { message: loadingMessage, start: startMessages, stop: stopMessages } = useLoadingMessages(campaignBuilderMessages);
-
-    const runCampaignBuilder = async () => {
-        setIsBuilding(true);
-        startMessages();
-
-        // Run ALL campaign tools in parallel
-        const result = await CampaignOrchestrator.runAllCampaignTools(data);
-
-        if (result.success) {
-            setResults(result.data);
-            setPerformanceAds(result.data.performanceAds || []);
-            setUgcScript(result.data.ugcScript || '');
-            setViralHooks(result.data.viralHooks || []);
-            setSalesAngles(result.data.salesAngles || []);
-
-            // Pick first angle for Creative Studio
-            const firstAngle = Array.isArray(result.data.salesAngles) && result.data.salesAngles.length > 0
-                ? result.data.salesAngles[0].angle
-                : (data.selectedAngle || data.productName || '');
-            updateData({ selectedAngle: firstAngle });
-        }
-
-        setIsBuilding(false);
-        stopMessages();
-    };
-
-    const handleNextPhase = () => {
-        setView('creative_studio_hub');
-    };
-
-    // Advanced mode — internal tool selected
-    if (isAdvanced && internalView !== 'hub') {
-        return (
-            <div className="relative">
-                <button onClick={() => setInternalView('hub')} className="absolute top-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-lg z-50">العودة للمركز</button>
-                {internalView === 'performance' && (
-                    <AdContentFactory
-                        performanceProject={performanceProject}
-                        setPerformanceProject={setPerformanceProject}
-                        masterProject={powerProject}
-                        setMasterProject={setPowerProject}
-                        userId={userId}
-                        refreshCredits={() => { }}
-                        onBridgeToVideo={bridgeToVideo}
-                    />
-                )}
-                {internalView === 'power' && <PowerStudio project={powerProject} setProject={setPowerProject} userId={userId} refreshCredits={() => { }} />}
-                {internalView === 'plan' && <PlanStudio project={planProject} setProject={setPlanProject} onBridgeToPhotoshoot={bridgeToPhotoshoot} userId={userId} />}
-            </div>
-        );
-    }
-
-    const TABS = [
-        { id: 'ads', label: '📣 الإعلانات المباشرة' },
-        { id: 'ugc', label: '🤳 سكريبت UGC' },
-        { id: 'hooks', label: '🎣 الخطافات الفيرال' },
-        { id: 'angles', label: '🎯 الزوايا التسويقية' },
-    ] as const;
-
+}: any) {
     return (
-        <div className="w-full space-y-8 animate-in fade-in duration-500" dir="rtl">
-            <div className="max-w-5xl mx-auto space-y-8">
-
-                {/* Header */}
-                <div className="flex justify-between items-center bg-gray-800 p-6 rounded-2xl border border-gray-700">
-                    <div>
-                        <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">🚀 مصنع الحملات الإعلانية</h1>
-                        <p className="text-gray-400 mt-2">كل الأدوات تشتغل مع بعض — إعلانات، UGC، خطافات، وزوايا دفعة واحدة.</p>
+        <div className="w-full animate-in fade-in duration-500" dir="rtl">
+            <div className="max-w-6xl mx-auto">
+                <Suspense fallback={
+                    <div className="flex items-center justify-center h-64 text-orange-400 text-lg font-bold animate-pulse gap-3 bg-gray-900 border border-white/5 rounded-3xl">
+                        <div className="w-6 h-6 border-4 border-orange-400 border-t-transparent rounded-full animate-spin" />
+                        جاري تحميل محرك الإعلانات الفائق...
                     </div>
-                    <div className="flex flex-col gap-2 items-end">
-                        {/* Performance Mode Toggle */}
-                        <label className="flex items-center gap-2.5 cursor-pointer select-none group">
-                            <span className="text-xs font-black text-orange-400 group-hover:text-orange-300 transition-colors">🔥 وضع الأداء العالي</span>
-                            <div
-                                onClick={() => setIsPerformanceMode(p => !p)}
-                                className={`relative w-11 h-6 rounded-full transition-all cursor-pointer ${isPerformanceMode
-                                        ? 'bg-gradient-to-r from-orange-500 to-red-500 shadow-[0_0_12px_rgba(249,115,22,0.4)]'
-                                        : 'bg-gray-700'
-                                    }`}
-                            >
-                                <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${isPerformanceMode ? 'translate-x-5' : 'translate-x-0.5'
-                                    }`} />
-                            </div>
-                        </label>
-                        {/* Expert Tools Toggle */}
-                        <label className="flex items-center gap-2 cursor-pointer opacity-50 hover:opacity-100 transition-opacity">
-                            <input type="checkbox" checked={isAdvanced} onChange={(e) => setIsAdvanced(e.target.checked)} className="w-4 h-4 text-purple-500 bg-gray-700 border-gray-600 rounded focus:ring-purple-600" />
-                            <span className="text-xs select-none">أدوات الخبراء</span>
-                        </label>
-                    </div>
-                </div>
-
-                {/* ── Performance Engine Panel (injected when toggled) ── */}
-                {isPerformanceMode && (
-                    <div className="bg-gray-900 border border-orange-500/20 rounded-3xl p-6 shadow-[0_0_30px_rgba(249,115,22,0.08)] animate-in fade-in slide-in-from-top-4 duration-300">
-                        <Suspense fallback={
-                            <div className="flex items-center justify-center h-48 text-orange-400 text-sm animate-pulse gap-3">
-                                <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
-                                جاري تحميل محرك الأداء...
-                            </div>
-                        }>
-                            <PerformancePanel />
-                        </Suspense>
-                    </div>
-                )}
-
-                {/* Campaign Goal Selection + Run Button */}
-                <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700 space-y-6">
-                    <h2 className="text-xl font-semibold mb-4">
-                        ما هو الهدف من الحملة للمنتج: <span className="text-blue-400">{data.productName || 'غير محدد'}</span>؟
-                    </h2>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <button
-                            onClick={() => updateData({ campaignGoal: 'المبيعات والتحويلات' })}
-                            className={`p-6 rounded-xl border text-right transition-all ${data.campaignGoal === 'المبيعات والتحويلات' ? 'bg-purple-900/40 border-purple-500' : 'bg-gray-900 border-gray-700 hover:border-gray-500'}`}
-                        >
-                            <div className="text-2xl mb-2">💰</div>
-                            <div className="font-bold text-lg">أرقام ومبيعات مباشرة (Direct Response)</div>
-                            <div className="text-gray-400 text-sm mt-1">يركز المحرك على الزوايا البيعية الحادة والـ Hooks المباشرة</div>
-                        </button>
-                        <button
-                            onClick={() => updateData({ campaignGoal: 'بناء الوعي والانتشار' })}
-                            className={`p-6 rounded-xl border text-right transition-all ${data.campaignGoal === 'بناء الوعي والانتشار' ? 'bg-blue-900/40 border-blue-500' : 'bg-gray-900 border-gray-700 hover:border-gray-500'}`}
-                        >
-                            <div className="text-2xl mb-2">🌍</div>
-                            <div className="font-bold text-lg">بناء مجتمع وانتشار (Brand Building)</div>
-                            <div className="text-gray-400 text-sm mt-1">يركز المحرك على رواية القصص والمحتوى القابل للمشاركة</div>
-                        </button>
-                    </div>
-
-                    <div className="pt-4 flex flex-col gap-4">
-                        <button
-                            onClick={runCampaignBuilder}
-                            disabled={isBuilding || !data.productName}
-                            className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-xl transition-all disabled:opacity-50 flex items-center gap-2 self-end"
-                        >
-                            {isBuilding
-                                ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> جاري تشغيل كل الأدوات...</>
-                                : <>✨ شغّل كل الأدوات دفعة واحدة</>
-                            }
-                        </button>
-                        {isBuilding && (
-                            <div className="bg-gray-900 border border-purple-500/20 rounded-2xl p-5">
-                                <div className="text-sm text-purple-400 font-bold mb-4 flex items-center gap-2">
-                                    <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
-                                    الذكاء الاصطناعي يشغّل 4 أدوات في نفس الوقت...
-                                </div>
-                                <AIProgressSteps steps={CAMPAIGN_STEPS} isActive={isBuilding} accentColor="purple" message={loadingMessage} />
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* ── Results Area — Tabbed Panel ── */}
-                {results && (
-                    <div className="space-y-4 animate-fade-in-up">
-
-                        {/* Success banner + quick CTA */}
-                        <div className="bg-purple-900/20 border border-purple-500/30 p-5 rounded-2xl flex items-center justify-between flex-wrap gap-3">
-                            <div className="flex items-center gap-3">
-                                <span className="text-3xl">🚀</span>
-                                <div>
-                                    <div className="text-purple-400 font-bold">كل الأدوات اشتغلت!</div>
-                                    <div className="text-gray-400 text-sm">الزاوية المختارة للاستوديو الإبداعي:</div>
-                                    <div className="text-white font-bold text-sm mt-0.5">{data.selectedAngle || '—'}</div>
-                                </div>
-                            </div>
-                            <button onClick={handleNextPhase} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-6 rounded-xl text-sm flex items-center gap-2">
-                                ➡️ استوديو الإبداع
-                            </button>
-                        </div>
-
-                        {/* Tab bar */}
-                        <div className="flex gap-2 overflow-x-auto pb-1">
-                            {TABS.map(t => (
-                                <button
-                                    key={t.id}
-                                    onClick={() => setActiveTab(t.id)}
-                                    className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${activeTab === t.id ? 'bg-purple-600 text-white' : 'bg-gray-800 text-gray-400 hover:text-white border border-gray-700'}`}
-                                >
-                                    {t.label}
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Tab content panel */}
-                        <div className="bg-gray-800 border border-gray-700 rounded-2xl overflow-hidden">
-
-                            {/* ── الإعلانات المباشرة ── */}
-                            {activeTab === 'ads' && (
-                                <div className="p-5 space-y-4">
-                                    <h4 className="text-purple-400 font-bold flex items-center gap-2">
-                                        <span>📣</span> 3 إعلانات مباشرة جاهزة للنشر
-                                    </h4>
-                                    {performanceAds.map((ad: any, i: number) => (
-                                        <div key={i} className="bg-gray-900 border border-gray-700 rounded-xl p-4 space-y-2">
-                                            <div className="flex items-center justify-between mb-1">
-                                                <input
-                                                    value={ad.headline}
-                                                    onChange={(e) => {
-                                                        const newAds = [...performanceAds];
-                                                        newAds[i].headline = e.target.value;
-                                                        setPerformanceAds(newAds);
-                                                    }}
-                                                    className="bg-transparent border-none p-0 text-purple-300 font-bold text-sm focus:ring-0 w-full"
-                                                    dir="auto"
-                                                />
-                                                <div className="flex items-center gap-2 shrink-0">
-                                                    {ad.format && <span className="text-xs text-gray-500 bg-gray-800 border border-gray-600 px-2 py-0.5 rounded">{ad.format}</span>}
-                                                    <button onClick={() => navigator.clipboard.writeText(`${ad.headline}\n\n${ad.body}\n\n${ad.cta}`)} className="text-xs text-gray-400 hover:text-white bg-gray-700 px-2 py-1 rounded">📋</button>
-                                                </div>
-                                            </div>
-                                            <textarea
-                                                value={ad.body}
-                                                onChange={(e) => {
-                                                    const newAds = [...performanceAds];
-                                                    newAds[i].body = e.target.value;
-                                                    setPerformanceAds(newAds);
-                                                }}
-                                                className="w-full bg-transparent border-none p-0 text-gray-200 text-sm leading-relaxed resize-none focus:ring-0"
-                                                dir="auto"
-                                                rows={3}
-                                            />
-                                            {ad.cta && (
-                                                <div className="flex items-center gap-2 mt-1">
-                                                    <span className="text-emerald-400 text-xs font-bold shrink-0">👉</span>
-                                                    <input
-                                                        value={ad.cta}
-                                                        onChange={(e) => {
-                                                            const newAds = [...performanceAds];
-                                                            newAds[i].cta = e.target.value;
-                                                            setPerformanceAds(newAds);
-                                                        }}
-                                                        className="bg-transparent border-none p-0 text-emerald-400 text-xs font-bold focus:ring-0 w-full"
-                                                        dir="auto"
-                                                    />
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-
-                            {/* ── سكريبت UGC ── */}
-                            {activeTab === 'ugc' && (
-                                <div className="p-5">
-                                    <div className="flex items-center justify-between mb-3">
-                                        <h4 className="text-yellow-400 font-bold flex items-center gap-2">
-                                            <span>🤳</span> سكريبت UGC — صوت مؤثر حقيقي
-                                        </h4>
-                                        <button onClick={() => navigator.clipboard.writeText(results.ugcScript || '')} className="text-xs text-gray-400 hover:text-white bg-gray-700 px-3 py-1.5 rounded-lg">📋 نسخ</button>
-                                    </div>
-                                    <textarea
-                                        value={ugcScript}
-                                        onChange={(e) => setUgcScript(e.target.value)}
-                                        className="w-full bg-gray-900 border border-gray-600 rounded-xl px-4 py-3 text-white leading-loose min-h-[220px] focus:ring-2 focus:ring-yellow-500"
-                                        dir="auto"
-                                    />
-                                    <p className="text-xs text-yellow-500 mt-2 font-bold animate-pulse">🛠️ يمكنك تعديل السكريبت هنا قبل الانتقال للمرحلة التالية</p>
-                                </div>
-                            )}
-
-                            {/* ── الخطافات الفيرال ── */}
-                            {activeTab === 'hooks' && (
-                                <div className="p-5">
-                                    <h4 className="text-pink-400 font-bold flex items-center gap-2 mb-4">
-                                        <span>🎣</span> 10 خطافات فيرال — أوقف التمرير من أول ثانية
-                                    </h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        {viralHooks.map((h: any, i: number) => (
-                                            <div key={i} className="bg-gray-900 border border-gray-700 rounded-xl p-3">
-                                                <div className="flex items-start justify-between gap-2 mb-1">
-                                                    <textarea
-                                                        value={h.hook}
-                                                        onChange={(e) => {
-                                                            const newHooks = [...viralHooks];
-                                                            newHooks[i].hook = e.target.value;
-                                                            setViralHooks(newHooks);
-                                                        }}
-                                                        className="bg-transparent border-none p-0 text-white font-bold text-sm leading-snug flex-1 resize-none focus:ring-0"
-                                                        dir="auto"
-                                                        rows={2}
-                                                    />
-                                                    <button onClick={() => navigator.clipboard.writeText(h.hook)} className="text-xs text-gray-500 hover:text-white shrink-0 bg-gray-800 px-2 py-1 rounded">📋</button>
-                                                </div>
-                                                <div className="flex gap-2 mt-1.5 flex-wrap">
-                                                    {h.type && <span className="text-xs bg-pink-900/40 border border-pink-500/30 text-pink-300 px-2 py-0.5 rounded">{h.type}</span>}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* ── الزوايا التسويقية ── */}
-                            {activeTab === 'angles' && (
-                                <div className="p-5">
-                                    <h4 className="text-blue-400 font-bold flex items-center gap-2 mb-4">
-                                        <span>🎯</span> 6 زوايا تسويقية — اختر زاوية للاستوديو الإبداعي
-                                    </h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {salesAngles.map((a: any, i: number) => (
-                                            <div
-                                                key={i}
-                                                onClick={() => updateData({ selectedAngle: a.angle })}
-                                                className={`bg-gray-900 border rounded-xl p-4 cursor-pointer transition-all hover:border-blue-500 ${data.selectedAngle === a.angle ? 'border-blue-500 ring-1 ring-blue-500/30' : 'border-gray-700'}`}
-                                            >
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <input
-                                                        value={a.angle}
-                                                        onChange={(e) => {
-                                                            const newAngles = [...salesAngles];
-                                                            newAngles[i].angle = e.target.value;
-                                                            setSalesAngles(newAngles);
-                                                        }}
-                                                        className="bg-transparent border-none p-0 text-blue-300 font-bold text-sm focus:ring-0 w-full"
-                                                        dir="auto"
-                                                    />
-                                                    {data.selectedAngle === a.angle && (
-                                                        <span className="text-xs text-blue-400 bg-blue-900/40 px-2 py-0.5 rounded border border-blue-500/30 shrink-0">✓ مختارة</span>
-                                                    )}
-                                                </div>
-                                                <textarea
-                                                    value={a.concept}
-                                                    onChange={(e) => {
-                                                        const newAngles = [...salesAngles];
-                                                        newAngles[i].concept = e.target.value;
-                                                        setSalesAngles(newAngles);
-                                                    }}
-                                                    className="w-full bg-transparent border-none p-0 text-gray-400 text-xs leading-relaxed mb-1 resize-none focus:ring-0"
-                                                    dir="auto"
-                                                    rows={2}
-                                                />
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Bottom CTA */}
-                        <button
-                            onClick={handleNextPhase}
-                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all text-lg flex items-center justify-center gap-2"
-                        >
-                            <span className="text-xl">🎬</span> إرسال للاستوديو الإبداعي (Creative Studio)
-                        </button>
-                    </div>
-                )}
-
-                {/* Advanced Mode — internal tools */}
-                {isAdvanced && (
-                    <div className="mt-8 border-t border-gray-700 pt-8 animate-fade-in-up">
-                        <h3 className="text-xl text-gray-400 mb-4 flex items-center gap-2">
-                            <span className="text-purple-500">⚙️</span> الأدوات الداخلية المتقدمة
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <button onClick={() => setInternalView('performance')} className="text-right bg-gray-800 hover:bg-gray-700 p-6 rounded-xl border border-gray-600 transition-colors">
-                                <div className="text-2xl mb-2">⚡</div>
-                                <div className="font-bold text-lg mb-1">مصنع الإعلانات</div>
-                                <div className="text-gray-400 text-sm">مولد إعلانات الأداء المتقدم</div>
-                            </button>
-                            <button onClick={() => setInternalView('power')} className="text-right bg-gray-800 hover:bg-gray-700 p-6 rounded-xl border border-gray-600 transition-colors">
-                                <div className="text-2xl mb-2">🔥</div>
-                                <div className="font-bold text-lg mb-1">باور ستوديو</div>
-                                <div className="text-gray-400 text-sm">توليد نصوص قوية للـ Reels</div>
-                            </button>
-                            <button onClick={() => setInternalView('plan')} className="text-right bg-gray-800 hover:bg-gray-700 p-6 rounded-xl border border-gray-600 transition-colors">
-                                <div className="text-2xl mb-2">📅</div>
-                                <div className="font-bold text-lg mb-1">خطة المحتوى</div>
-                                <div className="text-gray-400 text-sm">مولد خطة ٣٠ يوم من المحتوى</div>
-                            </button>
-                        </div>
-                    </div>
-                )}
-
+                }>
+                    <PerformancePanel />
+                </Suspense>
             </div>
         </div>
     );
