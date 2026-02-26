@@ -19,6 +19,84 @@ import { runAngleEngine } from './engine/AngleEngine';
 import { runAdVariationEngine } from './engine/AdVariationEngine';
 import AdCreativeCanvas from './renderer/AdCreativeCanvas';
 
+// ─── Loading State Component ──────────────────────────────────────────────────
+const STEPS = [
+    { title: 'جاري تحليل السوق والمنافسة...', duration: 2000 },
+    { title: 'جاري كتابة الهوكات الفعّالة...', duration: 2500 },
+    { title: 'جاري بناء زوايا البيع...', duration: 2000 },
+    { title: 'جاري تصميم الكريتف الإعلاني...', duration: 2500 },
+    { title: 'جاري التجميع النهائي...', duration: 1500 },
+];
+
+const PerformanceLoadingState: React.FC = () => {
+    const [currentStep, setCurrentStep] = useState(0);
+
+    useEffect(() => {
+        let timer: NodeJS.Timeout;
+        const advanceStep = (stepIndex: number) => {
+            if (stepIndex >= STEPS.length - 1) return;
+            timer = setTimeout(() => {
+                setCurrentStep(stepIndex + 1);
+                advanceStep(stepIndex + 1);
+            }, STEPS[stepIndex].duration);
+        };
+        advanceStep(0);
+        return () => clearTimeout(timer);
+    }, []);
+
+    return (
+        <div className="w-full max-w-2xl mx-auto bg-black/40 border border-orange-500/20 rounded-3xl p-8 flex flex-col items-center justify-center text-center shadow-2xl animate-in fade-in zoom-in-95 duration-500" dir="rtl">
+            <div className="w-20 h-20 mb-6 relative">
+                <div className="absolute inset-0 border-4 border-orange-500/30 rounded-full"></div>
+                <div className="absolute inset-0 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                <div className="absolute inset-0 flex items-center justify-center text-3xl animate-pulse">🔥</div>
+            </div>
+
+            <h3 className="text-2xl font-black text-white mb-2">لحظات ويجهز مصنع الإعلانات...</h3>
+            <p className="text-sm text-slate-400 mb-8">نعتمد على تحليل الأداء وصياغة الإعلانات بالسوق المصري.</p>
+
+            <div className="w-full space-y-4 text-right">
+                {STEPS.map((step, index) => {
+                    const isActive = index === currentStep;
+                    const isPassed = index < currentStep;
+
+                    return (
+                        <div key={index} className="flex items-center gap-4">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 font-bold text-sm ${isPassed ? 'bg-emerald-500 text-black' :
+                                    isActive ? 'bg-orange-500 text-black shadow-[0_0_15px_rgba(249,115,22,0.5)] scale-110' :
+                                        'bg-white/5 text-slate-500'
+                                }`}>
+                                {isPassed ? '✓' : index + 1}
+                            </div>
+                            <div className="flex-1">
+                                <p className={`font-bold transition-all duration-300 ${isPassed ? 'text-slate-300' :
+                                        isActive ? 'text-orange-400 text-lg' :
+                                            'text-slate-600'
+                                    }`}>
+                                    {step.title}
+                                </p>
+                                {isActive && (
+                                    <div className="w-full h-1.5 bg-white/5 rounded-full mt-2 overflow-hidden">
+                                        <div className="h-full bg-orange-500 rounded-full animate-progress" style={{ width: '100%', animationDuration: `${step.duration}ms`, animationTimingFunction: 'linear' }}></div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                @keyframes progress {
+                    0% { width: 0%; }
+                    100% { width: 100%; }
+                }
+                .animate-progress { animation-name: progress; }
+            `}} />
+        </div>
+    );
+};
+
 // ─── Form State ──────────────────────────────────────────────────────────────
 interface FormState {
     productName: string;
@@ -140,6 +218,7 @@ const PerformancePanel: React.FC = () => {
     const [form, setForm] = useState<FormState>(INITIAL_FORM);
     const [adSet, setAdSet] = useState<PerformanceAdSet | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isIntelligenceOpen, setIsIntelligenceOpen] = useState(false);
 
     // Product image for visual creative
     const [productImageSrc, setProductImageSrc] = useState<string | null>(null);
@@ -168,7 +247,7 @@ const PerformancePanel: React.FC = () => {
             const result = runAdVariationEngine(profile, angles);
             setAdSet(result);
             setIsGenerating(false);
-        }, 1500); // Added slight delay for UX loading feel
+        }, 10500); // 10.5 seconds to allow the loading animation to complete
     };
 
     return (
@@ -310,7 +389,13 @@ const PerformancePanel: React.FC = () => {
             </div>
 
             {/* ── Results Grid ────────────────────────────────────────────────── */}
-            {adSet && productImageSrc && (
+            {isGenerating && (
+                <div className="mt-8">
+                    <PerformanceLoadingState />
+                </div>
+            )}
+
+            {!isGenerating && adSet && productImageSrc && (
                 <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 space-y-8 mt-4">
 
                     <div className="text-center space-y-2 mb-8">
@@ -324,6 +409,65 @@ const PerformancePanel: React.FC = () => {
                         ))}
                     </div>
 
+                    {/* ── Advanced Intelligence Accordion ── */}
+                    <div className="mt-12 bg-white/5 border border-white/10 rounded-3xl overflow-hidden shadow-lg">
+                        <button
+                            onClick={() => setIsIntelligenceOpen(!isIntelligenceOpen)}
+                            className="w-full p-6 flex items-center justify-between hover:bg-white/5 transition-colors"
+                        >
+                            <div className="flex items-center gap-3">
+                                <span className="text-2xl">🧠</span>
+                                <h3 className="text-lg font-black text-purple-400">عرض التحليل المتقدم</h3>
+                            </div>
+                            <span className="text-white text-xl transition-transform duration-300" style={{ transform: isIntelligenceOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+                        </button>
+
+                        {isIntelligenceOpen && (
+                            <div className="p-6 border-t border-white/10 bg-black/40 grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-4">
+                                <div className="space-y-4">
+                                    <h4 className="text-sm font-bold text-white mb-2">📊 تموضع السوق والمنافسة</h4>
+                                    <div className="bg-white/5 p-4 rounded-xl border border-white/10 text-sm text-slate-300">
+                                        <p><span className="text-orange-400 font-bold">السوق: </span>{form.market === 'egypt' ? 'مصري 🇪🇬' : form.market === 'gulf' ? 'خليجي 🇸🇦' : 'الشرق الأوسط 🌍'}</p>
+                                        <p><span className="text-orange-400 font-bold">شريحة السعر: </span>{form.priceTier === 'budget' ? 'اقتصادي (يبحث عن التوفير)' : form.priceTier === 'mid' ? 'متوسط (توازن القيمة والسعر)' : 'بريميوم (يبحث عن الجودة والمكانة)'}</p>
+                                        <p><span className="text-orange-400 font-bold">مستوى الوعي: </span>{form.awarenessLevel === 'cold' ? 'بارد (يحتاج شرح وتوعية)' : form.awarenessLevel === 'warm' ? 'دافئ (يحتاج إثبات)' : 'حار (جاهز للشراء فوراً)'}</p>
+                                    </div>
+
+                                    <h4 className="text-sm font-bold text-white mt-6 mb-2">🎯 نقطة البيع الفريدة (USP)</h4>
+                                    <div className="bg-white/5 p-4 rounded-xl border border-white/10 text-sm text-slate-300 leading-relaxed font-semibold">
+                                        "{form.uniqueDifferentiator || form.mainBenefit}"
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <h4 className="text-sm font-bold text-white mb-2">📈 قوة الهوكات المولدة</h4>
+                                    <div className="space-y-3">
+                                        {adSet.variants.map((v, i) => (
+                                            <div key={i} className="flex flex-col gap-1 bg-white/5 p-3 rounded-xl border border-white/10">
+                                                <div className="flex justify-between items-center text-xs">
+                                                    <span className="text-slate-300">{v.angle.coreLabel}</span>
+                                                    <span className={`font-black ${v.confidenceScore >= 85 ? 'text-emerald-400' : v.confidenceScore >= 70 ? 'text-yellow-400' : 'text-red-400'}`}>
+                                                        {v.confidenceScore}% ثقة
+                                                    </span>
+                                                </div>
+                                                <div className="w-full h-1.5 bg-black/50 rounded-full overflow-hidden">
+                                                    <div
+                                                        className="h-full rounded-full"
+                                                        style={{
+                                                            width: `${v.confidenceScore}%`,
+                                                            background: v.confidenceScore >= 85 ? '#10B981' : v.confidenceScore >= 70 ? '#FBBF24' : '#EF4444'
+                                                        }}
+                                                    />
+                                                </div>
+                                                {v.hookScore.wasEnhanced && (
+                                                    <p className="text-[10px] text-yellow-500 mt-1">✨ تم تعزيز الهوك تلقائياً عبر AI</p>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
         </div>
