@@ -268,12 +268,14 @@ export async function generateImage(productImages: ImageFile[], prompt: string, 
         styleImages.forEach(img => parts.push({ inlineData: { data: img.base64, mimeType: img.mimeType } }));
     }
 
-    // Apply "Master Prompt" spices and structure
     const enhancedPrompt = `
     ${prompt}
     
     TECHNICAL SPECS: photorealistic, hyperrealistic, 8k resolution, sharp focus, detailed texture, cinematic lighting, DSLR photo, editorial photography, high detail, commercial quality.
-    STRICT: PRESERVE all original logos, text, and branding from the product images.
+    STRICT INSTRUCTIONS: 
+    1. Place the provided product in a completely NEW environment and background according to the prompt. 
+    2. DO NOT return the exact original image. You MUST generate a new background/composition.
+    3. Keep the product's original details, logos, and text intact, but integrate it seamlessly into the new scene.
   `.trim();
 
     parts.push({ text: enhancedPrompt });

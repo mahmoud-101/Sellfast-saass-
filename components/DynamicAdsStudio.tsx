@@ -92,10 +92,7 @@ const DynamicAdsStudio: React.FC<{
             return;
         }
 
-        const totalCost = CREDIT_COSTS.IMAGE_BASIC;
         setProject(s => ({ ...s, isGenerating: true, error: null }));
-        const deducted = await deductCredits(userId, totalCost);
-        if (!deducted) { setProject(s => ({ ...s, isGenerating: false, error: `رصيد غير كافٍ.` })); return; }
 
         // Replace Variables in the prompt
         let finalPrompt = selectedStyle.dynamicPrompt;
@@ -197,17 +194,11 @@ const DynamicAdsStudio: React.FC<{
 
                                 <button
                                     onClick={handleGenerate}
-                                    disabled={project.isGenerating || project.productImages.length === 0}
-                                    className="w-full mt-8 py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black rounded-2xl shadow-xl hover:scale-[1.02] transition-all active:scale-95 disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-3"
+                                    disabled={project.isGenerating}
+                                    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 shadow-[0_10px_30px_-10px_rgba(59,130,246,0.6)] disabled:opacity-50 transition-all"
                                 >
-                                    {project.isGenerating ? (
-                                        <>
-                                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                            <span>جاري تركيب السحر...</span>
-                                        </>
-                                    ) : (
-                                        <>توليد باستخدام الديناميك (${CREDIT_COSTS.IMAGE_BASIC} نقطة) <MagicWandIcon /></>
-                                    )}
+                                    {project.isGenerating ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <span className="text-xl">🧪</span>}
+                                    {project.isGenerating ? 'جاري التوليد بدقة فائقة...' : `توليد الإعلان الديناميكي الآن`}
                                 </button>
                             </div>
                         )}
