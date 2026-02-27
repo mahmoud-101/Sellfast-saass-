@@ -2,6 +2,7 @@
 import { GoogleGenAI, Modality, Part, Type, Chat } from "@google/genai";
 import { ImageFile, PowerStudioResult, AudioFile, TrendItem } from '../types';
 import { askPerplexity, askPerplexityJSON } from './perplexityService';
+import { DYNAMIC_STYLES } from '../lib/dynamicTemplates';
 
 const SMART_MODEL = 'gemini-2.5-flash';
 
@@ -1046,4 +1047,135 @@ export async function generateAdsWithEnrichment(
 
     // Parse وارجع النتيجة
     return parseGeminiResponse(adRaw);
+}
+
+// ============================================================================
+// ==================== PRO MODE: 6-AGENT PIPELINE ============================
+// ============================================================================
+
+export interface AgentProductData {
+    name: string;
+    description: string;
+    price: string;
+}
+
+// Agent 1: Market Analyzer
+export async function agentMarketAnalyzer(data: AgentProductData): Promise<any> {
+    const prompt = `
+    أنت محلل أسواق خبير (Market Analyzer) متخصص في السوق المصري والعربي.
+    حلل هذا المنتج بدقة شديدة:
+    اسم المنتج: ${data.name}
+    الوصف: ${data.description}
+    السعر: ${data.price}
+
+    أخرج النتيجة كـ JSON فقط بالصيغة التالية:
+    {
+      "targetAudience": "وصف دقيق بـ 10 كلمات للجمهور الفعلي",
+      "marketAwareness": "cold, warm, or hot",
+      "coreDesire": "الرغبة العميقة المدفونة التي يحققها المنتج",
+      "biggestPain": "أكبر ألم يهرب منه العميل الآن",
+      "marketSophistication": "مدى وعي العميل بالمنتجات المنافسة"
+    }
+    `;
+    return askOpenRouterJSON(prompt, "You are an expert Data Analyst. Output valid JSON only.");
+}
+
+// Agent 2: Angle Strategist
+export async function agentAngleStrategist(data: AgentProductData, marketAnalysis: any): Promise<any> {
+    const prompt = `
+    أنت استراتيجي إعلانات (Angle Strategist).
+    بناءً على هذا التحليل للسوق: ${JSON.stringify(marketAnalysis)}
+    اعطني 5 زوايا تسويقية (Angles) مختلفة تماماً لبيع: ${data.name} (${data.price})
+
+    أخرج النتيجة كـ JSON Array فقط بالصيغة التالية:
+    [
+      { "id": "pain", "title": "زاوية الألم والتخلص منه", "concept": "شرح الفكرة في سطر" },
+      { "id": "status", "title": "زاوية المكانة والبرستيج", "concept": "شرح الفكرة في سطر" },
+      { "id": "logic", "title": "زاوية المقارنة والمنطق", "concept": "شرح الفكرة في سطر" },
+      { "id": "urgency", "title": "زاوية العرض والندرة", "concept": "شرح الفكرة في سطر" },
+      { "id": "transform", "title": "زاوية التحول والنتيجة", "concept": "شرح الفكرة في سطر" }
+    ]
+    `;
+    return askOpenRouterJSON(prompt, "You are a Master Strategist. Output valid JSON Array only.");
+}
+
+// Agent 3: Hook Writer
+export async function agentHookWriter(data: AgentProductData, angle: any): Promise<any> {
+    const prompt = `
+    أنت صانع هوكات (Hook Writer) خبير في التيك توك وانستجرام ريلز (بالعامية المصرية).
+    زاوية الإعلان المطلوبة: ${angle.title} (${angle.concept})
+    المنتج: ${data.name}
+
+    اكتب 3 هوكات (Hooks) مختلفة تماماً، تخطف العين من أول ثانية وتجبر العميل يكمل قراية. (10 كلمات كحد أقصى للهوك).
+    أخرج النتيجة كـ JSON Array لمصفوفة نصوص فقط:
+    ["الهوك الأول هنا...", "الهوك الثاني هنا...", "الهوك الثالث هنا..."]
+    `;
+    return askOpenRouterJSON(prompt, "You are an expert Copywriter. Output valid JSON Array of strings only.");
+}
+
+// Agent 4: Copywriter
+export async function agentCopywriter(data: AgentProductData, angle: any, selectedHook: string): Promise<any> {
+    const prompt = `
+    أنت كاتب إعلانات محترف (Copywriter) يكتب بالعامية المصرية.
+    اكتب لي إعلان كامل ومقنع جداً بناءً على هذه الزاوية: ${angle.title}
+    وهذا الهوك الذي اخترناه كبداية للإعلان: "${selectedHook}"
+    
+    المنتج: ${data.description}
+    السعر: ${data.price}
+
+    قواعد الكتابة:
+    - لغة عامية مصرية، جمل قصيرة، إيموجيز احترافية في مكانها.
+    - اذكر السعر أو العرض.
+    - اجعل الإعلان مقسماً لفقرات مريحة للعين.
+
+    أخرج النتيجة كـ JSON فقط بالصيغة التالية:
+    {
+      "adBody": "محتوى الإعلان كاملاً مع الإيموجيز والسطور المنفصلة بدءاً من الهوك وحتى النهاية",
+      "callToAction": "زر الشراء القصير (مثال: اطلب دلوقتي والخصم شغال)"
+    }
+    `;
+    return askOpenRouterJSON(prompt, "You are an expert Direct Response Copywriter. Output valid JSON only.");
+}
+
+// Agent 5: Visual Director
+export async function agentVisualDirector(data: AgentProductData, angle: any): Promise<any> {
+    const prompt = `
+    أنت مخرج فني (Visual Director) عبقري لماركات عالمية.
+    نصور إعلاناً للمنتج: ${data.description}
+    الزاوية التسويقية هي: ${angle.title} (${angle.concept})
+
+    مهمتك اختيار القالب البصري الأنسب من القوالب التالية، ثم تعبئة المتغيرات ببراعة لإنشاء مشهد سينمائي للمنتج:
+    ${JSON.stringify(DYNAMIC_STYLES.map(s => ({ styleName: s.styleName, variables: s.requiredVariables })))}
+
+    أخرج النتيجة كـ JSON فقط بالصيغة التالية:
+    {
+      "selectedStyleName": "اسم القالب الإنجليزي بالظبط من القائمة",
+      "variables": {
+        "Variable_1": "English description",
+        "Variable_2": "English description"
+      },
+      "imagePrompt": "A master prompt entirely in English for an AI image generator based on the selected style and filled variables. Must be highly detailed, cinematic, and diverse (don't just show a blank product). Mention 8k, photorealistic."
+    }
+    `;
+    return askOpenRouterJSON(prompt, "You are an expert Creative Director. Output valid JSON only.");
+}
+
+// Agent 6: Objection Handler
+export async function agentObjectionHandler(data: AgentProductData, adBody: string): Promise<any> {
+    const prompt = `
+    أنت محامي شيطان (Objection Handler) ومدير خدمة عملاء خبير في السوق العربي.
+    اقرأ هذا الإعلان جيداً:
+    ${adBody}
+    
+    المنتج هو: ${data.description} وبسعر ${data.price}
+
+    استخرج أكبر 3 اعتراضات (شكوك أو مخاوف) ستمنع العميل المحتمل من الشراء فوراً بعد قراءة هذا الإعلان. واكتب لكل اعتراض "رد ساحق" لإقناعه وإغلاق البيعة.
+    
+    أخرج النتيجة كـ JSON Array فقط لهذه الأوبجكتات:
+    [
+      { "objection": "الاعتراض الأول من وعي العميل", "rebuttal": "الرد الحاسم لخدمة العملاء بالعامية المصرية" },
+      { "objection": "...", "rebuttal": "..." }
+    ]
+    `;
+    return askOpenRouterJSON(prompt, "You are an expert Sales Manager. Output valid JSON Array only.");
 }

@@ -105,10 +105,51 @@ export interface LayoutData {
     accentColor?: string;
 }
 
-// ─── Testing Suggestion ───────────────────────────────────────────────────────
 export interface TestingSuggestion {
     suggestedObjective: 'Conversion' | 'Engagement' | 'Video Views';
     suggestedAudience: string;
     budgetSplitSuggestion: string;
     testingNote: string;
+}
+
+// ============================================================================
+// ==================== PRO MODE: 6-AGENT PIPELINE TYPES =======================
+// ============================================================================
+
+export interface AgentMarketAnalysis {
+    targetAudience: string;
+    marketAwareness: string;
+    coreDesire: string;
+    biggestPain: string;
+    marketSophistication: string;
+}
+
+export interface AgentAngle {
+    id: string;
+    title: string;
+    concept: string;
+}
+
+export interface AgentAdCopy {
+    adBody: string;
+    callToAction: string;
+}
+
+export interface AgentVisual {
+    selectedStyleName: string;
+    variables: Record<string, string>;
+    imagePrompt: string;
+    generatedImageUrl?: string;
+}
+
+export interface AgentObjection {
+    objection: string;
+    rebuttal: string;
+}
+
+export interface FinalProModeAd {
+    angle: AgentAngle;
+    hooks: string[];
+    copy: AgentAdCopy;
+    visual: AgentVisual;
 }
