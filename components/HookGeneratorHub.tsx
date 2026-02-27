@@ -99,8 +99,11 @@ export const HookGeneratorHub: React.FC = () => {
                         <button
                             onClick={handleGenerate}
                             disabled={isGenerating}
-                            className="w-full md:w-auto px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl font-black text-lg transition-all shadow-[0_0_20px_rgba(168,85,247,0.4)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 group mx-auto"
+                            className="w-full md:w-auto px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl font-black text-lg transition-all shadow-[0_0_20px_rgba(168,85,247,0.4)] hover:shadow-[0_0_30px_rgba(168,85,247,0.6)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 group/btn mx-auto overflow-hidden relative"
                         >
+                            {/* Shimmer Effect */}
+                            <div className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover/btn:animate-[shimmer_1.5s_infinite]"></div>
+
                             {isGenerating ? (
                                 <>
                                     <RefreshCw className="w-6 h-6 animate-spin" />
@@ -108,7 +111,7 @@ export const HookGeneratorHub: React.FC = () => {
                                 </>
                             ) : (
                                 <>
-                                    <Sparkles className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                                    <Sparkles className="w-6 h-6 group-hover/btn:scale-110 transition-transform" />
                                     <span>توليد الهوكات السحرية</span>
                                 </>
                             )}

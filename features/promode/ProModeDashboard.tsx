@@ -160,200 +160,293 @@ const ProModeDashboard: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col gap-8 animate-in fade-in duration-300 pb-20 max-w-7xl mx-auto p-4" dir="rtl">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-purple-900/40 to-black border border-purple-500/20 p-8 rounded-3xl shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 blur-[100px] rounded-full"></div>
+        <div className="flex flex-col gap-10 animate-in fade-in duration-500 pb-32 max-w-[1600px] mx-auto p-4 md:p-8" dir="rtl">
+            {/* Header: Cinematic Command Center Style */}
+            <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-[2rem] blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                <div className="relative bg-[#050505] border border-white/10 p-10 rounded-[2rem] shadow-3xl overflow-hidden glass">
+                    <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-600/10 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2"></div>
 
-                <div className="relative z-10 flex gap-6 items-center">
-                    <div className="w-16 h-16 rounded-2xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-3xl shadow-[0_0_30px_rgba(168,85,247,0.4)]">
-                        🤖
-                    </div>
-                    <div>
-                        <h1 className="text-3xl font-black text-white mb-2 tracking-tight">الوضع الاحترافي <span className="text-purple-400">Pro Mode</span></h1>
-                        <p className="text-slate-400 text-sm">6 عملاء ذكاء اصطناعي (Agents) يعملون معاً لتحليل وبناء إعلانك من الصفر.</p>
+                    <div className="relative z-10 flex flex-col md:flex-row gap-8 items-center justify-between text-center md:text-right">
+                        <div className="flex flex-col md:flex-row gap-8 items-center">
+                            <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-5xl shadow-[0_0_50px_rgba(168,85,247,0.5)] animate-pulse">
+                                🤖
+                            </div>
+                            <div>
+                                <h1 className="text-4xl md:text-6xl font-black text-white mb-3 tracking-tighter uppercase italic">الوضع الاحترافي <span className="text-purple-500">PRO MODE</span></h1>
+                                <p className="text-slate-400 text-lg md:text-xl font-medium max-w-2xl leading-relaxed">
+                                    6 عملاء ذكاء اصطناعي (Agents) يعملون في تناغم استراتيجي لبناء إمبراطوريتك الإعلانية من الصفر.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Status Badge */}
+                        <div className={`px-6 py-3 rounded-2xl border font-black text-sm uppercase tracking-widest ${pipeline.status === 'completed' ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-400' :
+                            pipeline.status === 'error' ? 'border-red-500/50 bg-red-500/10 text-red-500' :
+                                pipeline.status === 'idle' ? 'border-purple-500/50 bg-purple-500/10 text-purple-400' :
+                                    'border-blue-500/50 bg-blue-500/10 text-blue-400 animate-pulse'
+                            }`}>
+                            STATUS: {pipeline.status.toUpperCase()}
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            {/* Main Content Grid: Split Screen Command Center */}
+            <div className="grid grid-cols-1 xl:grid-cols-20 gap-10">
 
-                {/* Left/Main Column: Input Form */}
-                <div className="lg:col-span-4 flex flex-col gap-6">
-                    <div className="bg-[#0f1219] border border-white/5 rounded-3xl p-6 shadow-xl">
-                        <h2 className="text-lg font-bold text-white mb-6 flex items-center gap-2"><span>📦</span> بيانات المنتج</h2>
+                {/* Left/Control Column: Input Form (8/20) */}
+                <div className="xl:col-span-6 flex flex-col gap-8">
+                    <div className="bg-[#0a0a0e] border border-white/5 rounded-[2.5rem] p-8 shadow-3xl glass sticky top-8">
+                        <h2 className="text-2xl font-black text-white mb-8 flex items-center gap-3">
+                            <span className="p-2 bg-purple-500/20 rounded-xl">📦</span> قمرة القيادة
+                        </h2>
 
-                        <div className="space-y-4">
-                            {/* Image Upload */}
-                            <div>
-                                <label className="text-xs text-slate-400 font-bold mb-1 block">صورة المنتج الحقيقية</label>
-                                <div className="flex items-center gap-4">
-                                    <div className={`w-24 h-24 rounded-xl border-2 border-dashed flex items-center justify-center overflow-hidden transition-colors ${productImage ? 'border-purple-500/50' : 'border-white/20 hover:border-white/40'}`}>
+                        <div className="space-y-6">
+                            {/* Image Upload: More prominent */}
+                            <div className="group/upload">
+                                <label className="text-xs text-slate-500 font-black mb-2 block uppercase tracking-tighter">1. البصمة البصرية (صورة المنتج)</label>
+                                <div className="relative">
+                                    <div className={`w-full aspect-video rounded-3xl border-2 border-dashed flex flex-col items-center justify-center overflow-hidden transition-all duration-500 ${productImage ? 'border-purple-500 shadow-[0_0_30px_rgba(168,85,247,0.2)]' : 'border-white/10 hover:border-purple-500/50 bg-white/5'}`}>
                                         {productImage ? (
-                                            <img src={productImage} alt="Product" className="w-full h-full object-cover" />
+                                            <img src={productImage} alt="Product" className="w-full h-full object-cover scale-105 group-hover/upload:scale-100 transition-transform duration-700" />
                                         ) : (
-                                            <span className="text-2xl opacity-50">📸</span>
+                                            <div className="text-center group-hover/upload:scale-110 transition-transform duration-500">
+                                                <span className="text-5xl mb-4 block opacity-50">📸</span>
+                                                <p className="text-sm font-bold text-slate-400">اسحب صورة المنتج هنا</p>
+                                            </div>
                                         )}
                                     </div>
-                                    <div className="flex-1">
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={handleImageUpload}
-                                            className="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-500/10 file:text-purple-400 hover:file:bg-purple-500/20"
-                                        />
-                                        <p className="text-[10px] text-slate-500 mt-2">عشان Agent 5 يبني فوقها التصميم</p>
-                                    </div>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleImageUpload}
+                                        className="absolute inset-0 opacity-0 cursor-pointer z-20"
+                                    />
+                                    {productImage && (
+                                        <div className="absolute bottom-4 left-4 right-4 bg-black/80 backdrop-blur-md p-3 rounded-2xl border border-white/10 flex items-center justify-between z-30 animate-in slide-in-from-bottom-2">
+                                            <p className="text-[10px] font-bold text-purple-400">✅ تم تحميل الصور بنجاح</p>
+                                            <button onClick={() => setProductImage(null)} className="text-[10px] text-red-400 hover:text-red-300 transition-colors uppercase font-black">إعادة تحميل</button>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="text-xs text-slate-400 font-bold mb-1 block">اسم المنتج</label>
-                                <input
-                                    type="text"
-                                    value={productForm.name}
-                                    onChange={e => setProductForm({ ...productForm, name: e.target.value })}
-                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-purple-500/60 transition-colors"
-                                    placeholder="مثال: سماعة ايربودز برو"
-                                />
-                            </div>
-                            <div>
-                                <label className="text-xs text-slate-400 font-bold mb-1 block">السعر (اختياري)</label>
-                                <input
-                                    type="text"
-                                    value={productForm.price}
-                                    onChange={e => setProductForm({ ...productForm, price: e.target.value })}
-                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-purple-500/60 transition-colors"
-                                    placeholder="مثال: 499 جنيه بدلاً من 800"
-                                />
-                            </div>
-                            <div>
-                                <label className="text-xs text-slate-400 font-bold mb-1 block">شرح وتفاصيل المنتج</label>
-                                <textarea
-                                    value={productForm.description}
-                                    onChange={e => setProductForm({ ...productForm, description: e.target.value })}
-                                    className="w-full h-32 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-purple-500/60 transition-colors resize-none"
-                                    placeholder="اكتب كل مميزات المنتج هنا..."
-                                />
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="text-xs text-slate-500 font-black mb-2 block uppercase tracking-tighter">2. الهوية الرقمية</label>
+                                    <input
+                                        type="text"
+                                        value={productForm.name}
+                                        onChange={e => setProductForm({ ...productForm, name: e.target.value })}
+                                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder-slate-600 focus:outline-none focus:border-purple-500/60 focus:bg-white/10 transition-all font-bold"
+                                        placeholder="اسم المنتج (مثال: برفيوم ليل القاهرة)"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs text-slate-500 font-black mb-2 block uppercase tracking-tighter">3. القيمة المالية</label>
+                                    <input
+                                        type="text"
+                                        value={productForm.price}
+                                        onChange={e => setProductForm({ ...productForm, price: e.target.value })}
+                                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder-slate-600 focus:outline-none focus:border-purple-500/60 focus:bg-white/10 transition-all font-bold"
+                                        placeholder="السعر بالكامل أو الخصم"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs text-slate-500 font-black mb-2 block uppercase tracking-tighter">4. الحمض النووي للمنتج (الشرح)</label>
+                                    <textarea
+                                        value={productForm.description}
+                                        onChange={e => setProductForm({ ...productForm, description: e.target.value })}
+                                        className="w-full h-40 bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder-slate-600 focus:outline-none focus:border-purple-500/60 focus:bg-white/10 transition-all resize-none font-medium leading-relaxed"
+                                        placeholder="صِف عظمة هذا المنتج وفوائده السحرية..."
+                                    />
+                                </div>
                             </div>
 
                             <button
                                 onClick={startPipeline}
                                 disabled={pipeline.status !== 'idle' && pipeline.status !== 'completed' && pipeline.status !== 'error'}
-                                className="w-full mt-4 bg-purple-600 hover:bg-purple-500 text-white px-6 py-4 rounded-xl font-black text-lg transition-all shadow-[0_0_20px_rgba(168,85,247,0.3)] disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+                                className="w-full mt-6 bg-purple-600 hover:bg-purple-500 text-white px-8 py-6 rounded-[2rem] font-black text-2xl transition-all shadow-[0_20px_40px_rgba(168,85,247,0.3)] hover:shadow-[0_25px_50px_rgba(168,85,247,0.5)] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-4 overflow-hidden relative group/btn"
                             >
+                                <div className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12 -translate-x-full group-hover/btn:animate-[shimmer_2s_infinite]"></div>
+
                                 {pipeline.status === 'idle' || pipeline.status === 'completed' || pipeline.status === 'error' ? (
-                                    <><span>🚀</span> إطلاق فريق العمل (Start Pipeline)</>
+                                    <>
+                                        <span className="text-3xl">☄️</span>
+                                        <span>إطلاق المصنع الذكي</span>
+                                    </>
                                 ) : (
                                     <>
-                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                        <span>جاري العمل...</span>
+                                        <div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                        <span>المصنع في قمة طاقته...</span>
                                     </>
                                 )}
                             </button>
+
+                            {pipeline.error && (
+                                <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-5 rounded-2xl text-sm font-bold flex items-center gap-3 animate-bounce">
+                                    <span className="text-xl">⚠️</span> {pipeline.error}
+                                </div>
+                            )}
                         </div>
                     </div>
-
-                    {/* Hide Pipeline 6-Agents checklist per user request */}
                 </div>
 
-                {/* Right Column: Output & Results */}
-                <div className="lg:col-span-8 flex flex-col gap-6">
+                {/* Right Column: Output & Mega Previews (14/20) */}
+                <div className="xl:col-span-14 flex flex-col gap-10">
 
-                    {pipeline.error && (
-                        <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-2xl text-sm font-bold">
-                            ⚠️ {pipeline.error}
-                        </div>
-                    )}
-
-                    {/* Show Market Analysis */}
+                    {/* Intelligence Briefing: Market Analysis (Sleeker style) */}
                     {pipeline.marketAnalysis && (
-                        <div className="bg-blue-500/5 border border-blue-500/20 rounded-3xl p-6 animate-in slide-in-from-bottom-4 duration-500">
-                            <h3 className="text-blue-400 font-black mb-4 flex items-center gap-2"><span>📊</span> Agent 1: Market Analysis</h3>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                <InsightBox label="الجمهور المستهدف" value={pipeline.marketAnalysis.targetAudience} />
-                                <InsightBox label="الرغبة العميقة" value={pipeline.marketAnalysis.coreDesire} />
-                                <InsightBox label="الألم الأكبر" value={pipeline.marketAnalysis.biggestPain} />
+                        <div className="bg-[#0f1219] border border-blue-500/20 rounded-[3rem] p-10 relative overflow-hidden glass animate-in slide-in-from-top-10 duration-700">
+                            <div className="absolute top-0 left-0 w-64 h-64 bg-blue-500/5 blur-[80px] rounded-full"></div>
+                            <h3 className="text-3xl font-black text-blue-400 mb-8 flex items-center gap-4">
+                                <span className="p-3 bg-blue-500/20 rounded-2xl">📊</span> موجز الاستخبارات التسويقية (Agent 1)
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
+                                <InsightBox label="الجمهور المستهدف" value={pipeline.marketAnalysis.targetAudience} icon="👥" />
+                                <InsightBox label="الرغبة العميقة" value={pipeline.marketAnalysis.coreDesire} icon="💎" />
+                                <InsightBox label="الألم الأكبر" value={pipeline.marketAnalysis.biggestPain} icon="⚡" />
                             </div>
                         </div>
                     )}
 
-                    {/* Show Generated Ads */}
+                    {/* The Theater: Ad Previews - HUGE Cards */}
                     {pipeline.finalAds.length > 0 && (
-                        <div className="space-y-6">
-                            <h3 className="text-purple-400 font-black text-xl flex items-center gap-2"><span>🔥</span> الإعلانات النهائية (Angles)</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="space-y-12">
+                            <div className="flex items-center justify-between px-4">
+                                <h3 className="text-4xl font-black text-white flex items-center gap-4">
+                                    <span className="text-5xl">🔥</span> معرض الأداء العالي
+                                </h3>
+                                <div className="text-slate-500 font-bold uppercase tracking-widest text-xs px-4 py-2 bg-white/5 rounded-full border border-white/10">
+                                    5 Master Angles Generated
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                                 {pipeline.finalAds.map((ad, idx) => (
-                                    <div key={idx} className="bg-[#151923] border border-white/5 rounded-3xl overflow-hidden shadow-2xl hover:border-purple-500/30 transition-colors flex flex-col">
+                                    <div key={idx} className="group/card relative animate-in slide-in-from-bottom-10 duration-1000" style={{ animationDelay: `${idx * 200}ms` }}>
+                                        {/* Glowing edge effect */}
+                                        <div className="absolute -inset-0.5 bg-gradient-to-br from-purple-500/50 to-indigo-500/50 rounded-[3rem] blur opacity-0 group-hover/card:opacity-100 transition duration-500"></div>
 
-                                        <div className="p-4 bg-purple-500/10 border-b border-purple-500/10">
-                                            <p className="text-[10px] text-purple-400 font-black uppercase mb-1">Angle {idx + 1}: {ad.angle.id}</p>
-                                            <h4 className="text-white font-bold text-sm">{ad.angle.title}</h4>
-                                        </div>
+                                        <div className="relative bg-[#10131d] border border-white/10 rounded-[3rem] overflow-hidden shadow-4xl h-full flex flex-col transition-all duration-500 group-hover/card:translate-y-[-10px] group-hover/card:shadow-[0_30px_60px_rgba(0,0,0,0.8)]">
 
-                                        <div className="p-5 flex-1 flex flex-col gap-4">
-                                            <div className="bg-black/30 rounded-xl p-3 border border-white/5">
-                                                <p className="text-[10px] text-slate-500 mb-2">🔥 أفضل هوك</p>
-                                                <p className="text-sm font-bold text-orange-400 leading-relaxed">{ad.hooks[0]}</p>
-                                            </div>
-
-                                            <div className="flex-1">
-                                                <p className="text-[10px] text-slate-500 mb-2">📝 محتوى الإعلان</p>
-                                                <p className="text-xs text-slate-300 leading-loose line-clamp-4 whitespace-pre-wrap">{ad.copy.adBody}</p>
-                                            </div>
-
-                                            <div className="bg-blue-500/5 rounded-xl border border-blue-500/10 mt-auto overflow-hidden flex flex-col">
-                                                <div className="p-3 pb-2 flex items-center justify-between">
-                                                    <p className="text-[10px] text-blue-400 font-bold flex items-center gap-1"><span>🎨</span> تصميم تم توليده بالذكاء الاصطناعي</p>
-                                                    <span className="text-[9px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full">جاهز للتحميل</span>
+                                            {/* Angle Badge */}
+                                            <div className="absolute top-6 right-6 z-30 flex items-center gap-2">
+                                                <div className="px-5 py-2.5 bg-black/60 backdrop-blur-xl border border-white/20 rounded-2xl text-xs font-black text-purple-400 uppercase tracking-widest shadow-2xl">
+                                                    Angle {idx + 1}
                                                 </div>
+                                            </div>
+
+                                            {/* Visual Section: MASSIVE IMAGE */}
+                                            <div className="relative aspect-[4/5] overflow-hidden bg-black/40">
                                                 {ad.visual.generatedImageUrl ? (
-                                                    <div className="w-full aspect-[4/5] bg-black/50 relative group overflow-hidden">
-                                                        <img src={ad.visual.generatedImageUrl} alt="Generated Ad Image" className="w-full h-full object-cover absolute inset-0 transition-transform duration-700 group-hover:scale-105" />
-                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center p-4">
+                                                    <>
+                                                        <img src={ad.visual.generatedImageUrl} alt="Generated Ad Image" className="w-full h-full object-cover transition-transform duration-[2000ms] group-hover/card:scale-110" />
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60"></div>
+
+                                                        <div className="absolute bottom-8 left-8 right-8 flex justify-between items-end">
+                                                            <div className="bg-emerald-500/20 backdrop-blur-md border border-emerald-500/30 px-4 py-2 rounded-2xl">
+                                                                <p className="text-[10px] font-black text-emerald-400 uppercase">Visual Style</p>
+                                                                <p className="text-xs font-bold text-white uppercase italic">{ad.visual.selectedStyleName} PRO</p>
+                                                            </div>
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
                                                                     const link = document.createElement('a');
                                                                     link.href = ad.visual.generatedImageUrl!;
-                                                                    link.download = `ad_creative_${idx + 1}.png`;
+                                                                    link.download = `PRO_AD_${idx + 1}.png`;
                                                                     link.click();
                                                                 }}
-                                                                className="bg-white text-black px-4 py-2 rounded-xl text-xs font-bold hover:scale-105 transition-transform"
+                                                                className="w-16 h-16 bg-white text-black rounded-full flex items-center justify-center shadow-3xl hover:bg-purple-500 hover:text-white transition-all hover:scale-110 active:scale-90"
+                                                                title="Download Image"
                                                             >
-                                                                تحميل الصورة ⬇️
+                                                                <Download className="w-7 h-7" />
                                                             </button>
                                                         </div>
-                                                    </div>
+                                                    </>
                                                 ) : (
-                                                    <div className="w-full aspect-[4/5] bg-black/50 flex flex-col items-center justify-center p-4 text-center gap-3 border-t border-white/5">
-                                                        <div className="w-8 h-8 rounded-full border-2 border-slate-700 border-t-blue-500 animate-spin"></div>
-                                                        <p className="text-[10px] text-slate-400">جاري المعالجة...</p>
+                                                    <div className="w-full h-full flex flex-col items-center justify-center p-12 text-center gap-6">
+                                                        <div className="w-16 h-16 rounded-full border-4 border-white/10 border-t-purple-500 animate-spin"></div>
+                                                        <div className="space-y-2">
+                                                            <p className="text-xl font-black text-white italic tracking-tighter uppercase">Visualizing Assets...</p>
+                                                            <p className="text-sm text-slate-500 font-bold">Agent 5 is painting the masterpiece</p>
+                                                        </div>
                                                     </div>
                                                 )}
                                             </div>
-                                        </div>
 
-                                        <div className="p-3 bg-white/5 mx-4 mb-4 rounded-xl">
-                                            <p className="text-xs text-center text-emerald-400 font-bold">{ad.copy.callToAction}</p>
-                                        </div>
+                                            {/* Content Section */}
+                                            <div className="p-8 md:p-10 flex flex-col gap-8 flex-1">
+                                                <div className="space-y-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="h-0.5 w-10 bg-orange-500"></div>
+                                                        <p className="text-xs font-black text-orange-500 uppercase tracking-widest">Headline Hook</p>
+                                                    </div>
+                                                    <h4 className="text-2xl md:text-3xl font-black text-white leading-tight leading-tighter tracking-tight italic">
+                                                        {ad.hooks[0]}
+                                                    </h4>
+                                                </div>
 
+                                                <div className="space-y-4 flex-1">
+                                                    <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Marketing Copy</p>
+                                                    <p className="text-lg text-slate-300 leading-relaxed font-medium line-clamp-6 bg-gradient-to-b from-slate-100 to-slate-400 bg-clip-text text-transparent">
+                                                        {ad.copy.adBody}
+                                                    </p>
+                                                </div>
+
+                                                <div className="bg-purple-500/10 border border-purple-500/20 p-6 rounded-[2rem] flex items-center justify-between">
+                                                    <div className="flex-1">
+                                                        <p className="text-[10px] text-purple-400 font-black uppercase mb-1">Conversion CTA</p>
+                                                        <p className="text-xl font-black text-white italic">{ad.copy.callToAction}</p>
+                                                    </div>
+                                                    <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-xl shadow-lg shadow-purple-500/20 rotate-12">
+                                                        💰
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
                         </div>
                     )}
 
-                    {/* Show Objection Handling */}
+                    {/* Post-Mission Debrief: Objection Handling */}
                     {pipeline.objections.length > 0 && (
-                        <div className="bg-orange-500/5 border border-orange-500/20 rounded-3xl p-6 mt-4 animate-in slide-in-from-bottom-4 duration-500">
-                            <h3 className="text-orange-400 font-black mb-4 flex items-center gap-2"><span>🛡️</span> Agent 6: Objection Handling (الأسئلة الشائعة)</h3>
-                            <div className="space-y-3">
+                        <div className="bg-[#050505] border border-orange-500/20 rounded-[3rem] p-12 mt-8 glass animate-in fade-in duration-1000">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+                                <div>
+                                    <h3 className="text-4xl font-black text-orange-400 mb-2 flex items-center gap-4">
+                                        <span className="p-3 bg-orange-500/20 rounded-2xl">🛡️</span> درع الاعتراضات (Agent 6)
+                                    </h3>
+                                    <p className="text-slate-400 font-bold">توقع مخاوف العميل واهزمها قبل أن تظهر.</p>
+                                </div>
+                                <div className="text-5xl opacity-20">🥷</div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 {pipeline.objections.map((obj, idx) => (
-                                    <div key={idx} className="bg-black/40 rounded-xl p-4 border border-white/5">
-                                        <p className="text-sm font-bold text-white mb-2"><span className="text-red-400">العميل:</span> {obj.objection}</p>
-                                        <p className="text-sm text-slate-300"><span className="text-emerald-400">الرد:</span> {obj.rebuttal}</p>
+                                    <div key={idx} className="group/obj relative">
+                                        <div className="absolute -inset-0.5 bg-gradient-to-r from-red-600 to-orange-600 rounded-3xl blur opacity-0 group-hover/obj:opacity-20 transition duration-500"></div>
+                                        <div className="relative bg-white/5 border border-white/5 rounded-3xl p-8 hover:bg-white/10 transition-all duration-300">
+                                            <div className="flex gap-6">
+                                                <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0">
+                                                    <AlertCircle className="w-7 h-7 text-red-400" />
+                                                </div>
+                                                <div className="space-y-4">
+                                                    <div>
+                                                        <p className="text-xs font-black text-red-500 uppercase tracking-widest mb-1">خوف العميل (Objection)</p>
+                                                        <p className="text-xl font-bold text-white">{obj.objection}</p>
+                                                    </div>
+                                                    <div className="h-0.5 w-12 bg-white/10"></div>
+                                                    <div>
+                                                        <p className="text-xs font-black text-emerald-500 uppercase tracking-widest mb-1">الرد الساحق (The Kill)</p>
+                                                        <p className="text-lg text-slate-300 font-medium leading-relaxed">{obj.rebuttal}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -367,15 +460,33 @@ const ProModeDashboard: React.FC = () => {
 };
 
 // ============================================================================
-// Helpers
+// Enhanced Helpers
 // ============================================================================
 
-
-const InsightBox = ({ label, value }: { label: string, value: string }) => (
-    <div className="bg-black/30 rounded-xl p-3 border border-white/5">
-        <p className="text-[10px] text-slate-500 mb-1">{label}</p>
-        <p className="text-xs font-bold text-slate-200">{value}</p>
+const InsightBox = ({ label, value, icon }: { label: string, value: string, icon: string }) => (
+    <div className="group/insight relative">
+        <div className="absolute -inset-0.5 bg-blue-500/20 rounded-3xl blur opacity-0 group-hover/insight:opacity-100 transition duration-500"></div>
+        <div className="relative bg-black/40 rounded-3xl p-6 border border-white/5 hover:border-blue-500/40 transition-all duration-300 h-full">
+            <div className="flex justify-between items-start mb-4">
+                <p className="text-[10px] text-blue-400 font-black uppercase tracking-widest">{label}</p>
+                <span className="text-xl grayscale group-hover/insight:grayscale-0 transition-all">{icon}</span>
+            </div>
+            <p className="text-lg font-black text-slate-100 leading-tight italic tracking-tight">{value}</p>
+        </div>
     </div>
 );
+
+const Download = ({ className }: { className?: string }) => (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+    </svg>
+);
+
+const AlertCircle = ({ className }: { className?: string }) => (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+);
+
 
 export default ProModeDashboard;

@@ -29,8 +29,20 @@ body {
   100% { transform: translateX(100%); }
 }
 
+@keyframes shimmer {
+  0% { transform: translateX(-100%) skewX(-12deg); }
+  100% { transform: translateX(200%) skewX(-12deg); }
+}
+
 .animate-progress-indefinite {
   animation: progress-indefinite 2s infinite linear;
   width: 100%;
   background: linear-gradient(90deg, transparent, #fff, transparent);
+}
+
+.glass {
+  background: rgba(15, 18, 25, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }

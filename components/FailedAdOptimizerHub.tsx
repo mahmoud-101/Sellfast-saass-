@@ -106,8 +106,11 @@ export const FailedAdOptimizerHub: React.FC = () => {
                     <button
                         onClick={handleAnalyze}
                         disabled={isSynthesizing}
-                        className="w-full md:w-auto px-8 py-4 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white rounded-xl font-black text-lg transition-all shadow-[0_0_20px_rgba(239,68,68,0.3)] hover:shadow-[0_0_30px_rgba(239,68,68,0.5)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                        className="w-full md:w-auto px-8 py-4 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white rounded-xl font-black text-lg transition-all shadow-[0_0_20px_rgba(239,68,68,0.3)] hover:shadow-[0_0_30px_rgba(239,68,68,0.5)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 overflow-hidden relative group/btn"
                     >
+                        {/* Shimmer Effect */}
+                        <div className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover/btn:animate-[shimmer_1.5s_infinite]"></div>
+
                         {isSynthesizing ? (
                             <>
                                 <RefreshCw className="w-6 h-6 animate-spin" />
@@ -115,7 +118,7 @@ export const FailedAdOptimizerHub: React.FC = () => {
                             </>
                         ) : (
                             <>
-                                <Send className="w-6 h-6" />
+                                <Send className="w-6 h-6 group-hover/btn:translate-x-1 transition-transform" />
                                 <span>شخّص وعالج الإعلان فوراً 💉</span>
                             </>
                         )}

@@ -219,8 +219,11 @@ export function UGCStudio() {
                             <button
                                 onClick={handleGenerateAll}
                                 disabled={!productImage || !productDesc || isGenerating}
-                                className="w-full h-14 text-lg font-bold bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full h-14 text-lg font-bold bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden relative group/btn"
                             >
+                                {/* Shimmer Effect */}
+                                <div className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover/btn:animate-[shimmer_1.5s_infinite]"></div>
+
                                 {isGenerating ? (
                                     <>
                                         <RefreshCw className="mr-2 h-5 w-5 animate-spin" />
@@ -228,7 +231,7 @@ export function UGCStudio() {
                                     </>
                                 ) : (
                                     <>
-                                        <Wand2 className="mr-2 h-5 w-5" />
+                                        <Wand2 className="mr-2 h-5 w-5 group-hover/btn:rotate-12 transition-transform" />
                                         ابدأ جلسة التصوير الكبرى
                                     </>
                                 )}
