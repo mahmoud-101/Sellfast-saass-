@@ -271,7 +271,10 @@ export async function generateImage(productImages: ImageFile[], prompt: string, 
     const enhancedPrompt = `
     ${prompt}
     
-    TECHNICAL SPECS: photorealistic, hyperrealistic, 8k resolution, sharp focus, detailed texture, cinematic lighting, DSLR photo, editorial photography, high detail, commercial quality.
+    TECHNICAL ADDITIONS:
+    - TARGET ASPECT RATIO: ${aspectRatio}
+    - photorealistic, hyperrealistic, 8k resolution, sharp focus, detailed texture, cinematic lighting, DSLR photo, editorial photography, high detail, commercial quality.
+    
     STRICT INSTRUCTIONS: 
     1. Place the provided product in a completely NEW environment and background according to the prompt. 
     2. DO NOT return the exact original image. You MUST generate a new background/composition.
@@ -283,16 +286,17 @@ export async function generateImage(productImages: ImageFile[], prompt: string, 
     return executeWithRetry(async () => {
         const ai = new GoogleGenAI({ apiKey: getApiKey() });
         const res = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
+            model: 'gemini-2.5-flash',
             contents: { parts },
             config: {
-                imageConfig: {
-                    aspectRatio: aspectRatio as any
-                }
+                // @ts-ignore
+                responseModalities: ["IMAGE"],
             }
         });
-        for (const part of res.candidates?.[0]?.content?.parts || []) { if (part.inlineData) return { base64: part.inlineData.data, mimeType: part.inlineData.mimeType, name: 'img.png' }; }
-        throw new Error('Fail');
+        for (const part of res.candidates?.[0]?.content?.parts || []) {
+            if (part.inlineData) return { base64: part.inlineData.data, mimeType: part.inlineData.mimeType || 'image/png', name: 'img.png' };
+        }
+        throw new Error('No image returned from Gemini');
     });
 }
 
