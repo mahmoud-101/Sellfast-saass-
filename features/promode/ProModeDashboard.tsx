@@ -5,6 +5,7 @@ import {
     agentHookWriter,
     agentCopywriter,
     agentVisualDirector,
+    agentResultValidator,
     agentObjectionHandler,
     generateImage,
     AgentProductData
@@ -87,43 +88,56 @@ const ProModeDashboard: React.FC = () => {
 
             const generatedAds: FinalProModeAd[] = [];
 
-            // For MVP speed, let's process the top 3 angles instead of 5 conceptually to not hit rate limits instantly
-            const topAngles = anglesData.slice(0, 3);
+            // For MVP speed previously it was 3, but user requested 5 distinct images.
+            const topAngles = anglesData.slice(0, 5);
+            const preliminaryAds: FinalProModeAd[] = [];
 
+            // Step 3a: Generate Hooks, Copy, and Initial Visual Prompts
             for (const angle of topAngles) {
-                // Agent 3: Hook Writer
                 const hooks = await agentHookWriter(productForm, angle);
                 const bestHook = hooks[0] || '';
-
-                // Agent 4: Copywriter
                 const copyData = await agentCopywriter(productForm, angle, bestHook);
-
-                // Agent 5: Visual Director
                 const visualData = await agentVisualDirector(productForm, angle);
 
-                // Actually Generate the Image with Agent 5's Prompt
-                // Convert string back to ImageFile expected by generateImage
-                const imgFile = {
-                    base64: productImage.includes('base64,') ? productImage.split('base64,')[1] : productImage,
-                    mimeType: productImage.startsWith('data:') ? productImage.split(';')[0].split(':')[1] : 'image/png',
-                    name: 'product.png'
-                };
-
-                try {
-                    const aiImage = await generateImage([imgFile], visualData.imagePrompt);
-                    visualData.generatedImageUrl = `data:${aiImage.mimeType};base64,${aiImage.base64}`;
-                } catch (imgError) {
-                    console.error("🖼️ AI Image generation error:", imgError);
-                    // Fallback to original image if Gemini GenAI fails
-                    visualData.generatedImageUrl = productImage;
-                }
-
-                generatedAds.push({
+                preliminaryAds.push({
                     angle,
                     hooks,
                     copy: copyData,
                     visual: visualData
                 });
+            }
+
+            // Step 3b: Agent 7 (Result Validator) - Ensure absolute visual diversity
+            setPipeline(prev => ({ ...prev, status: 'visualizing' }));
+            const rawVisuals = preliminaryAds.map(ad => ad.visual);
+            let validatedVisuals = rawVisuals;
+            try {
+                validatedVisuals = await agentResultValidator(rawVisuals);
+            } catch (validationErr) {
+                console.warn("Validation agent failed, using raw visuals", validationErr);
+            }
+
+            // Step 3c: Actually Generate the Images based on Validated Prompts
+            const imgFile = {
+                base64: productImage.includes('base64,') ? productImage.split('base64,')[1] : productImage,
+                mimeType: productImage.startsWith('data:') ? productImage.split(';')[0].split(':')[1] : 'image/png',
+                name: 'product.png'
+            };
+
+            for (let i = 0; i < preliminaryAds.length; i++) {
+                const ad = preliminaryAds[i];
+                const finalVisual = validatedVisuals[i] || ad.visual;
+                ad.visual = finalVisual;
+
+                try {
+                    const aiImage = await generateImage([imgFile], finalVisual.imagePrompt);
+                    ad.visual.generatedImageUrl = `data:${aiImage.mimeType};base64,${aiImage.base64}`;
+                } catch (imgError) {
+                    console.error("🖼️ AI Image generation error:", imgError);
+                    ad.visual.generatedImageUrl = productImage; // Fallback
+                }
+
+                generatedAds.push(ad);
             }
 
             setPipeline(prev => ({ ...prev, status: 'objections', finalAds: generatedAds }));
@@ -249,7 +263,7 @@ const ProModeDashboard: React.FC = () => {
                             <StatusRow label="2. Angle Strategist" status={['idle', 'analyzing'].includes(pipeline.status) ? 'pending' : (['strategizing'].includes(pipeline.status) ? 'active' : 'done')} />
                             <StatusRow label="3. Hook Writer" status={['idle', 'analyzing', 'strategizing'].includes(pipeline.status) ? 'pending' : (['hooking'].includes(pipeline.status) ? 'active' : 'done')} />
                             <StatusRow label="4. Direct Copywriter" status={['idle', 'analyzing', 'strategizing', 'hooking'].includes(pipeline.status) ? 'pending' : (['copywriting'].includes(pipeline.status) ? 'active' : 'done')} />
-                            <StatusRow label="5. Visual Director" status={['idle', 'analyzing', 'strategizing', 'hooking', 'copywriting'].includes(pipeline.status) ? 'pending' : (['visualizing'].includes(pipeline.status) ? 'active' : 'done')} />
+                            <StatusRow label="5. Visual Director & Validator" status={['idle', 'analyzing', 'strategizing', 'hooking', 'copywriting'].includes(pipeline.status) ? 'pending' : (['visualizing'].includes(pipeline.status) ? 'active' : 'done')} />
                             <StatusRow label="6. Objection Handler" status={['idle', 'analyzing', 'strategizing', 'hooking', 'copywriting', 'visualizing'].includes(pipeline.status) ? 'pending' : (['objections'].includes(pipeline.status) ? 'active' : 'done')} />
                         </div>
                     </div>
@@ -301,17 +315,32 @@ const ProModeDashboard: React.FC = () => {
                                             </div>
 
                                             <div className="bg-blue-500/5 rounded-xl border border-blue-500/10 mt-auto overflow-hidden flex flex-col">
-                                                <div className="p-3 pb-2">
-                                                    <p className="text-[10px] text-blue-400 mb-1 flex items-center gap-1"><span>🎨</span> توليد بصري الذكاء الاصطناعي</p>
-                                                    <p className="text-[10px] text-slate-300">القالب: {ad.visual.selectedStyleName}</p>
+                                                <div className="p-3 pb-2 flex items-center justify-between">
+                                                    <p className="text-[10px] text-blue-400 font-bold flex items-center gap-1"><span>🎨</span> تصميم تم توليده بالذكاء الاصطناعي</p>
+                                                    <span className="text-[9px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full">جاهز للتحميل</span>
                                                 </div>
                                                 {ad.visual.generatedImageUrl ? (
-                                                    <div className="w-full aspect-[4/5] bg-black/50 relative">
-                                                        <img src={ad.visual.generatedImageUrl} alt={ad.visual.selectedStyleName} className="w-full h-full object-cover absolute inset-0" />
+                                                    <div className="w-full aspect-[4/5] bg-black/50 relative group overflow-hidden">
+                                                        <img src={ad.visual.generatedImageUrl} alt="Generated Ad Image" className="w-full h-full object-cover absolute inset-0 transition-transform duration-700 group-hover:scale-105" />
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center p-4">
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    const link = document.createElement('a');
+                                                                    link.href = ad.visual.generatedImageUrl!;
+                                                                    link.download = `ad_creative_${idx + 1}.png`;
+                                                                    link.click();
+                                                                }}
+                                                                className="bg-white text-black px-4 py-2 rounded-xl text-xs font-bold hover:scale-105 transition-transform"
+                                                            >
+                                                                تحميل الصورة ⬇️
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 ) : (
-                                                    <div className="w-full aspect-[4/5] bg-black/50 flex items-center justify-center p-4 text-center">
-                                                        <p className="text-[9px] text-slate-500">{ad.visual.imagePrompt}</p>
+                                                    <div className="w-full aspect-[4/5] bg-black/50 flex flex-col items-center justify-center p-4 text-center gap-3 border-t border-white/5">
+                                                        <div className="w-8 h-8 rounded-full border-2 border-slate-700 border-t-blue-500 animate-spin"></div>
+                                                        <p className="text-[10px] text-slate-400">جاري المعالجة...</p>
                                                     </div>
                                                 )}
                                             </div>

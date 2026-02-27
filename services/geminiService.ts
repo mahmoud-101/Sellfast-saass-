@@ -287,7 +287,7 @@ export async function generateImage(productImages: ImageFile[], prompt: string, 
     return executeWithRetry(async () => {
         const ai = new GoogleGenAI({ apiKey: getApiKey() });
         const res = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-2.5-pro',
             contents: { parts },
             config: {
                 // @ts-ignore
@@ -1123,9 +1123,11 @@ export async function agentCopywriter(data: AgentProductData, angle: any, select
     المنتج: ${data.description}
     السعر: ${data.price}
 
-    قواعد الكتابة:
-    - لغة عامية مصرية، جمل قصيرة، إيموجيز احترافية في مكانها.
-    - اذكر السعر أو العرض.
+    قواعد الكتابة الاحترافية (خاصة للملابس والفاشون):
+    - استخدم لغة عامية مصرية، جمل قصيرة، وإيقاع سريع يلمس قلب العميل.
+    - اكتب كوبي يصف "الخامة، التفاصيل، الشياكة، وكيف سيشعر العميل عند ارتدائه".
+    - استخدم إيموجيز احترافية في مكانها المناسب بدون مبالغة.
+    - اذكر السعر أو العرض بطريقة ذكية تزيد من الـ AOV (مثل عرض الصحاب، وفر فلوسك).
     - اجعل الإعلان مقسماً لفقرات مريحة للعين.
 
     أخرج النتيجة كـ JSON فقط بالصيغة التالية:
@@ -1144,17 +1146,26 @@ export async function agentVisualDirector(data: AgentProductData, angle: any): P
     نصور إعلاناً للمنتج: ${data.description}
     الزاوية التسويقية هي: ${angle.title} (${angle.concept})
 
-    مهمتك اختيار القالب البصري الأنسب من القوالب التالية، ثم تعبئة المتغيرات ببراعة لإنشاء مشهد سينمائي للمنتج:
+    مهمتك اختيار القالب البصري الأنسب من القوالب التالية، ثم تعبئة المتغيرات ببراعة لإنشاء مشهد سينمائي عالي الجودة للمنتج:
     ${JSON.stringify(DYNAMIC_STYLES.map(s => ({ styleName: s.styleName, variables: s.requiredVariables })))}
+
+    🚨 قاعدة هامة لإخراج الصور الاحترافية (خاصة لمنتجات الملابس والفاشون): 
+    عند إنشاء الـ imagePrompt بالإنجليزية، يجب أن يكون شديد التفصيل (Highly Detailed) ويحتوي على الأقسام التالية لضمان نتيجة مبهرة:
+    - Core Item (The product looking premium)
+    - Background Props (e.g. stylish street sneakers, steaming coffee, cool sunglasses, urban stickers)
+    - Surface Material (e.g. rustic wooden, sleek marble)
+    - Atmosphere & Vibe (e.g. warm winter aesthetic, streetwear hype, cyberpunk neon)
+    - Lighting (e.g. dramatic lighting, neon glows, soft studio lighting)
+    - Camera (e.g. DSLR, 85mm lens, sharp focus, 8k photorealistic)
 
     أخرج النتيجة كـ JSON فقط بالصيغة التالية:
     {
       "selectedStyleName": "اسم القالب الإنجليزي بالظبط من القائمة",
       "variables": {
-        "Variable_1": "English description",
-        "Variable_2": "English description"
+        "Variable_1": "تفاصيل إنجليزية معبرة",
+        "Variable_2": "تفاصيل إنجليزية معبرة"
       },
-      "imagePrompt": "A master prompt entirely in English for an AI image generator based on the selected style and filled variables. Must be highly detailed, cinematic, and diverse (don't just show a blank product). Mention 8k, photorealistic."
+      "imagePrompt": "A master prompt entirely in English incorporating all the deep variables mentioned above (Props, Vibe, Material, Lighting, Camera) to create a premium, diverse, and photorealistic editorial scene."
     }
     `;
     return askOpenRouterJSON(prompt, "You are an expert Creative Director. Output valid JSON only.");
@@ -1178,4 +1189,31 @@ export async function agentObjectionHandler(data: AgentProductData, adBody: stri
     ]
     `;
     return askOpenRouterJSON(prompt, "You are an expert Sales Manager. Output valid JSON Array only.");
+}
+
+// Agent 7: Result Validator (Diversity Enforcement)
+export async function agentResultValidator(visualPrompts: any[]): Promise<any[]> {
+    const prompt = `
+    أنت مدقق جودة (Quality Assurance Validator).
+    لقد قام فريقنا بتوليد هذه الـ ${visualPrompts.length} توجيهات بصرية (Visual Prompts) لنفس المنتج:
+    ${JSON.stringify(visualPrompts, null, 2)}
+
+    مهمتك هي مراجعة الـ imagePrompt لكل عنصر. إذا كانت متشابهة جداً، قم بإعادة كتابتها جذرياً (باللغة الإنجليزية) لضمان أقصى قدر من "التنوع البصري" (Visual Diversity). 
+    نريد أن تكون الصور الخمسة مختلفة تماماً في:
+    1. Background Props (عناصر الخلفية)
+    2. Surface Material (الملمس والأرضية)
+    3. Atmosphere & Vibe (الجو العام)
+    4. Lighting (الإضاءة)
+    5. Camera Angles (زوايا التصوير)
+
+    أخرج النتيجة كـ JSON Array لنفس الأوبجكتات بعد التعديل (حافظ على selectedStyleName و variables كما هي، فقط عدل imagePrompt ليكون شديد التعقيد والتنوع بناءً على الـ 5 نقاط السابقة):
+    [
+      {
+        "selectedStyleName": "...",
+        "variables": { ... },
+        "imagePrompt": "A completely REWRITTEN, completely UNIQUE prompt..."
+      }
+    ]
+    `;
+    return askOpenRouterJSON(prompt, "You are an expert QA and Prompt Engineer. Output valid JSON Array only.");
 }

@@ -180,11 +180,10 @@ export default function App() {
     }
   }, [userId]);
 
-  // If the user is on the dashboard, we actually want to push them directly into the Performance Engine flow
-  // But to keep the structure, we can just render the performance engine directly when view === 'campaign_builder_hub'
+  // If the user is on the dashboard, we actually want to push them directly into the Pro Mode flow
   useEffect(() => {
-    if (view === 'dashboard') {
-      setView('campaign_builder_hub');
+    if (view === 'dashboard' || view === 'campaign_builder_hub') {
+      setView('pro_mode');
     }
   }, [view]);
 
@@ -204,8 +203,7 @@ export default function App() {
             {view !== 'landing' && userId && (
               <>
                 <div className="hidden md:flex items-center gap-2 bg-white/5 p-1 rounded-2xl border border-white/5">
-                  <button onClick={() => { setView('campaign_builder_hub'); setActiveScriptContext(''); }} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'campaign_builder_hub' ? 'bg-orange-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}>🔥 محرك الإعلانات</button>
-                  <button onClick={() => setView('pro_mode')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all flex items-center gap-1 ${view === 'pro_mode' ? 'bg-purple-600 text-white shadow-[0_0_15px_rgba(168,85,247,0.5)]' : 'text-purple-400 hover:text-purple-300 hover:bg-purple-500/10'}`}>🤖 الوضع الاحترافي</button>
+                  <button onClick={() => setView('pro_mode')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all flex items-center gap-1 ${view === 'pro_mode' ? 'bg-purple-600 text-white shadow-[0_0_15px_rgba(168,85,247,0.5)]' : 'text-purple-400 hover:text-purple-300 hover:bg-purple-500/10'}`}>🤖 الوضع الاحترافي (Pro Mode)</button>
                   <button onClick={() => setView('dynamic_ads')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'dynamic_ads' ? 'bg-blue-500 text-white shadow-[0_0_15px_rgba(59,130,246,0.5)]' : 'text-slate-400 hover:text-white'}`}>✨ قوالب ديناميكية</button>
                   <button onClick={() => setView('brand_kit')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'brand_kit' ? 'bg-orange-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}>🎨 هويتي</button>
                   <button onClick={() => setView('content_library')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'content_library' ? 'bg-orange-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}>📚 الإعلانات المحفوظة</button>
@@ -235,16 +233,10 @@ export default function App() {
             <div className="md:hidden bg-black/95 border-b border-white/5 p-6 animate-in slide-in-from-top duration-300">
               <div className="flex flex-col gap-4">
                 <button
-                  onClick={() => { setView('campaign_builder_hub'); setIsMenuOpen(false); setActiveScriptContext(''); }}
-                  className={`w-full p-4 rounded-2xl text-right font-black ${view === 'campaign_builder_hub' ? 'bg-orange-500 text-black' : 'bg-white/5 text-white'}`}
-                >
-                  🔥 محرك الإعلانات
-                </button>
-                <button
                   onClick={() => { setView('pro_mode'); setIsMenuOpen(false); }}
                   className={`w-full p-4 rounded-2xl text-right font-black flex items-center justify-between ${view === 'pro_mode' ? 'bg-purple-600 text-white' : 'bg-purple-900/10 text-purple-400 border border-purple-500/20'}`}
                 >
-                  <span>🤖 الوضع الاحترافي</span>
+                  <span>🤖 الوضع الاحترافي (Pro Mode)</span>
                   <span className="text-[10px] bg-purple-500/20 px-2 py-0.5 rounded-full border border-purple-500/30">جديد</span>
                 </button>
                 <button
@@ -289,7 +281,7 @@ export default function App() {
         </nav>
 
         <div className="w-full max-w-7xl flex-grow p-6 z-10 pt-10">
-          {view === 'landing' && <LandingPage onGetStarted={() => { setView('campaign_builder_hub'); setIsGuest(true); }} />}
+          {view === 'landing' && <LandingPage onGetStarted={() => { setView('pro_mode'); setIsGuest(true); }} />}
 
           {view !== 'landing' && !userId && <Auth onGuestLogin={() => setIsGuest(true)} />}
 
@@ -306,10 +298,10 @@ export default function App() {
           )}
 
           {/* Keep legacy routes available but hidden from main navigation */}
-          {view === 'brand_kit' && userId && <BrandKitManager userId={userId} onBack={() => setView('campaign_builder_hub')} />}
-          {view === 'faq' && userId && <FAQ onBack={() => setView('campaign_builder_hub')} />}
-          {view === 'privacy_policy' && userId && <LegalPages type="privacy" onBack={() => setView('campaign_builder_hub')} />}
-          {view === 'terms_of_service' && userId && <LegalPages type="terms" onBack={() => setView('campaign_builder_hub')} />}
+          {view === 'brand_kit' && userId && <BrandKitManager userId={userId} onBack={() => setView('pro_mode')} />}
+          {view === 'faq' && userId && <FAQ onBack={() => setView('pro_mode')} />}
+          {view === 'privacy_policy' && userId && <LegalPages type="privacy" onBack={() => setView('pro_mode')} />}
+          {view === 'terms_of_service' && userId && <LegalPages type="terms" onBack={() => setView('pro_mode')} />}
           {view === 'content_library' && userId && <ContentLibrary userId={userId} />}
           {view === 'admin' && userId && <AdminDashboard />}
           {view === 'dynamic_ads' && userId && <DynamicAdsStudio project={dynamicAdsProject} setProject={setDynamicAdsProject} userId={userId} />}
