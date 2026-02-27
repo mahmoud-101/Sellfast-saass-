@@ -29,7 +29,7 @@ export type AppView =
   | 'branding_mockups' | 'strategy_engine' | 'trend_engine' | 'brand_kit' | 'pricing'
   | 'library' | 'auth' | 'suite_view' | 'power' | 'ads_studio' | 'faq' | 'privacy_policy' | 'terms_of_service'
   | 'admin' | 'performance_studio' | 'content_library' | 'storyboard_studio'
-  | 'market_intelligence_hub' | 'campaign_builder_hub' | 'creative_studio_hub' | 'launch_brief_hub' | 'voiceover_studio' | 'dynamic_ads' | 'pro_mode' | 'ugc_studio' | 'hook_generator' | 'failed_ad_optimizer' | 'referral';
+  | 'market_intelligence_hub' | 'campaign_builder_hub' | 'creative_studio_hub' | 'launch_brief_hub' | 'voiceover_studio' | 'dynamic_ads' | 'pro_mode' | 'ugc_studio' | 'hook_generator' | 'failed_ad_optimizer' | 'referral' | 'organic_studio';
 
 export interface EliteChatMessage {
   role: 'user' | 'bot';
@@ -463,4 +463,18 @@ export interface DynamicAdsStudioProject extends ProjectBase {
   isAutoFilling: boolean;
   error: string | null;
   results: DynamicAdsResult[];
+}
+export interface OrganicStudioProject extends ProjectBase {
+  description: string;
+  targetAudience: string;
+  tone: string;
+  isGenerating: boolean;
+  progress: number;
+  result: {
+    strategy: string;
+    posts: { hook: string; body: string; tags: string }[];
+    reels: { title: string; script: string; tone: string }[];
+    ideas: string[];
+  } | null;
+  error: string | null;
 }

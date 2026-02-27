@@ -19,6 +19,7 @@ import {
     AgentObjection,
     FinalProModeAd
 } from '../performance/types';
+import { Download, AlertCircle, Zap } from 'lucide-react';
 
 // ============================================================================
 // Types & State
@@ -50,9 +51,10 @@ const INITIAL_STATE: ProModeState = {
 
 interface ProModeDashboardProps {
     userId: string;
+    onUpscale?: (imageUrl: string) => void;
 }
 
-const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId }) => {
+const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId, onUpscale }) => {
     const [pipeline, setPipeline] = useState<ProModeState>(INITIAL_STATE);
     const [productImage, setProductImage] = useState<string | null>(null);
     const [productForm, setProductForm] = useState<AgentProductData>({
@@ -60,6 +62,20 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId }) => {
         description: '',
         price: ''
     });
+
+    const [reasoningMsg, setReasoningMsg] = useState('في انتظار الانطلاق...');
+
+    const reasoningLibrary: Record<PipelineStatus, string[]> = {
+        idle: ['في انتظار الانطلاق...'],
+        analyzing: ['جاري تحليل المنتج...', 'جاري دراسة الجمهور...', 'جاري تحديد المزايا...'],
+        strategizing: ['جاري بناء خطة البيع...', 'جاري اختيار زوايا الإقناع...', 'جاري تجهيز الاستراتيجية...'],
+        hooking: ['جاري كتابة الهوكات...', 'جاري صياغة العناوين...', 'جاري اختبار قوة الجذب...'],
+        copywriting: ['جاري كتابة الإعلان...', 'جاري تجهيز نداء الفعل...', 'جاري مراجعة النص...'],
+        visualizing: ['جاري رسم اللوحة الإعلانية...', 'جاري معالجة المشاهد...', 'جاري توليد الصور...'],
+        objections: ['جاري توقع شكوك العميل...', 'جاري تجهيز الردود...', 'جاري تأمين البيعة...'],
+        completed: ['المهمة تمت بنجاح! 🚀'],
+        error: ['حدث خطأ في النظام ⚠️']
+    };
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -87,6 +103,16 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId }) => {
             // Reset and start
             setPipeline({ ...INITIAL_STATE, status: 'analyzing' });
 
+            // Reasoning interval
+            const interval = setInterval(() => {
+                setPipeline(prev => {
+                    const msgs = reasoningLibrary[prev.status] || ['جاري العمل...'];
+                    const randomMsg = msgs[Math.floor(Math.random() * msgs.length)];
+                    setReasoningMsg(randomMsg);
+                    return prev;
+                });
+            }, 3000);
+
             // 1. Agent Market Analyzer
             const marketData = await agentMarketAnalyzer(productForm);
             setPipeline(prev => ({ ...prev, status: 'strategizing', marketAnalysis: marketData }));
@@ -104,20 +130,25 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId }) => {
             const topAngles = anglesData.slice(0, 5);
             const preliminaryAds: FinalProModeAd[] = [];
 
-            // Step 3a: Generate Hooks, Copy, and Initial Visual Prompts
-            for (const angle of topAngles) {
-                const hooks = await agentHookWriter(productForm, angle);
-                const bestHook = hooks[0] || '';
-                const copyData = await agentCopywriter(productForm, angle, bestHook);
-                const visualData = await agentVisualDirector(productForm, angle);
+            // Step 3a: Parallel Processing of Hooks, Copy, and Visual Prompts for all top angles
+            const preliminaryAds: FinalProModeAd[] = await Promise.all(
+                topAngles.map(async (angle) => {
+                    const [hooks, visualData] = await Promise.all([
+                        agentHookWriter(productForm, angle),
+                        agentVisualDirector(productForm, angle)
+                    ]);
 
-                preliminaryAds.push({
-                    angle,
-                    hooks,
-                    copy: copyData,
-                    visual: visualData
-                });
-            }
+                    const bestHook = hooks[0] || '';
+                    const copyData = await agentCopywriter(productForm, angle, bestHook);
+
+                    return {
+                        angle,
+                        hooks,
+                        copy: copyData,
+                        visual: visualData
+                    };
+                })
+            );
 
             // Step 3b: Agent 7 (Result Validator) - Ensure absolute visual diversity
             setPipeline(prev => ({ ...prev, status: 'visualizing' }));
@@ -136,21 +167,23 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId }) => {
                 name: 'product.png'
             };
 
-            for (let i = 0; i < preliminaryAds.length; i++) {
-                const ad = preliminaryAds[i];
-                const finalVisual = validatedVisuals[i] || ad.visual;
-                ad.visual = finalVisual;
+            // Step 3c: Actually Generate the Images in parallel based on Validated Prompts
+            const generatedAds: FinalProModeAd[] = await Promise.all(
+                preliminaryAds.map(async (ad, i) => {
+                    const finalVisual = validatedVisuals[i] || ad.visual;
+                    ad.visual = finalVisual;
 
-                try {
-                    const aiImage = await generateImage([imgFile], finalVisual.imagePrompt);
-                    ad.visual.generatedImageUrl = `data:${aiImage.mimeType};base64,${aiImage.base64}`;
-                } catch (imgError) {
-                    console.error("🖼️ AI Image generation error:", imgError);
-                    ad.visual.generatedImageUrl = productImage; // Fallback
-                }
+                    try {
+                        const aiImage = await generateImage([imgFile], finalVisual.imagePrompt);
+                        ad.visual.generatedImageUrl = `data:${aiImage.mimeType};base64,${aiImage.base64}`;
+                    } catch (imgError) {
+                        console.error("🖼️ AI Image generation error:", imgError);
+                        ad.visual.generatedImageUrl = productImage; // Fallback
+                    }
 
-                generatedAds.push(ad);
-            }
+                    return ad;
+                })
+            );
 
             setPipeline(prev => ({ ...prev, status: 'objections', finalAds: generatedAds }));
 
@@ -168,11 +201,15 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId }) => {
         } catch (error: any) {
             console.error(error);
             setPipeline(prev => ({ ...prev, status: 'error', error: error.message || 'حدث خطأ في المصنع' }));
+        } finally {
+            // @ts-ignore
+            if (typeof interval !== 'undefined') clearInterval(interval);
         }
     };
 
     return (
-        <div className="flex flex-col gap-10 animate-in fade-in duration-500 pb-32 max-w-[1600px] mx-auto p-4 md:p-8" dir="rtl">
+    return (
+        <div className="flex flex-col gap-10 animate-in fade-in duration-500 pb-32 w-full mx-auto p-4 md:p-8 overflow-x-hidden" dir="rtl">
             {/* Header: Cinematic Command Center Style */}
             <div className="relative group">
                 <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-[2rem] blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
@@ -187,7 +224,7 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId }) => {
                             <div>
                                 <h1 className="text-4xl md:text-6xl font-black text-white mb-3 tracking-tighter uppercase italic">الوضع الاحترافي <span className="text-purple-500">PRO MODE</span></h1>
                                 <p className="text-slate-400 text-lg md:text-xl font-medium max-w-2xl leading-relaxed">
-                                    6 عملاء ذكاء اصطناعي (Agents) يعملون في تناغم استراتيجي لبناء إمبراطوريتك الإعلانية من الصفر.
+                                    نظام ذكاء اصطناعي متكامل يعمل في تناغم استراتيجي لبناء إمبراطوريتك الإعلانية من الصفر.
                                 </p>
                             </div>
                         </div>
@@ -198,7 +235,7 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId }) => {
                                 pipeline.status === 'idle' ? 'border-purple-500/50 bg-purple-500/10 text-purple-400' :
                                     'border-blue-500/50 bg-blue-500/10 text-blue-400 animate-pulse'
                             }`}>
-                            STATUS: {pipeline.status.toUpperCase()}
+                            {pipeline.status === 'idle' ? 'IDLE' : reasoningMsg.toUpperCase()}
                         </div>
                     </div>
                 </div>
@@ -279,19 +316,19 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId }) => {
                             <button
                                 onClick={startPipeline}
                                 disabled={pipeline.status !== 'idle' && pipeline.status !== 'completed' && pipeline.status !== 'error'}
-                                className="w-full mt-6 bg-purple-600 hover:bg-purple-500 text-white px-8 py-6 rounded-[2rem] font-black text-2xl transition-all shadow-[0_20px_40px_rgba(168,85,247,0.3)] hover:shadow-[0_25px_50px_rgba(168,85,247,0.5)] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-4 overflow-hidden relative group/btn"
+                                className="w-full mt-6 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-8 py-7 rounded-[2.5rem] font-black text-2xl transition-all shadow-[0_20px_40px_rgba(168,85,247,0.3)] hover:shadow-[0_25px_50px_rgba(168,85,247,0.5)] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-4 overflow-hidden relative group/btn border border-white/20"
                             >
                                 <div className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12 -translate-x-full group-hover/btn:animate-[shimmer_2s_infinite]"></div>
 
                                 {pipeline.status === 'idle' || pipeline.status === 'completed' || pipeline.status === 'error' ? (
                                     <>
-                                        <span className="text-3xl">☄️</span>
+                                        <span className="text-3xl animate-bounce">☄️</span>
                                         <span>إطلاق المصنع الذكي</span>
                                     </>
                                 ) : (
                                     <>
                                         <div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                        <span>المصنع في قمة طاقته...</span>
+                                        <span>جاري التنفيذ...</span>
                                     </>
                                 )}
                             </button>
@@ -313,7 +350,7 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId }) => {
                         <div className="bg-[#0f1219] border border-blue-500/20 rounded-[3rem] p-10 relative overflow-hidden glass animate-in slide-in-from-top-10 duration-700">
                             <div className="absolute top-0 left-0 w-64 h-64 bg-blue-500/5 blur-[80px] rounded-full"></div>
                             <h3 className="text-3xl font-black text-blue-400 mb-8 flex items-center gap-4">
-                                <span className="p-3 bg-blue-500/20 rounded-2xl">📊</span> موجز الاستخبارات التسويقية (Agent 1)
+                                <span className="p-3 bg-blue-500/20 rounded-2xl">📊</span> موجز الاستخبارات التسويقية
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
                                 <InsightBox label="الجمهور المستهدف" value={pipeline.marketAnalysis.targetAudience} icon="👥" />
@@ -346,7 +383,7 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId }) => {
                                             {/* Angle Badge */}
                                             <div className="absolute top-6 right-6 z-30 flex items-center gap-2">
                                                 <div className="px-5 py-2.5 bg-black/60 backdrop-blur-xl border border-white/20 rounded-2xl text-xs font-black text-purple-400 uppercase tracking-widest shadow-2xl">
-                                                    Angle {idx + 1}
+                                                    الزاوية {idx + 1}
                                                 </div>
                                             </div>
 
@@ -375,14 +412,24 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId }) => {
                                                             >
                                                                 <Download className="w-7 h-7" />
                                                             </button>
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    if (ad.visual.generatedImageUrl) onUpscale?.(ad.visual.generatedImageUrl);
+                                                                }}
+                                                                className="w-16 h-16 bg-gradient-to-br from-purple-600 to-indigo-600 text-white rounded-full flex items-center justify-center shadow-3xl hover:scale-110 active:scale-90 transition-all border border-white/20"
+                                                                title="Enhance Image (4K)"
+                                                            >
+                                                                <Zap className="w-7 h-7" />
+                                                            </button>
                                                         </div>
                                                     </>
                                                 ) : (
                                                     <div className="w-full h-full flex flex-col items-center justify-center p-12 text-center gap-6">
                                                         <div className="w-16 h-16 rounded-full border-4 border-white/10 border-t-purple-500 animate-spin"></div>
                                                         <div className="space-y-2">
-                                                            <p className="text-xl font-black text-white italic tracking-tighter uppercase">Visualizing Assets...</p>
-                                                            <p className="text-sm text-slate-500 font-bold">Agent 5 is painting the masterpiece</p>
+                                                            <p className="text-xl font-black text-white italic tracking-tighter uppercase">جاري رسم اللوحة الغلانية...</p>
+                                                            <p className="text-sm text-slate-500 font-bold">يتم الآن تجهيز المشهد الإعلاني بأعلى جودة</p>
                                                         </div>
                                                     </div>
                                                 )}
@@ -430,7 +477,7 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId }) => {
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
                                 <div>
                                     <h3 className="text-4xl font-black text-orange-400 mb-2 flex items-center gap-4">
-                                        <span className="p-3 bg-orange-500/20 rounded-2xl">🛡️</span> درع الاعتراضات (Agent 6)
+                                        <span className="p-3 bg-orange-500/20 rounded-2xl">🛡️</span> درع الاعتراضات المنيع
                                     </h3>
                                     <p className="text-slate-400 font-bold">توقع مخاوف العميل واهزمها قبل أن تظهر.</p>
                                 </div>
@@ -487,18 +534,5 @@ const InsightBox = ({ label, value, icon }: { label: string, value: string, icon
         </div>
     </div>
 );
-
-const Download = ({ className }: { className?: string }) => (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-    </svg>
-);
-
-const AlertCircle = ({ className }: { className?: string }) => (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-);
-
 
 export default ProModeDashboard;

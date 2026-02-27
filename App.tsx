@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Zap, Users, Gift, CreditCard } from 'lucide-react';
+import { Zap, Users, Gift, CreditCard, Sparkles } from 'lucide-react';
 import {
   AppView,
   MasterFactoryProject,
@@ -15,7 +15,8 @@ import {
   PerformanceStudioProject,
   EliteScriptProject,
   StoryboardStudioProject,
-  VoiceOverStudioProject
+  VoiceOverStudioProject,
+  OrganicStudioProject
 } from './types';
 import { supabase } from './lib/supabase';
 
@@ -45,7 +46,10 @@ import { ContentLibrary } from './components/ContentLibrary';
 import StoryboardStudio from './components/StoryboardStudio';
 import VoiceOverStudio from './components/VoiceOverStudio';
 import ReferralDashboard from './components/ReferralDashboard';
+import OrganicViralStudio from './components/OrganicViralStudio';
 import ImageEditorModal from './components/ImageEditorModal';
+import ImageUpscaler from './components/ImageUpscaler';
+import GettingStartedWizard from './components/GettingStartedWizard';
 import DynamicAdsStudio from './components/DynamicAdsStudio';
 import { BalanceBadge } from './components/BalanceBadge';
 import { ImageFile, DynamicAdsStudioProject } from './types';
@@ -67,9 +71,11 @@ export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeScriptContext, setActiveScriptContext] = useState('');
   const [globalEditingImage, setGlobalEditingImage] = useState<ImageFile | null>(null);
+  const [upscalingImage, setUpscalingImage] = useState<string | null>(null);
   const [session, setSession] = useState<any>(null);
   const [isGuest, setIsGuest] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
 
   useEffect(() => {
     // 1. التقاط كود الإحالة من الرابط وتخزينه في المتصفح مؤقتاً 🔗
@@ -139,6 +145,7 @@ export default function App() {
     id: 'ugc-1', name: 'UGC Content', productImages: [], selectedScenarios: [], isUploading: false, isGenerating: false, results: [], error: null
   });
 
+
   const [performanceProject, setPerformanceProject] = useState<PerformanceStudioProject>({
     id: 'perf-1',
     name: 'Performance Pack',
@@ -179,6 +186,10 @@ export default function App() {
 
   const [dynamicAdsProject, setDynamicAdsProject] = useState<DynamicAdsStudioProject>({
     id: 'dyn-1', name: 'قوالب ديناميكية', productImages: [], selectedStyleId: null, variableValues: {}, isGenerating: false, isUploading: false, error: null, results: [], autoFillDescription: '', isAutoFilling: false
+  });
+
+  const [organicProject, setOrganicProject] = useState<OrganicStudioProject>({
+    id: 'org-1', name: 'الاستراتيجية الأورجانيك', description: '', targetAudience: '', tone: 'storytelling', isGenerating: false, progress: 0, result: null, error: null
   });
 
   const bridgeToPlan = (context: string) => { setPlanStudio(prev => ({ ...prev, prompt: context })); setView('plan_studio'); };
@@ -233,8 +244,10 @@ export default function App() {
                   <button onClick={() => setView('hook_generator')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'hook_generator' ? 'bg-pink-500 text-white shadow-[0_0_15px_rgba(236,72,153,0.5)]' : 'text-slate-400 hover:text-white'}`}>🪝 مولد الهوكات</button>
                   <button onClick={() => setView('failed_ad_optimizer')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'failed_ad_optimizer' ? 'bg-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'text-slate-400 hover:text-white'}`}>💔 إنعاش الإعلانات</button>
                   <button onClick={() => setView('ugc_studio')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'ugc_studio' ? 'bg-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'text-slate-400 hover:text-white'}`}>📸 التصوير و UGC</button>
+                  <button onClick={() => setView('organic_studio')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'organic_studio' ? 'bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'text-slate-400 hover:text-white'}`}>🌿 محتوى فيروسي (Viral)</button>
                   <button onClick={() => setView('brand_kit')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'brand_kit' ? 'bg-orange-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}>🎨 هويتي</button>
                   <button onClick={() => setView('content_library')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'content_library' ? 'bg-orange-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}>📚 الإعلانات المحفوظة</button>
+                  <button onClick={() => setIsWizardOpen(true)} className="px-5 py-2 rounded-xl text-[11px] font-black text-purple-400 hover:bg-purple-500/10 transition-all border border-purple-500/20">🚀 ابدأ من هنا</button>
                   <button onClick={() => setView('admin')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'admin' ? 'bg-orange-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}>⚙️ الإدارة</button>
                 </div>
 
@@ -346,10 +359,22 @@ export default function App() {
           {view === 'content_library' && userId && <ContentLibrary userId={userId} />}
           {view === 'admin' && userId && <AdminDashboard />}
           {view === 'referral' && userId && <ReferralDashboard userId={userId} />}
+          {view === 'referral' && userId && <ReferralDashboard userId={userId} />}
+          {view === 'organic_studio' && userId && (
+            <OrganicViralStudio
+              userId={userId}
+              project={organicProject}
+              setProject={setOrganicProject}
+              onSendToDesign={(content) => {
+                setUgcProject(prev => ({ ...prev, customScenarios: [content] })); // Set context for UGC
+                setView('ugc_studio');
+              }}
+            />
+          )}
           {view === 'ugc_studio' && userId && <UGCStudio userId={userId} />}
           {view === 'hook_generator' && userId && <HookGeneratorHub userId={userId} />}
           {view === 'failed_ad_optimizer' && userId && <FailedAdOptimizerHub userId={userId} />}
-          {view === 'pro_mode' && userId && <ProModeDashboard userId={userId} />}
+          {view === 'pro_mode' && userId && <ProModeDashboard userId={userId} onUpscale={(url) => setUpscalingImage(url)} />}
 
           {/* Mobile Bottom Navigation 📱 */}
           {userId && (
@@ -360,6 +385,13 @@ export default function App() {
               >
                 <Zap size={22} />
                 <span className="text-[8px] font-black uppercase tracking-tighter">ذكاء</span>
+              </button>
+              <button
+                onClick={() => setView('organic_studio')}
+                className={`flex flex-col items-center gap-1 transition-all ${view === 'organic_studio' ? 'text-emerald-400 scale-110' : 'text-white/40'}`}
+              >
+                <Sparkles size={22} />
+                <span className="text-[8px] font-black uppercase tracking-tighter">فيرال</span>
               </button>
               <button
                 onClick={() => setView('content_library')}
@@ -394,6 +426,8 @@ export default function App() {
         <WhatsAppButton />
         {isPricingOpen && userId && <PricingModal userId={userId} onClose={() => setIsPricingOpen(false)} />}
         {globalEditingImage && <ImageEditorModal image={globalEditingImage} onClose={() => setGlobalEditingImage(null)} />}
+        {upscalingImage && userId && <ImageUpscaler imageUrl={upscalingImage} userId={userId} onClose={() => setUpscalingImage(null)} />}
+        {isWizardOpen && <GettingStartedWizard onSelectPath={setView} onClose={() => setIsWizardOpen(false)} />}
       </div>
     </ProductIntelligenceProvider>
   );
