@@ -36,8 +36,9 @@ import LegalPages from './components/LegalPages';
 import AdsStudio from './components/AdsStudio';
 import DailyPackStudio from './components/DailyPackStudio';
 import TrendEngine from './components/TrendEngine';
-import PowerStudio from './components/PowerStudio';
 import { UGCStudio } from './components/UGCStudio';
+import { HookGeneratorHub } from './components/HookGeneratorHub';
+import { FailedAdOptimizerHub } from './components/FailedAdOptimizerHub';
 import AdminDashboard from './components/AdminDashboard';
 import { ContentLibrary } from './components/ContentLibrary';
 import StoryboardStudio from './components/StoryboardStudio';
@@ -204,6 +205,8 @@ export default function App() {
               <>
                 <div className="hidden md:flex items-center gap-2 bg-white/5 p-1 rounded-2xl border border-white/5">
                   <button onClick={() => setView('pro_mode')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all flex items-center gap-1 ${view === 'pro_mode' ? 'bg-purple-600 text-white shadow-[0_0_15px_rgba(168,85,247,0.5)]' : 'text-purple-400 hover:text-purple-300 hover:bg-purple-500/10'}`}>🤖 الوضع الاحترافي (Pro Mode)</button>
+                  <button onClick={() => setView('hook_generator')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'hook_generator' ? 'bg-pink-500 text-white shadow-[0_0_15px_rgba(236,72,153,0.5)]' : 'text-slate-400 hover:text-white'}`}>🪝 مولد الهوكات</button>
+                  <button onClick={() => setView('failed_ad_optimizer')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'failed_ad_optimizer' ? 'bg-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'text-slate-400 hover:text-white'}`}>💔 إنعاش الإعلانات</button>
                   <button onClick={() => setView('ugc_studio')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'ugc_studio' ? 'bg-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'text-slate-400 hover:text-white'}`}>📸 التصوير و UGC</button>
                   <button onClick={() => setView('brand_kit')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'brand_kit' ? 'bg-orange-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}>🎨 هويتي</button>
                   <button onClick={() => setView('content_library')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'content_library' ? 'bg-orange-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}>📚 الإعلانات المحفوظة</button>
@@ -244,6 +247,18 @@ export default function App() {
                   className={`w-full p-4 rounded-2xl text-right font-black ${view === 'brand_kit' ? 'bg-orange-500 text-black' : 'bg-white/5 text-white'}`}
                 >
                   🎨 هويتي
+                </button>
+                <button
+                  onClick={() => { setView('hook_generator'); setIsMenuOpen(false); }}
+                  className={`w-full p-4 rounded-2xl text-right font-black ${view === 'hook_generator' ? 'bg-pink-500 text-white' : 'bg-white/5 text-white'}`}
+                >
+                  🪝 مولد الهوكات
+                </button>
+                <button
+                  onClick={() => { setView('failed_ad_optimizer'); setIsMenuOpen(false); }}
+                  className={`w-full p-4 rounded-2xl text-right font-black ${view === 'failed_ad_optimizer' ? 'bg-red-500 text-white' : 'bg-white/5 text-white'}`}
+                >
+                  💔 إنعاش الإعلانات
                 </button>
                 <button
                   onClick={() => { setView('ugc_studio'); setIsMenuOpen(false); }}
@@ -304,8 +319,9 @@ export default function App() {
           {view === 'terms_of_service' && userId && <LegalPages type="terms" onBack={() => setView('pro_mode')} />}
           {view === 'content_library' && userId && <ContentLibrary userId={userId} />}
           {view === 'admin' && userId && <AdminDashboard />}
-          {view === 'dynamic_ads' && userId && <DynamicAdsStudio project={dynamicAdsProject} setProject={setDynamicAdsProject} userId={userId} />}
           {view === 'ugc_studio' && userId && <UGCStudio />}
+          {view === 'hook_generator' && userId && <HookGeneratorHub />}
+          {view === 'failed_ad_optimizer' && userId && <FailedAdOptimizerHub />}
           {view === 'pro_mode' && userId && <ProModeDashboard />}
         </div>
 

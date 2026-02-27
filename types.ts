@@ -29,7 +29,7 @@ export type AppView =
   | 'branding_mockups' | 'strategy_engine' | 'trend_engine' | 'brand_kit' | 'pricing'
   | 'library' | 'auth' | 'suite_view' | 'power' | 'ads_studio' | 'faq' | 'privacy_policy' | 'terms_of_service'
   | 'admin' | 'performance_studio' | 'content_library' | 'storyboard_studio'
-  | 'market_intelligence_hub' | 'campaign_builder_hub' | 'creative_studio_hub' | 'launch_brief_hub' | 'voiceover_studio' | 'dynamic_ads' | 'pro_mode' | 'ugc_studio';
+  | 'market_intelligence_hub' | 'campaign_builder_hub' | 'creative_studio_hub' | 'launch_brief_hub' | 'voiceover_studio' | 'dynamic_ads' | 'pro_mode' | 'ugc_studio' | 'hook_generator' | 'failed_ad_optimizer';
 
 export interface EliteChatMessage {
   role: 'user' | 'bot';

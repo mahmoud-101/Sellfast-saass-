@@ -1237,3 +1237,60 @@ export async function agentResultValidator(visualPrompts: any[]): Promise<any[]>
         return visualPrompts;
     }
 }
+
+// ============================================================================
+// STANDALONE CREATOR TOOLS (Phase 12)
+// ============================================================================
+
+export async function generateStandaloneHooks(productInfo: string): Promise<any> {
+    const prompt = `
+    أنت صانع محتوى إعلاني (Hook Generator) عبقري، متخصص في السوق المصري والعربي.
+    لديك هذا المنتج أو الفكرة أو رابط صفحة الهبوط:
+    ${productInfo}
+
+    مهمتك كتابة 12 هوك (Hook) إعلاني خاطف للأنظار (Scroll-Stopping للفيسبوك وتيك توك وانستجرام) مقسمين إلى 4 فئات:
+    1. Pain (ألم العميل ومشاكله)
+    2. Desire (رغبات العميل العميقة)
+    3. Mystery (غموض وفضول غير متوقع)
+    4. Objection (رد على اعتراض صريح وتحدي)
+
+    أخرج النتيجة كـ JSON Object فقط بالصيغة التالية تماماً:
+    {
+      "hooks": [
+        { "category": "Pain", "text": "هوك رقم 1 بالعامية المصرية الجذابة...", "explanation": "ليه الهوك ده قوي وبيشد الانتباه؟" },
+        // ... (مجموع 12 هوك، 3 لكل فئة)
+      ]
+    }
+    `;
+    return askOpenRouterJSON(prompt, "You are an elite short-form video copywriter. Output valid JSON only.");
+}
+
+export async function optimizeFailedAd(adCopy: string, productContext?: string): Promise<any> {
+    const prompt = `
+    أنت طبيب إعلانات محترف (Ad Doctor) وخبير إعلانات ممولة في السوق المصري والعربي.
+    لديك إعلان فاشل لم يحقق مبيعات:
+    النص الإعلاني الفاشل:
+    "${adCopy}"
+
+    ${productContext ? `معلومات إضافية عن المنتج: ${productContext}` : ''}
+
+    مهمتك:
+    1. تحليل سريع لسبب فشل هذا الإعلان (مثلاً: بداية مملة، عدم وجود Call to Action واضح، مفيش لعب على عاطفة المشتري).
+    2. كتابة 3 نسخ إعلانية جديدة كلياً (Optimized Variations) مبنية على زوايا نفسية مختلفة لإنقاذ المبيعات.
+
+    أخرج النتيجة كـ JSON Object فقط بالصيغة الأساسية:
+    {
+      "diagnosis": "تشخيص سبب الفشل في سطرين (قاسي ومباشر)",
+      "variations": [
+        {
+          "strategy": "الاستراتيجية (مثال: اللعب على الألم)",
+          "hook": "الجملة الافتتاحية الخاطفة",
+          "body": "السطور الإقناعية بالعامية المصرية",
+          "cta": "طلب الشراء القوي"
+        }
+        // (مجموع 3 نسخ)
+      ]
+    }
+    `;
+    return askOpenRouterJSON(prompt, "You are a master direct response copywriter and conversion optimization expert. Output valid JSON only.");
+}
