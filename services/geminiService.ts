@@ -73,15 +73,22 @@ async function askOpenRouter(prompt: string, sys?: string): Promise<string> {
     return data.choices?.[0]?.message?.content || '';
 }
 
+export function parseRobustJSON(text: string): any {
+    if (!text) return {};
+    let clean = text.trim();
+    clean = clean.replace(/```json/gi, '');
+    clean = clean.replace(/```/g, '');
+    try {
+        return JSON.parse(clean.trim());
+    } catch (e) {
+        console.warn("Failed to parse JSON, returning raw string to avoid crash:", clean);
+        throw e;
+    }
+}
+
 async function askOpenRouterJSON(prompt: string, sys?: string): Promise<any> {
     const text = await askOpenRouter(prompt, sys);
-    try {
-        const jsonMatch = text.match(/```json\s*([\s\S]*?)```/) || text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) return JSON.parse(jsonMatch[1] || jsonMatch[0]);
-        return JSON.parse(text);
-    } catch {
-        return JSON.parse(text);
-    }
+    return parseRobustJSON(text);
 }
 
 /**
@@ -1194,26 +1201,39 @@ export async function agentObjectionHandler(data: AgentProductData, adBody: stri
 // Agent 7: Result Validator (Diversity Enforcement)
 export async function agentResultValidator(visualPrompts: any[]): Promise<any[]> {
     const prompt = `
-    أنت مدقق جودة (Quality Assurance Validator).
+    أنت مدقق جودة بصرخة (Quality Assurance Validator) ومصلح أخطاء عبقري.
     لقد قام فريقنا بتوليد هذه الـ ${visualPrompts.length} توجيهات بصرية (Visual Prompts) لنفس المنتج:
     ${JSON.stringify(visualPrompts, null, 2)}
 
-    مهمتك هي مراجعة الـ imagePrompt لكل عنصر. إذا كانت متشابهة جداً، قم بإعادة كتابتها جذرياً (باللغة الإنجليزية) لضمان أقصى قدر من "التنوع البصري" (Visual Diversity). 
-    نريد أن تكون الصور الخمسة مختلفة تماماً في:
-    1. Background Props (عناصر الخلفية)
-    2. Surface Material (الملمس والأرضية)
-    3. Atmosphere & Vibe (الجو العام)
-    4. Lighting (الإضاءة)
-    5. Camera Angles (زوايا التصوير)
+    مهمتك مزدوجة الآن:
+    أولاً: "إصلاح الأخطاء" (Auto-Fixing) 🛠️
+    - راجع الـ \`selectedStyleName\` في كل أوبجكت. هل هو اسم حقيقي موجود في النظام؟ استخدم فقط أسماء إنجليزية واضحة وعامة (مثل: Studio Soft Light, Cyberpunk, Cinematic Street, الخ).
+    - راجع الـ \`variables\`. هل هناك متغيرات ضرورية ناقصة؟ إذا كانت ناقصة، قم بـ "تأليفها واستنتاجها" فوراً من عندك بالإنجليزية. لا تترك أي متغير فارغ أو تظهر رسالة خطأ.
 
-    أخرج النتيجة كـ JSON Array لنفس الأوبجكتات بعد التعديل (حافظ على selectedStyleName و variables كما هي، فقط عدل imagePrompt ليكون شديد التعقيد والتنوع بناءً على الـ 5 نقاط السابقة):
+    ثانياً: "التنوع البصري" (Visual Diversity) 🎨
+    - مراجعة الـ imagePrompt لكل عنصر. إذا كانت متشابهة جداً، قم بإعادة كتابتها جذرياً (باللغة الإنجليزية) لضمان أقصى قدر من "التنوع البصري". 
+    - نريد أن تكون الصور الخمسة مختلفة تماماً في:
+      1. Background Props (عناصر الخلفية)
+      2. Surface Material (الملمس والأرضية)
+      3. Atmosphere & Vibe (الجو العام)
+      4. Lighting (الإضاءة)
+      5. Camera Angles (زوايا التصوير)
+
+    أخرج النتيجة كـ JSON Array لنفس الأوبجكتات بعد الإصلاح والتعديل:
     [
       {
-        "selectedStyleName": "...",
-        "variables": { ... },
+        "selectedStyleName": "الاسم المصحح",
+        "variables": { "متغير_1": "قيمة مصلحة", "متغير_2": "قيمة مستنتجة" },
         "imagePrompt": "A completely REWRITTEN, completely UNIQUE prompt..."
       }
     ]
     `;
-    return askOpenRouterJSON(prompt, "You are an expert QA and Prompt Engineer. Output valid JSON Array only.");
+
+    try {
+        const result = await askOpenRouterJSON(prompt, "You are an expert QA and Prompt Engineer. Output valid JSON Array only.");
+        return Array.isArray(result) ? result : visualPrompts;
+    } catch (e) {
+        console.warn("Agent 7 Validation failed, returning original prompts to avoid breaking the UI.");
+        return visualPrompts;
+    }
 }

@@ -255,18 +255,7 @@ const ProModeDashboard: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Pipeline Status Indicator */}
-                    <div className="bg-[#0f1219] border border-white/5 rounded-3xl p-6 shadow-xl">
-                        <h2 className="text-sm font-bold text-slate-300 mb-4 uppercase tracking-widest text-center">حالة العملاء الستة (Agents)</h2>
-                        <div className="space-y-3">
-                            <StatusRow label="1. Market Analyzer" status={pipeline.status === 'idle' ? 'pending' : (['analyzing'].includes(pipeline.status) ? 'active' : 'done')} />
-                            <StatusRow label="2. Angle Strategist" status={['idle', 'analyzing'].includes(pipeline.status) ? 'pending' : (['strategizing'].includes(pipeline.status) ? 'active' : 'done')} />
-                            <StatusRow label="3. Hook Writer" status={['idle', 'analyzing', 'strategizing'].includes(pipeline.status) ? 'pending' : (['hooking'].includes(pipeline.status) ? 'active' : 'done')} />
-                            <StatusRow label="4. Direct Copywriter" status={['idle', 'analyzing', 'strategizing', 'hooking'].includes(pipeline.status) ? 'pending' : (['copywriting'].includes(pipeline.status) ? 'active' : 'done')} />
-                            <StatusRow label="5. Visual Director & Validator" status={['idle', 'analyzing', 'strategizing', 'hooking', 'copywriting'].includes(pipeline.status) ? 'pending' : (['visualizing'].includes(pipeline.status) ? 'active' : 'done')} />
-                            <StatusRow label="6. Objection Handler" status={['idle', 'analyzing', 'strategizing', 'hooking', 'copywriting', 'visualizing'].includes(pipeline.status) ? 'pending' : (['objections'].includes(pipeline.status) ? 'active' : 'done')} />
-                        </div>
-                    </div>
+                    {/* Hide Pipeline 6-Agents checklist per user request */}
                 </div>
 
                 {/* Right Column: Output & Results */}
@@ -381,16 +370,6 @@ const ProModeDashboard: React.FC = () => {
 // Helpers
 // ============================================================================
 
-const StatusRow = ({ label, status }: { label: string, status: 'pending' | 'active' | 'done' }) => {
-    return (
-        <div className="flex items-center justify-between bg-black/30 rounded-lg px-4 py-2.5 border border-white/5">
-            <span className={`text-xs font-bold ${status === 'active' ? 'text-white' : 'text-slate-500'} ${status === 'done' ? 'text-emerald-400' : ''}`}>{label}</span>
-            {status === 'pending' && <span className="text-[10px] text-slate-600">Pending...</span>}
-            {status === 'active' && <div className="w-3 h-3 bg-purple-500 rounded-full animate-ping"></div>}
-            {status === 'done' && <span className="text-emerald-400">✓</span>}
-        </div>
-    );
-}
 
 const InsightBox = ({ label, value }: { label: string, value: string }) => (
     <div className="bg-black/30 rounded-xl p-3 border border-white/5">

@@ -37,7 +37,7 @@ import AdsStudio from './components/AdsStudio';
 import DailyPackStudio from './components/DailyPackStudio';
 import TrendEngine from './components/TrendEngine';
 import PowerStudio from './components/PowerStudio';
-import UGCStudio from './components/UGCStudio';
+import { UGCStudio } from './components/UGCStudio';
 import AdminDashboard from './components/AdminDashboard';
 import { ContentLibrary } from './components/ContentLibrary';
 import StoryboardStudio from './components/StoryboardStudio';
@@ -204,7 +204,7 @@ export default function App() {
               <>
                 <div className="hidden md:flex items-center gap-2 bg-white/5 p-1 rounded-2xl border border-white/5">
                   <button onClick={() => setView('pro_mode')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all flex items-center gap-1 ${view === 'pro_mode' ? 'bg-purple-600 text-white shadow-[0_0_15px_rgba(168,85,247,0.5)]' : 'text-purple-400 hover:text-purple-300 hover:bg-purple-500/10'}`}>🤖 الوضع الاحترافي (Pro Mode)</button>
-                  <button onClick={() => setView('dynamic_ads')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'dynamic_ads' ? 'bg-blue-500 text-white shadow-[0_0_15px_rgba(59,130,246,0.5)]' : 'text-slate-400 hover:text-white'}`}>✨ قوالب ديناميكية</button>
+                  <button onClick={() => setView('ugc_studio')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'ugc_studio' ? 'bg-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'text-slate-400 hover:text-white'}`}>📸 التصوير و UGC</button>
                   <button onClick={() => setView('brand_kit')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'brand_kit' ? 'bg-orange-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}>🎨 هويتي</button>
                   <button onClick={() => setView('content_library')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'content_library' ? 'bg-orange-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}>📚 الإعلانات المحفوظة</button>
                   <button onClick={() => setView('admin')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'admin' ? 'bg-orange-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}>⚙️ الإدارة</button>
@@ -246,10 +246,10 @@ export default function App() {
                   🎨 هويتي
                 </button>
                 <button
-                  onClick={() => { setView('dynamic_ads'); setIsMenuOpen(false); }}
-                  className={`w-full p-4 rounded-2xl text-right font-black ${view === 'dynamic_ads' ? 'bg-blue-500 text-white' : 'bg-white/5 text-white'}`}
+                  onClick={() => { setView('ugc_studio'); setIsMenuOpen(false); }}
+                  className={`w-full p-4 rounded-2xl text-right font-black ${view === 'ugc_studio' ? 'bg-indigo-500 text-white' : 'bg-white/5 text-white'}`}
                 >
-                  ✨ قوالب ديناميكية
+                  📸 التصوير و الـ UGC
                 </button>
                 <button
                   onClick={() => { setView('content_library'); setIsMenuOpen(false); }}
@@ -305,6 +305,7 @@ export default function App() {
           {view === 'content_library' && userId && <ContentLibrary userId={userId} />}
           {view === 'admin' && userId && <AdminDashboard />}
           {view === 'dynamic_ads' && userId && <DynamicAdsStudio project={dynamicAdsProject} setProject={setDynamicAdsProject} userId={userId} />}
+          {view === 'ugc_studio' && userId && <UGCStudio />}
           {view === 'pro_mode' && userId && <ProModeDashboard />}
         </div>
 

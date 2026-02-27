@@ -59,13 +59,15 @@ export async function askPerplexity(prompt: string, systemInstruction?: string, 
 export async function askPerplexityJSON(prompt: string, systemInstruction?: string, model: string = 'sonar'): Promise<any> {
     const fullPrompt = `${prompt}\n\nIMPORTANT: Your response MUST be valid JSON only. Do not include any markdown formatting or extra text.`;
     const response = await askPerplexity(fullPrompt, systemInstruction, model);
-    
+
     try {
         // Clean markdown if present
-        const cleanJson = response.replace(/```json|```/g, '').trim();
-        return JSON.parse(cleanJson);
+        let cleanJson = response.trim();
+        cleanJson = cleanJson.replace(/```json/gi, '');
+        cleanJson = cleanJson.replace(/```/g, '');
+        return JSON.parse(cleanJson.trim());
     } catch (error) {
-        console.error('Failed to parse Perplexity JSON response:', response);
+        console.warn('Failed to parse Perplexity JSON response:', response);
         throw new Error('Failed to parse structured response from Perplexity.');
     }
 }
