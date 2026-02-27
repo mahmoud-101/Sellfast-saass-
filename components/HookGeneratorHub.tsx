@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { generateStandaloneHooks } from '../services/geminiService';
 import { Sparkles, Copy, CheckCircle2, ChevronRight, AlertCircle, RefreshCw, Zap } from 'lucide-react';
+import { generateStandaloneHooks } from '../services/geminiService';
+import { deductCredits, CREDIT_COSTS } from '../lib/supabase';
 
 interface HookTemplate {
     category: string;
@@ -8,7 +9,11 @@ interface HookTemplate {
     explanation: string;
 }
 
-export const HookGeneratorHub: React.FC = () => {
+interface HookGeneratorHubProps {
+    userId: string;
+}
+
+export const HookGeneratorHub: React.FC<HookGeneratorHubProps> = ({ userId }) => {
     const [productInfo, setProductInfo] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [hooks, setHooks] = useState<HookTemplate[]>([]);
@@ -24,6 +29,15 @@ export const HookGeneratorHub: React.FC = () => {
         try {
             setIsGenerating(true);
             setError(null);
+
+            // Credit Deduction
+            const success = await deductCredits(userId, CREDIT_COSTS.COPYWRITING);
+            if (!success) {
+                setError('عفواً، رصيدك غير كافٍ. يرجى شحن الرصيد للمتابعة.');
+                setIsGenerating(false);
+                return;
+            }
+
             const res = await generateStandaloneHooks(productInfo);
 
             if (res && res.hooks && Array.isArray(res.hooks)) {

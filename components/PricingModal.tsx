@@ -17,41 +17,48 @@ const PricingModal: React.FC<PricingModalProps> = ({ onClose, userId }) => {
             name: 'باقة التجربة',
             price: '199',
             credits: '350',
-            equivalent: '≈ 3 حملات إعلانية كاملة',
+            unitPrice: '0.56',
+            equivalent: '≈ 7 خدمات احترافية',
             color: 'border-white/10',
             bg: 'bg-white/5',
-            features: ['3 حملات إعلانية كاملة', '10 صور منتج احترافية', 'دعم فني عبر البريد', 'صلاحية لمدة سنة']
+            features: ['350 نقطة رصيد', 'استخدام غير محدود لكافة الأدوات', 'دعم فني عبر البريد', 'صالح لمدة عام']
         },
         {
             id: 'pro',
             name: 'باقة النمو',
-            price: '599',
+            price: '499',
             credits: '1200',
-            equivalent: '≈ 10 حملات + 40 صورة',
+            unitPrice: '0.41',
+            save: '25%',
+            equivalent: '≈ 24 خدمة احترافية',
             color: 'border-[#FFD700]/50',
             bg: 'bg-[#FFD700]/10',
             popular: true,
-            features: ['10 حملات إعلانية كاملة', '40 صورة منتج 4K', 'أولوية في المعالجة', 'دعم واتساب مباشر']
+            features: ['1200 نقطة رصيد', 'أولوية في معالجة الصور', 'دعم واتساب خاص', 'خصم 25% على سعر النقطة']
         },
         {
             id: 'agency',
             name: 'باقة الوكالات',
-            price: '1499',
-            credits: '3500',
-            equivalent: '≈ 30 حملة + 120 صورة',
+            price: '999',
+            credits: '3000',
+            unitPrice: '0.33',
+            save: '40%',
+            equivalent: '≈ 60 خدمة احترافية',
             color: 'border-emerald-500/40',
             bg: 'bg-emerald-500/5',
-            features: ['30 حملة إعلانية كاملة', '120 صورة منتج', 'وصول لمحرك الفيديو Veo', 'رخصة تجارية شاملة']
+            features: ['3000 نقطة رصيد', 'رخصة تجارية كاملة', 'سرعة معالجة Turbo', 'خصم 40% على سعر النقطة']
         },
         {
             id: 'beast',
             name: 'باقة السيطرة',
-            price: '3999',
+            price: '2499',
             credits: '10000',
-            equivalent: '≈ 90 حملة + 350 صورة',
+            unitPrice: '0.24',
+            save: '60%',
+            equivalent: '≈ 200 خدمة احترافية',
             color: 'border-purple-500/40',
             bg: 'bg-purple-500/5',
-            features: ['90 حملة إعلانية كاملة', '350 صورة احترافية', 'لوحة إدارة الفريق', 'تحديثات حصرية قبل الجميع']
+            features: ['10,000 نقطة رصيد', 'مدير حساب مخصص', 'وصول حصري للميزات الجديدة', 'خصم 60% على سعر النقطة']
         },
     ];
 
@@ -92,13 +99,19 @@ const PricingModal: React.FC<PricingModalProps> = ({ onClose, userId }) => {
                                 <h3 className="text-xl font-black text-white leading-tight min-h-[50px]">{plan.name}</h3>
                                 <div className="flex flex-col">
                                     <span className="text-5xl font-black text-white">{plan.price} <span className="text-sm text-white/30 font-bold">ج.م</span></span>
+                                    <span className="text-[10px] text-[#FFD700] font-black mt-1 uppercase">سعر النقطة: {plan.unitPrice} ج.م</span>
                                 </div>
                                 <div className="py-2.5 px-5 bg-white/5 rounded-2xl inline-block text-[#FFD700] font-black text-sm border border-white/5">
-                                    {plan.credits} نقطة
+                                    {plan.credits.toLocaleString()} نقطة
                                 </div>
-                                {(plan as any).equivalent && (
+                                {plan.equivalent && (
                                     <div className="mt-2 text-emerald-400 text-xs font-bold opacity-80">
-                                        {(plan as any).equivalent}
+                                        {plan.equivalent}
+                                    </div>
+                                )}
+                                {plan.save && (
+                                    <div className="mt-1 bg-emerald-500/20 text-emerald-400 text-[10px] font-black py-1 px-3 rounded-full inline-block">
+                                        توفير {plan.save}
                                     </div>
                                 )}
                             </div>
@@ -158,6 +171,54 @@ const PricingModal: React.FC<PricingModalProps> = ({ onClose, userId }) => {
                             {isSubmitting ? 'جاري تسجيل الطلب...' : 'تأكيد التحويل (واتساب)'}
                             <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M12.012 2c-5.508 0-9.987 4.479-9.987 9.988 0 1.757.455 3.409 1.251 4.849l-1.332 4.86 4.975-1.304c1.404.757 2.997 1.189 4.693 1.189 5.508 0 9.988-4.479 9.988-9.988 0-5.508-4.48-9.988-9.988-9.988zm6.541 14.156c-.285.802-1.454 1.459-2.003 1.558-.49.088-1.127.159-1.808-.159-2.883-1.343-4.706-4.321-4.851-4.512-.144-.191-1.171-1.554-1.171-2.96 0-1.406.738-2.097 1-2.39.262-.293.571-.366.762-.366.191 0 .381.001.547.009.176.009.414-.066.649.492.235.558.802 1.956.872 2.1.07.144.117.311.023.498-.094.187-.141.311-.282.47-.141.159-.297.355-.424.476-.141.134-.288.28-.124.558.164.278.728 1.199 1.562 1.933.1.088.192.13.284.13.111 0 .216-.051.31-.137.288-.266.63-.687.9-.993.271-.306.495-.257.778-.152.282.105 1.79.845 2.097.998.307.153.511.228.586.356.075.127.075.736-.21 1.538z" /></svg>
                         </button>
+                    </div>
+                </div>
+
+                {/* Value Breakdown Section */}
+                <div className="mt-16 bg-white/5 rounded-[3.5rem] p-8 md:p-14 border border-white/5">
+                    <h3 className="text-3xl font-black text-white text-center mb-10">لماذا إبداع برو هو الخيار الأذكى لعملك؟ 🧠</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                        <div className="space-y-6">
+                            <h4 className="text-xl font-black text-emerald-400 text-right">مع إبداع برو (AI) ✨</h4>
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between p-4 bg-emerald-500/5 rounded-2xl border border-emerald-500/10 flex-row-reverse">
+                                    <span className="text-sm font-bold text-white">تحليل السوق + 5 إعلانات</span>
+                                    <span className="text-emerald-400 font-black">50 نقطة (≈ 15 ج.م)</span>
+                                </div>
+                                <div className="flex items-center justify-between p-4 bg-emerald-500/5 rounded-2xl border border-emerald-500/10 flex-row-reverse">
+                                    <span className="text-sm font-bold text-white">تصوير منتج 4K (UGC)</span>
+                                    <span className="text-emerald-400 font-black">20 نقطة (≈ 6 ج.م)</span>
+                                </div>
+                                <div className="flex items-center justify-between p-4 bg-emerald-500/5 rounded-2xl border border-emerald-500/10 flex-row-reverse">
+                                    <span className="text-sm font-bold text-white">مولد هوكات (12 هوك)</span>
+                                    <span className="text-emerald-400 font-black">10 نقاط (≈ 3 ج.م)</span>
+                                </div>
+                                <div className="p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 text-center">
+                                    <p className="text-emerald-400 font-black text-lg">النتيجة: توفير 95% من التكاليف + سرعة فورية</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-6">
+                            <h4 className="text-xl font-black text-red-400 text-right">بالطريقة التقليدية (بشري) 👤</h4>
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between p-4 bg-red-500/5 rounded-2xl border border-red-500/10 flex-row-reverse">
+                                    <span className="text-sm font-bold text-white/60">كاتب محتوى (لكل إعلان)</span>
+                                    <span className="text-red-400 font-black">300/500 ج.م</span>
+                                </div>
+                                <div className="flex items-center justify-between p-4 bg-red-500/5 rounded-2xl border border-red-500/10 flex-row-reverse">
+                                    <span className="text-sm font-bold text-white/60">جلسة تصوير احترافية</span>
+                                    <span className="text-red-400 font-black">2000+ ج.م</span>
+                                </div>
+                                <div className="flex items-center justify-between p-4 bg-red-500/5 rounded-2xl border border-red-500/10 flex-row-reverse">
+                                    <span className="text-sm font-bold text-white/60">وقت التنفيذ الضائع</span>
+                                    <span className="text-red-400 font-black">3-7 أيام</span>
+                                </div>
+                                <div className="p-4 bg-red-500/10 rounded-2xl border border-red-500/20 text-center">
+                                    <p className="text-red-400 font-black text-lg">النتيجة: تكاليف باهظة + بطء في النشر</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

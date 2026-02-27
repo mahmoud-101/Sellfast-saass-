@@ -27,21 +27,32 @@ export const CREDIT_COSTS = {
     POWER_PROD: 250,
     AD_VIDEO: 20,
     AI_EXPAND: 10,
+    PRO_MODE: 50,
 };
 
 /**
  * جلب بيانات المستخدم أو إنشاؤه إذا لم يكن موجوداً
+ * نقوم الآن بمزامنة البريد الإلكتروني أيضاً لتسهيل الإدارة 📧
  */
-export const getUserProfile = async (userId: string) => {
+export const getUserProfile = async (userId: string, email?: string) => {
     if (!isSupabaseConfigured()) return { id: userId, credits: 50, is_demo: true };
     try {
         const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
         if (error) throw error;
+
         if (!data) {
-            const { data: newData, error: insertError } = await supabase.from('profiles').insert([{ id: userId, credits: 50 }]).select().single();
+            const { data: newData, error: insertError } = await supabase
+                .from('profiles')
+                .insert([{ id: userId, credits: 50, email: email }])
+                .select()
+                .single();
             if (insertError) throw insertError;
             return newData;
+        } else if (email && data.email !== email) {
+            // تحديث البريد إذا تغير أو كان ناقصاً
+            await supabase.from('profiles').update({ email }).eq('id', userId);
         }
+
         return data;
     } catch (e) {
         console.error("Supabase Error:", e);
@@ -90,10 +101,16 @@ export const getAdminUsers = async () => {
 };
 
 export const getAdminStats = async () => {
-    const { data: users } = await supabase.from('profiles').select('credits');
-    const totalUsers = users?.length || 0;
-    const totalCredits = users?.reduce((acc, curr) => acc + (curr.credits || 0), 0) || 0;
-    return { totalUsers, totalCredits, activeToday: Math.floor(totalUsers * 0.3) };
+    if (!isSupabaseConfigured()) return { totalUsers: 0, totalCredits: 0, activeToday: 0 };
+    const { count: totalUsers } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
+    const { data: creditsData } = await supabase.from('profiles').select('credits');
+    const totalCredits = creditsData?.reduce((sum, u) => sum + (u.credits || 0), 0) || 0;
+
+    return {
+        totalUsers: totalUsers || 0,
+        totalCredits,
+        activeToday: Math.floor((totalUsers || 0) * 0.3) // Synthetic activity for UI polish
+    };
 };
 
 export const getAdminLogs = async () => {
@@ -216,6 +233,98 @@ export const approvePayment = async (requestId: string, adminId: string) => {
 
     await logAction(request.user_id, 'PAYMENT_APPROVED', `تمت الموافقة على شحن ${request.credits} نقطة`);
 };
+
+/**
+ * وظائف الإحصائيات المالية المتقدمة للمدير 💰
+ */
+export const getAdminFinanceStats = async () => {
+    if (!isSupabaseConfigured()) return { totalRevenue: 0, monthlyRevenue: 0, estimatedProfit: 0 };
+
+    try {
+        // 1. جلب كل المدفوعات المعتمدة
+        const { data: approvedPayments, error } = await supabase
+            .from('payment_requests')
+            .select('amount')
+            .eq('status', 'approved');
+
+        if (error) throw error;
+
+        const totalRevenue = approvedPayments?.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0) || 0;
+
+        // 2. جلب مدفوعات الشهر الحالي
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const { data: monthlyPayments } = await supabase
+            .from('payment_requests')
+            .select('amount')
+            .eq('status', 'approved')
+            .gte('created_at', startOfMonth.toISOString());
+
+        const monthlyRevenue = monthlyPayments?.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0) || 0;
+
+        // 3. حساب الربح الصافي التقديري (بعد خصم تكاليف الـ API - تقدير 15%)
+        const estimatedProfit = totalRevenue * 0.85;
+
+        return { totalRevenue, monthlyRevenue, estimatedProfit };
+    } catch (e) {
+        console.error("Finance Stats Error:", e);
+        return { totalRevenue: 0, monthlyRevenue: 0, estimatedProfit: 0 };
+    }
+};
+
+/**
+ * جلب سجل المدفوعات الكامل (طلبات معلقة + تاريخ سابق) 📜
+ */
+export const getAdminPaymentHistory = async () => {
+    if (!isSupabaseConfigured()) return [];
+    try {
+        const { data, error } = await supabase
+            .from('payment_requests')
+            .select('*, profiles(email)')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        return data || [];
+    } catch (e) {
+        console.error("Payment History Error:", e);
+        return [];
+    }
+};
+
+/**
+ * تحليل استخدام الأدوات البرمجية 📊
+ */
+export const getAdminUsageAnalytics = async () => {
+    if (!isSupabaseConfigured()) return [];
+    try {
+        // نستخدم سجل العمليات لاستنتاج الأدوات الأكثر استخداماً
+        const { data: logs } = await supabase
+            .from('logs')
+            .select('action_type')
+            .in('action_type', ['PRO_MODE', 'COPYWRITING', 'IMAGE_PRO', 'MARKET_ANALYSIS']);
+
+        const counts: { [key: string]: number } = {
+            'PRO_MODE': 0,
+            'COPYWRITING': 0,
+            'IMAGE_PRO': 0,
+            'MARKET_ANALYSIS': 0
+        };
+
+        logs?.forEach(l => {
+            if (counts[l.action_type] !== undefined) {
+                counts[l.action_type]++;
+            }
+        });
+
+        return Object.entries(counts).map(([name, value]) => ({ name, value }));
+    } catch (e) {
+        console.error("Usage Analytics Error:", e);
+        return [];
+    }
+};
+
 
 /**
  * وظائف إدارة المشاريع (Projects)

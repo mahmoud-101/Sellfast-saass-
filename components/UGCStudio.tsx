@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Upload, ImageIcon, Wand2, Download, ImagePlus, RefreshCw } from 'lucide-react';
+import { Upload, ImageIcon, Wand2, Download, ImagePlus, RefreshCw, ImagePlus as ImagePlusIcon } from 'lucide-react';
 import { generateImage } from '../services/geminiService';
 import ImageEditorModal from './ImageEditorModal';
+import { deductCredits, CREDIT_COSTS } from '../lib/supabase';
 
 interface ImageFile {
     file?: File;
@@ -44,12 +45,17 @@ const SHOT_TYPES: ShotConfig[] = [
     }
 ];
 
-export function UGCStudio() {
+interface UGCStudioProps {
+    userId: string; // Added userId prop
+}
+
+export function UGCStudio({ userId }: UGCStudioProps) { // Updated component signature
     const [productImage, setProductImage] = useState<ImageFile | null>(null);
     const [referenceImage, setReferenceImage] = useState<ImageFile | null>(null);
     const [productDesc, setProductDesc] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedShots, setGeneratedShots] = useState<{ config: ShotConfig; image: ImageFile | null; loading: boolean }[]>([]);
+    const [error, setError] = useState<string | null>(null); // Added error state
 
     // Editor State
     const [editingImage, setEditingImage] = useState<ImageFile | null>(null);
@@ -77,9 +83,29 @@ export function UGCStudio() {
     };
 
     const handleGenerateAll = async () => {
-        if (!productImage || !productDesc) return;
+        if (!productImage || !productDesc) {
+            setError('الرجاء رفع صورة المنتج وإدخال وصف المنتج.');
+            return;
+        }
 
         setIsGenerating(true);
+        setError(null); // Clear previous errors
+
+        // Credit Deduction
+        try {
+            const success = await deductCredits(userId, CREDIT_COSTS.IMAGE_PRO); // Deduct credits
+            if (!success) {
+                setError('عفواً، رصيدك غير كافٍ. يرجى شحن الرصيد للمتابعة.');
+                setIsGenerating(false);
+                return;
+            }
+        } catch (deductionError) {
+            console.error("Credit deduction failed:", deductionError);
+            setError('حدث خطأ أثناء خصم الرصيد. الرجاء المحاولة مرة أخرى.');
+            setIsGenerating(false);
+            return;
+        }
+
         // Initialize placeholders
         const initialStates = SHOT_TYPES.map(config => ({ config, image: null, loading: true }));
         setGeneratedShots(initialStates);
@@ -88,7 +114,7 @@ export function UGCStudio() {
         await Promise.allSettled(
             SHOT_TYPES.map(async (config, index) => {
                 try {
-                    const finalPrompt = `${config.promptText}. Product Context: ${productDesc}. Place the exact provided product seamlessly into this new scene. Ensure materials and branding match.`;
+                    const finalPrompt = `${config.promptText}. Product Context: ${productDesc}. Place the exact provided product seamlessly into this new scene.Ensure materials and branding match.`;
                     const styleImages = referenceImage ? [referenceImage] : null;
 
                     const resultImg = await generateImage([productImage], finalPrompt, styleImages, "1:1");
@@ -99,7 +125,7 @@ export function UGCStudio() {
                         return next;
                     });
                 } catch (error) {
-                    console.error(`Failed to generate ${config.title}:`, error);
+                    console.error(`Failed to generate ${config.title}: `, error);
                     setGeneratedShots(prev => {
                         const next = [...prev];
                         next[index] = { ...next[index], loading: false };
@@ -152,7 +178,7 @@ export function UGCStudio() {
                                     <div className="space-y-1 text-center">
                                         {productImage ? (
                                             <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-gray-200">
-                                                <img src={`data:${productImage.mimeType};base64,${productImage.base64}`} alt="Product" className="w-full h-full object-contain bg-white" />
+                                                <img src={`data:${productImage.mimeType}; base64, ${productImage.base64} `} alt="Product" className="w-full h-full object-contain bg-white" />
                                                 <button onClick={() => setProductImage(null)} className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full shadow-lg hover:bg-red-600">
                                                     ✕
                                                 </button>
@@ -181,7 +207,7 @@ export function UGCStudio() {
                                     <div className="space-y-1 text-center">
                                         {referenceImage ? (
                                             <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-gray-200">
-                                                <img src={`data:${referenceImage.mimeType};base64,${referenceImage.base64}`} alt="Reference" className="w-full h-full object-contain bg-white" />
+                                                <img src={`data:${referenceImage.mimeType}; base64, ${referenceImage.base64} `} alt="Reference" className="w-full h-full object-contain bg-white" />
                                                 <button onClick={() => setReferenceImage(null)} className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full shadow-lg hover:bg-red-600">
                                                     ✕
                                                 </button>
@@ -262,7 +288,7 @@ export function UGCStudio() {
                                         ) : shot.image ? (
                                             <>
                                                 <img
-                                                    src={`data:${shot.image.mimeType};base64,${shot.image.base64}`}
+                                                    src={`data:${shot.image.mimeType}; base64, ${shot.image.base64} `}
                                                     alt={shot.config.title}
                                                     className="w-full h-full object-cover"
                                                 />
@@ -275,7 +301,7 @@ export function UGCStudio() {
                                                         تعديل وتصميم
                                                     </button>
                                                     <button
-                                                        onClick={() => downloadImage(`data:${shot.image?.mimeType};base64,${shot.image?.base64}`, `${shot.config.id}_result.png`)}
+                                                        onClick={() => downloadImage(`data:${shot.image?.mimeType}; base64, ${shot.image?.base64} `, `${shot.config.id} _result.png`)}
                                                         className="font-bold bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded-md flex items-center text-sm"
                                                     >
                                                         <Download className="w-4 h-4 mr-2" />

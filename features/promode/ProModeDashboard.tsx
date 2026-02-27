@@ -10,6 +10,7 @@ import {
     generateImage,
     AgentProductData
 } from '../../services/geminiService';
+import { deductCredits, CREDIT_COSTS } from '../../lib/supabase';
 import {
     AgentMarketAnalysis,
     AgentAngle,
@@ -47,7 +48,11 @@ const INITIAL_STATE: ProModeState = {
 // Main Dashboard Component
 // ============================================================================
 
-const ProModeDashboard: React.FC = () => {
+interface ProModeDashboardProps {
+    userId: string;
+}
+
+const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId }) => {
     const [pipeline, setPipeline] = useState<ProModeState>(INITIAL_STATE);
     const [productImage, setProductImage] = useState<string | null>(null);
     const [productForm, setProductForm] = useState<AgentProductData>({
@@ -72,6 +77,13 @@ const ProModeDashboard: React.FC = () => {
         }
 
         try {
+            // 0. Credit Check & Deduction
+            const success = await deductCredits(userId, CREDIT_COSTS.PRO_MODE);
+            if (!success) {
+                setPipeline(prev => ({ ...prev, error: 'عفواً، رصيدك غير كافٍ لتشغيل الوضع الاحترافي. يرجى شحن الرصيد للمتابعة.' }));
+                return;
+            }
+
             // Reset and start
             setPipeline({ ...INITIAL_STATE, status: 'analyzing' });
 

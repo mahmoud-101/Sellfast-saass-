@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import { AlertCircle, ArrowRight, BrainCircuit, CheckCircle2, Copy, Flame, MessageSquare, Sparkles, Target, Zap, Stethoscope, RefreshCw, Send } from 'lucide-react';
 import { optimizeFailedAd } from '../services/geminiService';
-import { Stethoscope, Send, RefreshCw, AlertCircle, Copy, CheckCircle2 } from 'lucide-react';
+import { deductCredits, CREDIT_COSTS } from '../lib/supabase';
 
 interface AdVariation {
     strategy: string;
@@ -14,7 +15,11 @@ interface DiagnosisResult {
     variations: AdVariation[];
 }
 
-export const FailedAdOptimizerHub: React.FC = () => {
+interface FailedAdOptimizerHubProps {
+    userId: string;
+}
+
+export const FailedAdOptimizerHub: React.FC<FailedAdOptimizerHubProps> = ({ userId }) => {
     const [adCopy, setAdCopy] = useState('');
     const [productContext, setProductContext] = useState('');
     const [isSynthesizing, setIsSynthesizing] = useState(false);
@@ -28,9 +33,16 @@ export const FailedAdOptimizerHub: React.FC = () => {
             return;
         }
 
+        setIsSynthesizing(true);
+        setError(null);
         try {
-            setIsSynthesizing(true);
-            setError(null);
+            // Credit Deduction
+            const success = await deductCredits(userId, CREDIT_COSTS.COPYWRITING);
+            if (!success) {
+                setError('عفواً، رصيدك غير كافٍ. يرجى شحن الرصيد للمتابعة.');
+                setIsSynthesizing(false);
+                return;
+            }
 
             const res = await optimizeFailedAd(adCopy, productContext);
             if (res && res.diagnosis && Array.isArray(res.variations)) {

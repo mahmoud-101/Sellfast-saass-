@@ -45,6 +45,7 @@ import StoryboardStudio from './components/StoryboardStudio';
 import VoiceOverStudio from './components/VoiceOverStudio';
 import ImageEditorModal from './components/ImageEditorModal';
 import DynamicAdsStudio from './components/DynamicAdsStudio';
+import { BalanceBadge } from './components/BalanceBadge';
 import { ImageFile, DynamicAdsStudioProject } from './types';
 
 import { ProductIntelligenceProvider } from './context/ProductIntelligenceContext';
@@ -71,10 +72,20 @@ export default function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      if (session?.user) {
+        import('./lib/supabase').then(({ getUserProfile }) => {
+          getUserProfile(session.user.id, session.user.email);
+        });
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      if (session?.user) {
+        import('./lib/supabase').then(({ getUserProfile }) => {
+          getUserProfile(session.user.id, session.user.email);
+        });
+      }
     });
 
     // Global Image Editor Listener
@@ -225,6 +236,7 @@ export default function App() {
 
             {view !== 'landing' && userId && (
               <div className="hidden md:flex items-center gap-4">
+                <BalanceBadge userId={userId} />
                 <button onClick={() => setIsPricingOpen(true)} className="bg-orange-500 text-black px-6 py-2.5 rounded-xl text-[11px] font-black shadow-xl hover:scale-105 transition-all">شحن رصيد</button>
                 <button onClick={() => supabase.auth.signOut()} className="bg-white/5 text-white/40 px-4 py-2.5 rounded-xl text-[11px] font-black hover:bg-red-500/10 hover:text-red-500 transition-all">خروج</button>
               </div>
@@ -319,10 +331,10 @@ export default function App() {
           {view === 'terms_of_service' && userId && <LegalPages type="terms" onBack={() => setView('pro_mode')} />}
           {view === 'content_library' && userId && <ContentLibrary userId={userId} />}
           {view === 'admin' && userId && <AdminDashboard />}
-          {view === 'ugc_studio' && userId && <UGCStudio />}
-          {view === 'hook_generator' && userId && <HookGeneratorHub />}
-          {view === 'failed_ad_optimizer' && userId && <FailedAdOptimizerHub />}
-          {view === 'pro_mode' && userId && <ProModeDashboard />}
+          {view === 'ugc_studio' && userId && <UGCStudio userId={userId} />}
+          {view === 'hook_generator' && userId && <HookGeneratorHub userId={userId} />}
+          {view === 'failed_ad_optimizer' && userId && <FailedAdOptimizerHub userId={userId} />}
+          {view === 'pro_mode' && userId && <ProModeDashboard userId={userId} />}
         </div>
 
         <Footer onNavigate={setView} onOpenPricing={() => setIsPricingOpen(true)} />
