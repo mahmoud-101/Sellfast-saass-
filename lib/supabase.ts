@@ -33,30 +33,79 @@ export const CREDIT_COSTS = {
 /**
  * جلب بيانات المستخدم أو إنشاؤه إذا لم يكن موجوداً
  * نقوم الآن بمزامنة البريد الإلكتروني أيضاً لتسهيل الإدارة 📧
+ * مع دعم نظام التسجيل عبر روابط الإحالة (Referral)
  */
-export const getUserProfile = async (userId: string, email?: string) => {
+export const getUserProfile = async (userId: string, email?: string, referredBy?: string) => {
     if (!isSupabaseConfigured()) return { id: userId, credits: 50, is_demo: true };
     try {
         const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
         if (error) throw error;
 
         if (!data) {
+            // توليد كود إحالة فريد للمستخدم الجديد
+            const referralCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+
+            // محاولة جلب ID الشخص الذي قام بالإحالة
+            let referredById = null;
+            if (referredBy) {
+                const { data: refData } = await supabase.from('profiles').select('id').eq('referral_code', referredBy).maybeSingle();
+                referredById = refData?.id;
+            }
+
             const { data: newData, error: insertError } = await supabase
                 .from('profiles')
-                .insert([{ id: userId, credits: 50, email: email }])
+                .insert([{
+                    id: userId,
+                    credits: 50,
+                    email: email,
+                    referral_code: referralCode,
+                    referred_by: referredById
+                }])
                 .select()
                 .single();
             if (insertError) throw insertError;
             return newData;
-        } else if (email && data.email !== email) {
-            // تحديث البريد إذا تغير أو كان ناقصاً
-            await supabase.from('profiles').update({ email }).eq('id', userId);
+        } else {
+            // تحديث البيانات إذا كانت ناقصة (البريد الإلكتروني وكود الإحالة)
+            const updates: any = {};
+            if (email && data.email !== email) updates.email = email;
+            if (!data.referral_code) {
+                updates.referral_code = Math.random().toString(36).substring(2, 10).toUpperCase();
+            }
+
+            if (Object.keys(updates).length > 0) {
+                await supabase.from('profiles').update(updates).eq('id', userId);
+            }
         }
 
         return data;
     } catch (e) {
         console.error("Supabase Error:", e);
         return { id: userId, credits: 0, error: true };
+    }
+};
+
+/**
+ * جلب بيانات الإحالة الخاصة بالمستخدم 🤝
+ */
+export const getReferralStats = async (userId: string) => {
+    if (!isSupabaseConfigured()) return { code: '', count: 0, earned: 0 };
+    try {
+        const { data: profile } = await supabase.from('profiles').select('referral_code').eq('id', userId).single();
+        const { count } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('referred_by', userId);
+
+        // جلب إجمالي النقاط المكتسبة من الإحالات (من السجلات)
+        const { data: logs } = await supabase.from('logs').select('description').eq('user_id', userId).eq('action_type', 'REFERRAL_BONUS');
+        const earned = logs?.length ? logs.length * 100 : 0; // 100 نقطة لكل إحالة ناجحة
+
+        return {
+            code: profile?.referral_code || '',
+            count: count || 0,
+            earned: earned
+        };
+    } catch (e) {
+        console.error("Referral Stats Error:", e);
+        return { code: '', count: 0, earned: 0 };
     }
 };
 
@@ -232,6 +281,22 @@ export const approvePayment = async (requestId: string, adminId: string) => {
     }).eq('id', requestId);
 
     await logAction(request.user_id, 'PAYMENT_APPROVED', `تمت الموافقة على شحن ${request.credits} نقطة`);
+
+    // 4. مكافأة الشخص الذي قام بالإحالة (Referral Bonus) 💎
+    // نكافئ المحيل بـ 100 نقطة عند أول عملية شحن للمحال
+    const { data: userProfile } = await supabase.from('profiles').select('referred_by').eq('id', request.user_id).single();
+    if (userProfile?.referred_by) {
+        // نتحقق إذا كان هذا أول شحن للمستخدم
+        const { count } = await supabase.from('payment_requests').select('*', { count: 'exact', head: true }).eq('user_id', request.user_id).eq('status', 'approved');
+
+        if (count === 1) { // هذه هي العملية الأولى الناجحة
+            const { data: referrer } = await supabase.from('profiles').select('credits').eq('id', userProfile.referred_by).single();
+            if (referrer) {
+                await supabase.from('profiles').update({ credits: referrer.credits + 100 }).eq('id', userProfile.referred_by);
+                await logAction(userProfile.referred_by, 'REFERRAL_BONUS', `مكافأة 100 نقطة لدعوة مستخدم جديد قام بالشحن`);
+            }
+        }
+    }
 };
 
 /**

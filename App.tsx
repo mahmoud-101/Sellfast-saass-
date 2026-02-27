@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { Zap, Users, Gift, CreditCard } from 'lucide-react';
 import {
   AppView,
   MasterFactoryProject,
@@ -43,6 +44,7 @@ import AdminDashboard from './components/AdminDashboard';
 import { ContentLibrary } from './components/ContentLibrary';
 import StoryboardStudio from './components/StoryboardStudio';
 import VoiceOverStudio from './components/VoiceOverStudio';
+import ReferralDashboard from './components/ReferralDashboard';
 import ImageEditorModal from './components/ImageEditorModal';
 import DynamicAdsStudio from './components/DynamicAdsStudio';
 import { BalanceBadge } from './components/BalanceBadge';
@@ -70,11 +72,22 @@ export default function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
+    // 1. التقاط كود الإحالة من الرابط وتخزينه في المتصفح مؤقتاً 🔗
+    const urlParams = new URLSearchParams(window.location.search);
+    const refCode = urlParams.get('ref');
+    if (refCode) {
+      localStorage.setItem('referred_by_code', refCode);
+      // تنظيف الرابط للحفاظ على الخصوصية والمظهر الاحترافي
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session?.user) {
+        const storedRef = localStorage.getItem('referred_by_code');
         import('./lib/supabase').then(({ getUserProfile }) => {
-          getUserProfile(session.user.id, session.user.email);
+          getUserProfile(session.user.id, session.user.email, storedRef || undefined);
         });
       }
     });
@@ -82,8 +95,9 @@ export default function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session?.user) {
+        const storedRef = localStorage.getItem('referred_by_code');
         import('./lib/supabase').then(({ getUserProfile }) => {
-          getUserProfile(session.user.id, session.user.email);
+          getUserProfile(session.user.id, session.user.email, storedRef || undefined);
         });
       }
     });
@@ -331,10 +345,48 @@ export default function App() {
           {view === 'terms_of_service' && userId && <LegalPages type="terms" onBack={() => setView('pro_mode')} />}
           {view === 'content_library' && userId && <ContentLibrary userId={userId} />}
           {view === 'admin' && userId && <AdminDashboard />}
+          {view === 'referral' && userId && <ReferralDashboard userId={userId} />}
           {view === 'ugc_studio' && userId && <UGCStudio userId={userId} />}
           {view === 'hook_generator' && userId && <HookGeneratorHub userId={userId} />}
           {view === 'failed_ad_optimizer' && userId && <FailedAdOptimizerHub userId={userId} />}
           {view === 'pro_mode' && userId && <ProModeDashboard userId={userId} />}
+
+          {/* Mobile Bottom Navigation 📱 */}
+          {userId && (
+            <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] w-[92%] glass-card rounded-3xl p-2 border border-white/10 shadow-2xl flex items-center justify-around flex-row-reverse bg-black/60 backdrop-blur-2xl py-3 px-4">
+              <button
+                onClick={() => setView('pro_mode')}
+                className={`flex flex-col items-center gap-1 transition-all ${view === 'pro_mode' ? 'text-[#FFD700] scale-110' : 'text-white/40'}`}
+              >
+                <Zap size={22} />
+                <span className="text-[8px] font-black uppercase tracking-tighter">ذكاء</span>
+              </button>
+              <button
+                onClick={() => setView('content_library')}
+                className={`flex flex-col items-center gap-1 transition-all ${view === 'content_library' ? 'text-[#FFD700] scale-110' : 'text-white/40'}`}
+              >
+                <Users size={22} />
+                <span className="text-[8px] font-black uppercase tracking-tighter">مكتبتي</span>
+              </button>
+              <button
+                onClick={() => setView('referral')}
+                className={`flex flex-col items-center gap-1 transition-all ${view === 'referral' ? 'text-emerald-400 scale-110' : 'text-white/40'}`}
+              >
+                <div className="relative">
+                  <Gift size={22} />
+                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                </div>
+                <span className="text-[8px] font-black uppercase tracking-tighter">هدايا</span>
+              </button>
+              <button
+                onClick={() => setIsPricingOpen(true)}
+                className="flex flex-col items-center gap-1 text-white/40"
+              >
+                <CreditCard size={22} />
+                <span className="text-[8px] font-black uppercase tracking-tighter">شحن</span>
+              </button>
+            </div>
+          )}
         </div>
 
         <Footer onNavigate={setView} onOpenPricing={() => setIsPricingOpen(true)} />
