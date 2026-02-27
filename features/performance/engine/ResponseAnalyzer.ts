@@ -27,16 +27,17 @@ export function parseGeminiResponse(rawText: string): GenerationResult {
         .replace(/[\u0000-\u001F\u007F]/g, (c) => c === '\n' || c === '\r' || c === '\t' ? c : '') // clean control chars
         .trim()
 
+    let rawParsed: any;
     let parsed: GenerationResult & { ads: (AdCard & { imagePrompt?: string })[] }
 
     try {
-        parsed = JSON.parse(cleaned)
+        rawParsed = JSON.parse(cleaned)
     } catch (e) {
         // محاولة إصلاح JSON شايف truncation
-        const lastBrace = cleaned.lastIndexOf('}')
+        const lastBrace = cleaned.lastIndexOf(']')
         if (lastBrace > 0) {
             try {
-                parsed = JSON.parse(cleaned.slice(0, lastBrace + 1))
+                rawParsed = JSON.parse(cleaned.slice(0, lastBrace + 1))
             } catch {
                 throw new Error('الـ AI مارجعش JSON صح — حاول تاني')
             }
@@ -45,7 +46,24 @@ export function parseGeminiResponse(rawText: string): GenerationResult {
         }
     }
 
-    if (!parsed.ads || parsed.ads.length === 0) {
+    // Handle case where Gemini returns an array directly
+    if (Array.isArray(rawParsed)) {
+        parsed = {
+            ads: rawParsed.map((item: any) => ({
+                ...item,
+                // map "content" block to root properties
+                primaryText: item.content?.primaryText || '—',
+                headline: item.content?.headline || '—',
+                hooks: item.content?.hooks || ['—', '—', '—'],
+                adPost: item.content?.adPost || '—',
+                imagePrompt: item.content?.imagePrompt || '',
+            }))
+        } as any;
+    } else {
+        parsed = rawParsed;
+    }
+
+    if (!parsed?.ads || parsed.ads.length === 0) {
         throw new Error('الـ AI مارجعش إعلانات')
     }
 

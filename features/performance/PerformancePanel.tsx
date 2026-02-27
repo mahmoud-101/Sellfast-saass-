@@ -15,7 +15,7 @@ import type {
 import type { GenerationResult, AdCard as AdCardType, ProductFormData } from './types/ad.types';
 import { buildAdPrompt } from './engine/PromptBuilder';
 import { parseGeminiResponse, isValidResult } from './engine/ResponseAnalyzer';
-import { askGemini, generateImage } from '../../services/geminiService';
+import { generateImage, generateAdsWithEnrichment } from '../../services/geminiService';
 
 // ─── Loading State Component ──────────────────────────────────────────────────
 const STEPS = [
@@ -210,6 +210,7 @@ const PerformancePanel: React.FC = () => {
     const [adSet, setAdSet] = useState<GenerationResult | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [isIntelligenceOpen, setIsIntelligenceOpen] = useState(false);
+    const [globalError, setGlobalError] = useState<string | null>(null);
 
     // Product image for visual creative
     const [productImageSrc, setProductImageSrc] = useState<string | null>(null);
@@ -251,9 +252,11 @@ const PerformancePanel: React.FC = () => {
         const file = imgInputRef.current?.files?.[0];
         const refFile = refImgInputRef.current?.files?.[0] || null;
         if (!form.productDescription.trim() || !form.price.trim() || !productImageSrc || !file) return;
+
         setIsGenerating(true);
         setIsIntelligenceOpen(false); // Reset accordion state
         setAdSet(null);
+        setGlobalError(null);
 
         // Map form to ProductFormData
         const formData: ProductFormData = {
@@ -264,15 +267,11 @@ const PerformancePanel: React.FC = () => {
         };
 
         try {
-            // Build prompt
-            const prompt = buildAdPrompt(formData);
-
-            // Only ask Gemini for the text parts first.
-            const rawText = await askGemini(prompt, "You are a senior Meta Ad buyer and copywriter expert in the Egyptian and Gulf markets.");
-            const parsed = parseGeminiResponse(rawText);
+            // Generate using enriched AI methodology
+            const parsed = await generateAdsWithEnrichment(formData);
 
             if (!isValidResult(parsed)) {
-                throw new Error("Invalid response from analyzer");
+                throw new Error("تنسيق الرد غير صالح من الذكاء الاصطناعي");
             }
 
             // Set initial AdSet with loading state for images
@@ -311,10 +310,10 @@ const PerformancePanel: React.FC = () => {
                 }
             });
 
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error generating ads:", error);
             setIsGenerating(false);
-            // Show alert in actual implementation or handle fallback gracefully
+            setGlobalError(error.message || "حدث خطأ غير متوقع أثناء توليد الإعلانات. يرجى المحاولة مرة أخرى.");
         }
     };
 
@@ -435,6 +434,17 @@ const PerformancePanel: React.FC = () => {
                         className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-orange-500/60 transition-colors shadow-inner"
                     />
                 </div>
+
+                {/* Error Banner */}
+                {globalError && (
+                    <div className="md:col-span-2 mt-2 bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-start gap-3 animate-in fade-in">
+                        <span className="text-red-500 text-xl mt-0.5">⚠️</span>
+                        <div>
+                            <h4 className="text-red-400 font-bold mb-1">عذراً، حدث خطأ</h4>
+                            <p className="text-red-300 text-sm leading-relaxed">{globalError}</p>
+                        </div>
+                    </div>
+                )}
 
                 {/* Generate Button */}
                 <div className="md:col-span-2 mt-4">

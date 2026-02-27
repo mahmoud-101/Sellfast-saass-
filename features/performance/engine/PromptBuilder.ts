@@ -177,7 +177,57 @@ const JSON_TEMPLATE = `
 ]
 `
 
-export function buildAdPrompt(data: ProductFormData): string {
+export interface EnrichmentResult {
+  targetGender: string;
+  ageRange: string;
+  lifestyle: string;
+  topPains: string[];
+  competitorWeakness: string;
+  suggestedTone: string;
+  bestAngle: string;
+  uniqueInsight: string;
+  categoryInsights: string;
+  visualStyle: string;
+}
+
+export function buildEnrichmentPrompt(data: ProductFormData): string {
+  return `
+  أنت الآن خبير استراتيجي في التسويق وباحث ديموغرافي محترف للسوق المصري والخليجي.
+  حلل هذا المنتج واستخرج أقوى الزوايا البيعية ورؤى الجمهور الدقيقة.
+
+  وصف المنتج:
+  ${data.productDescription}
+  
+  السعر:
+  ${data.price}
+
+  أخرج النتيجة بصيغة JSON فقط:
+  {
+    "targetGender": "لمن هذا بالضبط؟ (رجال/نساء/الكل)",
+    "ageRange": "أكثر فئة عمرية محتملة (مثال: 25-35)",
+    "lifestyle": "صف حياتهم اليومية في 5 كلمات",
+    "topPains": ["ألم نفسي عميق 1", "ألم سطحي 2", "ألم ثانوي 3"],
+    "competitorWeakness": "ما الذي يفعله هذا المنتج وتفشل فيه المنتجات الأخرى؟",
+    "suggestedTone": "نبرة الصوت المثالية للإعلان (مثال: تحدي، تعاطف، مباشر)",
+    "bestAngle": "أكثر زاوية مربحة للتركيز عليها (مثال: مكانة، خوف، راحة)",
+    "uniqueInsight": "رؤية واحدة عن هذا المشتري يغفل عنها المسوقون",
+    "categoryInsights": "حقيقة عن هذا السوق (مثال: مشترو العناية بالبشرة متشككون)",
+    "visualStyle": "نوع الصورة الدقيق الذي يوقف التمرير (Scroll)"
+  }
+  `;
+}
+
+export function buildAdPrompt(data: ProductFormData, enrichment?: EnrichmentResult): string {
+  const enrichmentData = enrichment ? `
+معلومات تحليل الجمهور (استخدمها لكتابة كلام مقنع):
+- الفئة المستهدفة: ${enrichment.targetGender} (${enrichment.ageRange})
+- نمط الحياة: ${enrichment.lifestyle}
+- أعمق الآلام: ${enrichment.topPains.join('، ')}
+- النبرة المطلوبة: ${enrichment.suggestedTone}
+- الزاوية الأهم: ${enrichment.bestAngle}
+- ملاحظة خفية عن الجمهور: ${enrichment.uniqueInsight}
+  ` : '';
+
   return `
 أنت الآن "إبداع برو v3" — أقوى صانع إعلانات Performance/Direct Response في الشرق الأوسط.
 شغلتك مش إنك تكتب كلام منمق، شغلتك إنك تكتب كلام "يبيع" بالعامية المصرية الأصيلة.
@@ -187,6 +237,8 @@ export function buildAdPrompt(data: ProductFormData): string {
 معلومات المنتج:
 الوصف والألم والفوائد (تفاصيل المنتج): ${data.productDescription}
 السعر: ${data.price}
+
+${enrichmentData}
 
 ${LANGUAGE_RULES}
 

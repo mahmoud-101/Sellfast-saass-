@@ -966,3 +966,75 @@ export async function autoFillDynamicVariables(
     }
 }
 
+import { buildEnrichmentPrompt, buildAdPrompt, EnrichmentResult } from '../features/performance/engine/PromptBuilder';
+import { ProductFormData } from '../features/performance/types/ad.types';
+import { parseGeminiResponse } from '../features/performance/engine/ResponseAnalyzer';
+
+/**
+ * generateAdsWithEnrichment
+ * ─────────────────────────
+ * بدل call واحدة → callين:
+ * Call 1: تحليل المنتج والجمهور والسوق
+ * Call 2: توليد الإعلانات بناءً على التحليل
+ *
+ * النتيجة: إعلانات مخصصة للجمهور الفعلي مش كلام عام
+ */
+export async function generateAdsWithEnrichment(
+    product: ProductFormData,
+    onProgress?: (step: string) => void
+): Promise<ReturnType<typeof parseGeminiResponse>> {
+
+    // ── CALL 1: Enrichment ─────────────────────────────────────────────────────
+    onProgress?.('جاري تحليل المنتج والسوق...');
+
+    const enrichmentPrompt = buildEnrichmentPrompt(product);
+
+    let enrichmentRaw: string;
+    try {
+        enrichmentRaw = await askGemini(enrichmentPrompt);
+    } catch (e) {
+        console.warn('[generateAdsWithEnrichment] Enrichment call failed, using fallback', e);
+        // Fallback: نكمل من غير enrichment لو فشلت
+        enrichmentRaw = '{}';
+    }
+
+    // Parse الـ enrichment result
+    let enrichment: EnrichmentResult;
+    try {
+        const cleaned = enrichmentRaw
+            .replace(/```json/gi, '')
+            .replace(/```/g, '')
+            .trim();
+        enrichment = JSON.parse(cleaned);
+    } catch (e) {
+        console.warn('[generateAdsWithEnrichment] Failed to parse enrichment, using defaults', e);
+        // Fallback defaults لو فشل الـ parse
+        enrichment = {
+            targetGender: 'الاثنين',
+            ageRange: '20-40',
+            lifestyle: 'جمهور مصري عادي',
+            topPains: [product.mainPain || 'مشكلة المنتج', 'الألم اليومي', 'الخوف من القرار الغلط'],
+            competitorWeakness: 'جودة أقل بسعر أعلى',
+            suggestedTone: 'كاجوال',
+            bestAngle: 'pain',
+            uniqueInsight: 'الجمهور محتاج يشوف نتيجة حقيقية',
+            categoryInsights: 'السوق المصري بيشتري بالثقة والتوصية',
+            visualStyle: 'lifestyle photography in Egyptian setting'
+        };
+    }
+
+    // ── CALL 2: Ad Generation ──────────────────────────────────────────────────
+    onProgress?.('جاري صياغة الإعلانات الجذابة بناءً على التحليل...');
+
+    const adPrompt = buildAdPrompt(product, enrichment);
+
+    let adRaw: string;
+    try {
+        adRaw = await askGemini(adPrompt, "You are a senior Meta Ad buyer and copywriter expert in the Egyptian and Gulf markets.");
+    } catch (e) {
+        throw new Error('فشل توليد الإعلانات — حاول تاني');
+    }
+
+    // Parse وارجع النتيجة
+    return parseGeminiResponse(adRaw);
+}
