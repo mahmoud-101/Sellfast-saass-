@@ -162,6 +162,22 @@ const AdCard: React.FC<{ variant: AdCardType, productImageSrc: string, index: nu
             </div>
 
             <div className="space-y-6 flex-1 flex flex-col">
+                {/* 1.5 Dynamic Variables (Super Intelligence) */}
+                {variant.imageVariables && Object.keys(variant.imageVariables).length > 0 && (
+                    <div className="bg-blue-500/5 rounded-2xl p-4 border border-blue-500/20 rtl flex-shrink-0">
+                        <p className="text-[10px] font-black uppercase text-blue-400 mb-2 flex items-center gap-1.5"><span className="text-sm">🧪</span> المتغيرات الديناميكية للمشهد (AI)</p>
+                        <p className="text-[10px] text-white font-bold mb-3">القالب المفضل: <span className="text-blue-300">{variant.imageStyleName}</span></p>
+                        <div className="flex flex-wrap gap-2">
+                            {Object.entries(variant.imageVariables).map(([key, val], i) => (
+                                <div key={i} className="bg-black/40 px-2.5 py-1.5 rounded-lg border border-white/5 max-w-full">
+                                    <span className="text-[9px] text-slate-500 block mb-0.5">{key.replace(/_/g, ' ')}</span>
+                                    <span className="text-[10px] text-slate-300 font-medium line-clamp-2 leading-relaxed">{val}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {/* 2. Ad Post (Copy-paste ready) */}
                 <div className="bg-white/5 rounded-2xl p-5 border border-white/5 flex-1 relative rtl group-hover:bg-white/10 transition-colors">
                     <p className="text-[11px] font-black uppercase text-orange-400/80 mb-4 flex items-center gap-1.5"><span className="text-sm">📝</span> الكوبي الإعلاني (متوافق مع الذوق العام)</p>

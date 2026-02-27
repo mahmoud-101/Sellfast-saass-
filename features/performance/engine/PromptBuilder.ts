@@ -168,9 +168,13 @@ const JSON_TEMPLATE = `
         "[Hook 1]",
         "[Hook 2]",
         "[Hook 3]"
-      ],
       "adPost": "[البوست بصيغة قابلة للنسخ واللصق فوراً — مع إيموجيز موزعة بذكاء]",
-      "imagePrompt": "[MUST BE HIGHLY DIVERSE EVEY TIME: e.g. Angle 1: Close up of product. Angle 2: Beautiful female model wearing it outdoors. Angle 3: Professional male model in a studio. Angle 4: Lifestyle shot with accessories. Angle 5: Cinematic wide angle. DO NOT use the same description twice. Provide a highly detailed English prompt for an AI image generator.]"
+      "imageStyleName": "[Choose the exact English name of the style you picked from DYNAMIC_TEMPLATES_INSTRUCTION]",
+      "imageVariables": {
+        "Variable_Name_1": "Your highly creative short English description for this variable",
+        "Variable_Name_2": "Your highly creative short English description for this variable"
+      },
+      "imagePrompt": "[MUST BE HIGHLY DIVERSE EVEY TIME: e.g. Angle 1: Close up of product. Angle 2: Beautiful female model wearing it outdoors. Angle 3: Professional male model in a studio. Angle 4: Lifestyle shot with accessories. Angle 5: Cinematic wide angle. DO NOT use the same description twice. Provide a highly detailed English prompt for an AI image generator based on the dynamically filled template.]"
     }
   }
   // كرر هذا لـ 5 زوايا مختلفة

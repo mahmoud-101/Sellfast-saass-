@@ -32,6 +32,7 @@ export interface AdCard {
   imageUrl: string | null
   imagePrompt: string
   imageStyleName: string
+  imageVariables?: Record<string, string>
   generatedImageUrl?: string
   isLoading: boolean
 }

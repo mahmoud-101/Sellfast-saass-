@@ -56,6 +56,8 @@ export function parseGeminiResponse(rawText: string): GenerationResult {
                 headline: item.content?.headline || '—',
                 hooks: item.content?.hooks || ['—', '—', '—'],
                 adPost: item.content?.adPost || '—',
+                imageStyleName: item.content?.imageStyleName || 'Smart Style',
+                imageVariables: item.content?.imageVariables || {},
                 imagePrompt: item.content?.imagePrompt || '',
             }))
         } as any;
@@ -88,6 +90,8 @@ export function parseGeminiResponse(rawText: string): GenerationResult {
             imageUrl: null,
             isLoading: true,
             // الـ imagePrompt بيتحفظ للـ generation
+            imageStyleName: (ad as any).imageStyleName || 'Smart Style',
+            imageVariables: (ad as any).imageVariables || {},
             imagePrompt: (ad as any).imagePrompt || buildFallbackImagePrompt(style),
             hookScore: typeof ad.hookScore === 'number' ? Math.min(100, Math.max(0, ad.hookScore)) : 60,
             ctaButton: ad.ctaButton || defaultCTA(style),
