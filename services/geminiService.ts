@@ -959,7 +959,10 @@ export async function autoFillDynamicVariables(
                     responseMimeType: "application/json",
                 }
             });
-            return JSON.parse(result.text || "{}");
+            const rawText = result.text || "{}";
+            const jsonMatch = rawText.match(/```json\s*([\s\S]*?)```/) || rawText.match(/\{[\s\S]*\}/);
+            const cleanedText = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : rawText;
+            return JSON.parse(cleanedText);
         });
         return res;
     } catch (e) {

@@ -170,7 +170,7 @@ const JSON_TEMPLATE = `
         "[Hook 3]"
       ],
       "adPost": "[البوست بصيغة قابلة للنسخ واللصق فوراً — مع إيموجيز موزعة بذكاء]",
-      "imagePrompt": "[وصف الصورة الناتج من اختيارك للقالب الديناميكي]"
+      "imagePrompt": "[MUST BE HIGHLY DIVERSE EVEY TIME: e.g. Angle 1: Close up of product. Angle 2: Beautiful female model wearing it outdoors. Angle 3: Professional male model in a studio. Angle 4: Lifestyle shot with accessories. Angle 5: Cinematic wide angle. DO NOT use the same description twice. Provide a highly detailed English prompt for an AI image generator.]"
     }
   }
   // كرر هذا لـ 5 زوايا مختلفة
