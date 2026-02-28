@@ -125,6 +125,43 @@ const ContentCalendarHub: React.FC<Props> = ({ project, setProject, onBridgeToPh
         } catch (err) { setProject(s => ({ ...s, isGenerating: false, error: "فشل إنشاء التقويم" })); }
     };
 
+    const handleGenerateDayImage = async (day: CalendarDay) => {
+        if (day.isLoading) return;
+
+        // Update state to loading
+        setProject(s => ({
+            ...s,
+            days: s.days.map(d => d.id === day.id ? { ...d, isLoading: true, error: null } : d)
+        }));
+
+        // Update selectedDay if it's currently selected
+        if (selectedDay?.id === day.id) {
+            setSelectedDay(prev => prev ? { ...prev, isLoading: true, error: null } : null);
+        }
+
+        try {
+            const scenePrompt = `High-end social media creative for ${project.targetMarket}. Context: ${day.visualPrompt}. Tone: Modern, Luxury, Aesthetic. Commercial photography.`;
+            const img = await generateImage(project.productImages, scenePrompt, null, "1:1");
+
+            setProject(s => ({
+                ...s,
+                days: s.days.map(d => d.id === day.id ? { ...d, image: img, isLoading: false } : d)
+            }));
+
+            if (selectedDay?.id === day.id) {
+                setSelectedDay(prev => prev ? { ...prev, image: img, isLoading: false } : null);
+            }
+        } catch (e) {
+            setProject(s => ({
+                ...s,
+                days: s.days.map(d => d.id === day.id ? { ...d, isLoading: false, error: 'فشل التوليد' } : d)
+            }));
+            if (selectedDay?.id === day.id) {
+                setSelectedDay(prev => prev ? { ...prev, isLoading: false, error: 'فشل التوليد' } : null);
+            }
+        }
+    };
+
     const getTypeIcon = (type: string) => {
         switch (type) {
             case 'product': return <ShoppingBag className="w-4 h-4 text-orange-400" />;
@@ -315,14 +352,22 @@ const ContentCalendarHub: React.FC<Props> = ({ project, setProject, onBridgeToPh
                                 {selectedDay.image ? (
                                     <img src={`data:${selectedDay.image.mimeType};base64,${selectedDay.image.base64}`} className="w-full h-full object-cover" alt="" />
                                 ) : (
-                                    <div className="w-full h-full flex flex-col items-center justify-center gap-4 bg-white/5 animate-pulse">
+                                    <div
+                                        className={`w-full h-full flex flex-col items-center justify-center gap-4 bg-white/5 ${!selectedDay.isLoading ? 'cursor-pointer hover:bg-white/10 transition-colors group/img' : 'animate-pulse'}`}
+                                        onClick={() => !selectedDay.isLoading && handleGenerateDayImage(selectedDay)}
+                                    >
                                         {selectedDay.isLoading ? (
                                             <>
                                                 <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
                                                 <span className="text-orange-500 font-black text-xs">جاري تخيل المشهد...</span>
                                             </>
                                         ) : (
-                                            <span className="text-slate-600 font-black text-xs">اضغط لتوليد الصورة</span>
+                                            <>
+                                                <div className="p-4 bg-orange-500/10 rounded-full group-hover/img:scale-110 transition-transform">
+                                                    <Sparkles className="w-8 h-8 text-orange-500" />
+                                                </div>
+                                                <span className="text-slate-400 font-black text-sm group-hover/img:text-orange-400 transition-colors">اضغط لتوليد الصورة الإعلانية لهذا اليوم</span>
+                                            </>
                                         )}
                                     </div>
                                 )}

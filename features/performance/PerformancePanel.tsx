@@ -14,7 +14,7 @@ import type {
 } from './types';
 import type { GenerationResult, AdCard as AdCardType, ProductFormData } from './types/ad.types';
 import { buildAdPrompt } from './engine/PromptBuilder';
-import { parseGeminiResponse, isValidResult } from './engine/ResponseAnalyzer';
+import { parseGeminiResponse, isValidResult, hasDuplicateTexts } from './engine/ResponseAnalyzer';
 import { generateImage, generateAdsWithEnrichment } from '../../services/geminiService';
 import { generateMetaCSV, AdExportData } from './engine/ExportPipeline';
 import { predictCTR } from './engine/ScoringPredictor';
@@ -296,11 +296,18 @@ const PerformancePanel: React.FC = () => {
         };
 
         try {
-            // Generate using enriched AI methodology
-            const parsed = await generateAdsWithEnrichment(formData);
+            // Generate using enriched AI methodology with validation loop
+            let parsed = await generateAdsWithEnrichment(formData);
+
+            let attempts = 0;
+            while (attempts < 2 && (!isValidResult(parsed) || hasDuplicateTexts(parsed.ads))) {
+                console.warn(`[Agent] Validation failed (attempt ${attempts + 1}). Retrying generation for unique outputs...`);
+                parsed = await generateAdsWithEnrichment(formData);
+                attempts++;
+            }
 
             if (!isValidResult(parsed)) {
-                throw new Error("تنسيق الرد غير صالح من الذكاء الاصطناعي");
+                throw new Error("تنسيق الرد غير صالح من الذكاء الاصطناعي، يرجى إعادة المحاولة.");
             }
 
             // Set initial AdSet with loading state for images
@@ -317,9 +324,23 @@ const PerformancePanel: React.FC = () => {
                 referenceImages = [{ base64: refBase64Data, mimeType: refFile.type, name: refFile.name }];
             }
 
+            // Define strong visual modifiers to force Gemini to create distinct images
+            const imageStyleModifiers: Record<string, string> = {
+                pain: "Dark moody cinematic lighting, showing struggle or dramatic contrast.",
+                compare: "Split screen comparison style, bright clinical lighting, clear visual difference.",
+                bold: "Vibrant neon colors, dynamic low angle camera, high energy bold look.",
+                transform: "Golden hour warm lighting, euphoric mood, bright uplifting and happy.",
+                urgency: "Red alert dramatic lighting, high contrast, fast-paced action feel.",
+                story: "Soft natural documentary style lighting, candid lifestyle film still."
+            };
+
             parsed.ads.forEach(async (ad, index) => {
                 try {
-                    const generatedImage = await generateImage([productImage], ad.imagePrompt, referenceImages, "3:4");
+                    const styleModifier = imageStyleModifiers[ad.style] || "Unique composition, commercial quality";
+                    // Forcing the model to distinctively vary the image
+                    const forcedPrompt = `[Style Directive: ${styleModifier}] ${ad.imagePrompt} [Seed: ${Math.random().toString(36).substring(2, 8)}]`;
+
+                    const generatedImage = await generateImage([productImage], forcedPrompt, referenceImages, "3:4");
                     const finalUrl = `data:${generatedImage.mimeType};base64,${generatedImage.base64}`;
 
                     setAdSet(prev => {
