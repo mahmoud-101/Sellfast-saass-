@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Zap, Users, Gift, CreditCard, Sparkles } from 'lucide-react';
+import { Zap, Users, Gift, CreditCard, Sparkles, Calendar } from 'lucide-react';
 import {
   AppView,
   MasterFactoryProject,
@@ -16,7 +16,8 @@ import {
   EliteScriptProject,
   StoryboardStudioProject,
   VoiceOverStudioProject,
-  OrganicStudioProject
+  OrganicStudioProject,
+  ContentCalendarProject
 } from './types';
 import { supabase } from './lib/supabase';
 
@@ -26,7 +27,7 @@ import Auth from './components/Auth';
 import BrandKitManager from './components/BrandKitManager';
 import PhotoshootDirector from './components/PhotoshootDirector';
 import VideoStudio from './components/VideoStudio';
-import PlanStudio from './components/PlanStudio';
+import ContentCalendarHub from './components/ContentCalendarHub';
 import MarketingStudio from './components/MarketingStudio';
 import AdContentFactory from './components/AdContentFactory';
 import PricingModal from './components/PricingModal';
@@ -193,7 +194,11 @@ export default function App() {
     id: 'org-1', name: 'الاستراتيجية الأورجانيك', description: '', targetAudience: '', tone: 'storytelling', isGenerating: false, progress: 0, result: null, error: null
   });
 
-  const bridgeToPlan = (context: string) => { setPlanStudio(prev => ({ ...prev, prompt: context })); setView('plan_studio'); };
+  const [contentCalendar, setContentCalendar] = useState<ContentCalendarProject>({
+    id: 'cal-1', name: 'تقويم الـ 30 يوم', productImages: [], prompt: '', targetMarket: 'السعودية', dialect: 'لهجة سعودية', days: [], isGenerating: false, isUploading: false, error: null
+  });
+
+  const bridgeToPlan = (context: string) => { setContentCalendar(prev => ({ ...prev, prompt: context })); setView('content_calendar'); };
   const bridgeToVideo = (script: string) => { setActiveScriptContext(script); setView('video_studio'); };
   const bridgeToPhotoshoot = (context: string) => { setPhotoshootProject(prev => ({ ...prev, customStylePrompt: context })); setView('photoshoot'); };
 
@@ -227,11 +232,11 @@ export default function App() {
 
   return (
     <ProductIntelligenceProvider>
-      <div className="min-h-screen w-full flex flex-col items-center bg-black text-white font-sans overflow-x-hidden selection:bg-orange-500/30">
+      <div className="min-h-screen w-full flex flex-col items-center bg-black text-white font-sans overflow-x-hidden selection:bg-orange-500/30 pb-20 md:pb-0">
         {/* Onboarding overlay — shows once for first-time users */}
         {showOnboarding && <OnboardingModal onClose={() => setShowOnboarding(false)} />}
 
-        <nav className="sticky top-0 z-[100] w-full backdrop-blur-xl bg-black/80 border-b border-white/5">
+        <nav className="sticky top-0 z-[100] w-full backdrop-blur-2xl bg-black/60 border-b border-white/5 shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
           <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
             <div className="flex items-center gap-3 cursor-pointer group" onClick={() => { setView('campaign_builder_hub'); setIsMenuOpen(false); }}>
               <img src={LOGO_IMAGE_URL} alt="Ebdaa Pro" className="h-10 w-auto group-hover:scale-110 transition-transform" />
@@ -240,16 +245,19 @@ export default function App() {
 
             {view !== 'landing' && userId && (
               <>
-                <div className="hidden md:flex items-center gap-2 bg-white/5 p-1 rounded-2xl border border-white/5">
-                  <button onClick={() => setView('pro_mode')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all flex items-center gap-1 ${view === 'pro_mode' ? 'bg-purple-600 text-white shadow-[0_0_15px_rgba(168,85,247,0.5)]' : 'text-purple-400 hover:text-purple-300 hover:bg-purple-500/10'}`}>🤖 الوضع الاحترافي (Pro Mode)</button>
+                <div className="hidden md:flex items-center gap-2 bg-white/5 p-1 rounded-2xl border border-white/5 backdrop-blur-md">
+                  <button onClick={() => setView('pro_mode')} className={`relative overflow-hidden px-5 py-2 rounded-xl text-[11px] font-black transition-all flex items-center gap-1 ${view === 'pro_mode' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-[0_0_20px_rgba(168,85,247,0.4)]' : 'text-purple-400 hover:text-purple-300 hover:bg-purple-500/10'}`}>
+                    <span className="relative z-10">🤖 الوضع الاحترافي (Pro Mode)</span>
+                    {view === 'pro_mode' && <span className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent animate-shimmer"></span>}
+                  </button>
                   <button onClick={() => setView('hook_generator')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'hook_generator' ? 'bg-pink-500 text-white shadow-[0_0_15px_rgba(236,72,153,0.5)]' : 'text-slate-400 hover:text-white'}`}>🪝 مولد الهوكات</button>
                   <button onClick={() => setView('failed_ad_optimizer')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'failed_ad_optimizer' ? 'bg-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'text-slate-400 hover:text-white'}`}>💔 إنعاش الإعلانات</button>
                   <button onClick={() => setView('ugc_studio')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'ugc_studio' ? 'bg-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'text-slate-400 hover:text-white'}`}>📸 التصوير و UGC</button>
-                  <button onClick={() => setView('organic_studio')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'organic_studio' ? 'bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'text-slate-400 hover:text-white'}`}>🌿 محتوى فيروسي (Viral)</button>
-                  <button onClick={() => setView('funnel_architect')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'funnel_architect' ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-400 hover:text-white'}`}>📐 مهندس الأقماع</button>
-                  <button onClick={() => setView('brand_kit')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'brand_kit' ? 'bg-orange-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}>🎨 هويتي</button>
-                  <button onClick={() => setView('content_library')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'content_library' ? 'bg-orange-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}>📚 الإعلانات المحفوظة</button>
-                  <button onClick={() => setIsWizardOpen(true)} className="px-5 py-2 rounded-xl text-[11px] font-black text-purple-400 hover:bg-purple-500/10 transition-all border border-purple-500/20">🚀 ابدأ من هنا</button>
+                  <button onClick={() => setView('content_calendar')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'content_calendar' ? 'bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'text-slate-400 hover:text-white'}`}>🗓️ تقويم محتوى (30 يوم)</button>
+                  <button onClick={() => setView('funnel_architect')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'funnel_architect' ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-400 hover:text-white'}`}>📐 خطة البيع (Funnel)</button>
+                  <button onClick={() => setView('brand_kit')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'brand_kit' ? 'bg-gradient-to-r from-orange-500 to-rose-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}>🎨 هويتي</button>
+                  <button onClick={() => setView('content_library')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'content_library' ? 'bg-gradient-to-r from-orange-500 to-rose-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}>📚 الإعلانات المحفوظة</button>
+                  <button onClick={() => setIsWizardOpen(true)} className="px-5 py-2 rounded-xl text-[11px] font-black text-purple-400 hover:bg-purple-500/10 transition-all border border-purple-500/20 hover:border-purple-500/40">🚀 ابدأ من هنا</button>
                   <button onClick={() => setView('admin')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'admin' ? 'bg-orange-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}>⚙️ الإدارة</button>
                 </div>
 
@@ -305,7 +313,7 @@ export default function App() {
                   onClick={() => { setView('funnel_architect'); setIsMenuOpen(false); }}
                   className={`w-full p-4 rounded-2xl text-right font-black flex items-center justify-between ${view === 'funnel_architect' ? 'bg-blue-600 text-white' : 'bg-white/5 text-white'}`}
                 >
-                  <span>📐 مهندس الأقماع (Funnel)</span>
+                  <span>📐 خطة البيع (Funnel)</span>
                   <span className="text-[10px] bg-blue-500/20 px-2 py-0.5 rounded-full border border-blue-500/30">جديد</span>
                 </button>
                 <button
@@ -369,15 +377,12 @@ export default function App() {
           {view === 'admin' && userId && <AdminDashboard />}
           {view === 'referral' && userId && <ReferralDashboard userId={userId} />}
           {view === 'referral' && userId && <ReferralDashboard userId={userId} />}
-          {view === 'organic_studio' && userId && (
-            <OrganicViralStudio
+          {view === 'content_calendar' && userId && (
+            <ContentCalendarHub
               userId={userId}
-              project={organicProject}
-              setProject={setOrganicProject}
-              onSendToDesign={(content) => {
-                setUgcProject(prev => ({ ...prev, customScenarios: [content] })); // Set context for UGC
-                setView('ugc_studio');
-              }}
+              project={contentCalendar}
+              setProject={setContentCalendar}
+              onBridgeToPhotoshoot={bridgeToPhotoshoot}
             />
           )}
           {view === 'ugc_studio' && userId && <UGCStudio userId={userId} />}
@@ -388,44 +393,56 @@ export default function App() {
 
           {/* Mobile Bottom Navigation 📱 */}
           {userId && (
-            <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] w-[92%] glass-card rounded-3xl p-2 border border-white/10 shadow-2xl flex items-center justify-around flex-row-reverse bg-black/60 backdrop-blur-2xl py-3 px-4">
+            <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] w-[92%] rounded-[2.5rem] p-1.5 border border-white/5 shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex items-center justify-around flex-row-reverse bg-black/40 backdrop-blur-3xl ring-1 ring-white/10">
               <button
                 onClick={() => setView('pro_mode')}
-                className={`flex flex-col items-center gap-1 transition-all ${view === 'pro_mode' ? 'text-[#FFD700] scale-110' : 'text-white/40'}`}
+                className={`flex-1 flex flex-col items-center gap-1.5 py-3 transition-all duration-500 rounded-3xl ${view === 'pro_mode' ? 'bg-gradient-to-b from-purple-500/20 to-purple-600/0 text-purple-400' : 'text-slate-500 hover:text-slate-300'}`}
               >
-                <Zap size={22} />
-                <span className="text-[8px] font-black uppercase tracking-tighter">ذكاء</span>
+                <div className={`p-2 rounded-xl transition-all duration-500 ${view === 'pro_mode' ? 'bg-purple-500/20 shadow-[0_0_20px_rgba(168,85,247,0.3)] scale-110' : ''}`}>
+                  <Zap size={20} strokeWidth={view === 'pro_mode' ? 3 : 2} />
+                </div>
+                <span className="text-[9px] font-black uppercase tracking-tighter">الذكاء</span>
               </button>
               <button
-                onClick={() => setView('organic_studio')}
-                className={`flex flex-col items-center gap-1 transition-all ${view === 'organic_studio' ? 'text-emerald-400 scale-110' : 'text-white/40'}`}
+                onClick={() => setView('content_calendar')}
+                className={`flex-1 flex flex-col items-center gap-1.5 py-3 transition-all duration-500 rounded-3xl ${view === 'content_calendar' ? 'bg-gradient-to-b from-emerald-500/20 to-emerald-600/0 text-emerald-400' : 'text-slate-500 hover:text-slate-300'}`}
               >
-                <Sparkles size={22} />
-                <span className="text-[8px] font-black uppercase tracking-tighter">فيرال</span>
+                <div className={`p-2 rounded-xl transition-all duration-500 ${view === 'content_calendar' ? 'bg-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.3)] scale-110' : ''}`}>
+                  <Calendar size={20} strokeWidth={view === 'content_calendar' ? 3 : 2} />
+                </div>
+                <span className="text-[9px] font-black uppercase tracking-tighter">التقويم</span>
               </button>
+
+              {/* Center Launch Hole or Library */}
               <button
                 onClick={() => setView('content_library')}
-                className={`flex flex-col items-center gap-1 transition-all ${view === 'content_library' ? 'text-[#FFD700] scale-110' : 'text-white/40'}`}
+                className={`flex-1 flex flex-col items-center gap-1.5 py-3 transition-all duration-500 rounded-3xl ${view === 'content_library' ? 'bg-gradient-to-b from-orange-500/20 to-orange-600/0 text-orange-400' : 'text-slate-500 hover:text-slate-300'}`}
               >
-                <Users size={22} />
-                <span className="text-[8px] font-black uppercase tracking-tighter">مكتبتي</span>
+                <div className={`p-2 rounded-xl transition-all duration-500 ${view === 'content_library' ? 'bg-orange-500/20 shadow-[0_0_20px_rgba(249,115,22,0.3)] scale-110' : ''}`}>
+                  <Users size={20} strokeWidth={view === 'content_library' ? 3 : 2} />
+                </div>
+                <span className="text-[9px] font-black uppercase tracking-tighter">مكتبتي</span>
               </button>
+
               <button
                 onClick={() => setView('referral')}
-                className={`flex flex-col items-center gap-1 transition-all ${view === 'referral' ? 'text-emerald-400 scale-110' : 'text-white/40'}`}
+                className={`flex-1 flex flex-col items-center gap-1.5 py-3 transition-all duration-500 rounded-3xl ${view === 'referral' ? 'bg-gradient-to-b from-rose-500/20 to-rose-600/0 text-rose-400' : 'text-slate-500 hover:text-slate-300'}`}
               >
-                <div className="relative">
-                  <Gift size={22} />
-                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                <div className={`relative p-2 rounded-xl transition-all duration-500 ${view === 'referral' ? 'bg-rose-500/20 shadow-[0_0_20px_rgba(244,63,94,0.3)] scale-110' : ''}`}>
+                  <Gift size={20} strokeWidth={view === 'referral' ? 3 : 2} />
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(244,63,94,1)]"></span>
                 </div>
-                <span className="text-[8px] font-black uppercase tracking-tighter">هدايا</span>
+                <span className="text-[9px] font-black uppercase tracking-tighter">هدايا</span>
               </button>
+
               <button
                 onClick={() => setIsPricingOpen(true)}
-                className="flex flex-col items-center gap-1 text-white/40"
+                className="flex-1 flex flex-col items-center gap-1.5 py-3 text-slate-500 hover:text-slate-300 transition-all"
               >
-                <CreditCard size={22} />
-                <span className="text-[8px] font-black uppercase tracking-tighter">شحن</span>
+                <div className="p-2">
+                  <CreditCard size={20} />
+                </div>
+                <span className="text-[9px] font-black uppercase tracking-tighter">شحن</span>
               </button>
             </div>
           )}
@@ -437,7 +454,7 @@ export default function App() {
         {isPricingOpen && userId && <PricingModal userId={userId} onClose={() => setIsPricingOpen(false)} />}
         {globalEditingImage && <ImageEditorModal image={globalEditingImage} onClose={() => setGlobalEditingImage(null)} />}
         {upscalingImage && userId && <ImageUpscaler imageUrl={upscalingImage} userId={userId} onClose={() => setUpscalingImage(null)} />}
-        {isWizardOpen && <GettingStartedWizard onSelectPath={setView} onClose={() => setIsWizardOpen(false)} />}
+        {isWizardOpen && <GettingStartedWizard onSelectPath={(v) => setView(v as AppView)} onClose={() => setIsWizardOpen(false)} />}
       </div>
     </ProductIntelligenceProvider>
   );

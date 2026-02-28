@@ -327,6 +327,44 @@ export async function generateCampaignPlan(productImages: ImageFile[], goal: str
     } catch { return []; }
 }
 
+export async function generateContentCalendar30Days(productImages: ImageFile[], goal: string, market: string, dialect: string): Promise<any[]> {
+    const prompt = `
+    You are a World-Class Content Strategist for the Arabic/MENA market.
+    Create a 30-day content calendar for:
+    - Goal: ${goal}
+    - Market: ${market}
+    - Dialect: ${dialect}
+    
+    The calendar MUST be a balanced mix:
+    - 40% Product Showcase (Selling directly)
+    - 30% Viral/Educational (Sharing secrets, value, storytelling)
+    - 20% Engagement (Questions, polls, memes)
+    - 10% Video/Reel Scripts (High impact)
+    
+    Return ONLY a JSON array of 30 objects. Each object MUST have:
+    {
+      "id": "day-1 to day-30",
+      "date": "Day 1",
+      "type": "product | viral | engagement | video",
+      "title": "Short catchy title",
+      "caption": "Full social media caption in ${dialect}",
+      "visualPrompt": "Detailed AI image generation prompt for this day",
+      "script": "If type is video, provide a 30s script, else null"
+    }
+
+    Respond ONLY with the JSON array.
+    `;
+
+    const res = await askGemini(prompt, "Senior Social Media Strategist");
+    try {
+        const plan = parseRobustJSON(res);
+        if ((import.meta as any).env.VITE_USER_ID) {
+            await awardPoints((import.meta as any).env.VITE_USER_ID, 100, "برمجة خطة محتوى 30 يوم");
+        }
+        return plan;
+    } catch { return []; }
+}
+
 export async function analyzeProductForCampaign(images: ImageFile[]): Promise<string> {
     try {
         return await executeWithRetry(async () => {

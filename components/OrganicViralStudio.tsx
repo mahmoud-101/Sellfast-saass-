@@ -88,17 +88,24 @@ const OrganicViralStudio: React.FC<OrganicViralStudioProps> = ({ project, setPro
         return (
             <div className="w-full max-w-6xl mx-auto py-10 space-y-12 animate-in fade-in slide-in-from-bottom-5 text-right" dir="rtl">
                 {/* Header Section */}
-                <div className="glass-card p-10 rounded-[3rem] border border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-transparent flex flex-col md:flex-row justify-between items-center gap-8">
-                    <div>
-                        <h2 className="text-4xl font-black text-white mb-2">استراتيجيتك للفيرال جاهزة! 🌿</h2>
-                        <p className="text-emerald-400 font-bold">{project.result.strategy}</p>
+                <div className="relative group/header overflow-hidden rounded-[3rem] p-10 border border-emerald-500/20 bg-black shadow-4xl">
+                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent opacity-50 group-hover/header:opacity-70 transition-opacity duration-700"></div>
+                    <div className="absolute -top-24 -left-24 w-64 h-64 bg-emerald-500/10 blur-[100px] rounded-full"></div>
+
+                    <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-8">
+                        <div>
+                            <h2 className="text-4xl font-black text-white mb-2 flex items-center gap-3">
+                                <span className="animate-bounce">🌿</span> استراتيجيتك للفيرال جاهزة!
+                            </h2>
+                            <p className="text-emerald-400 font-bold text-lg leading-relaxed max-w-2xl">{project.result.strategy}</p>
+                        </div>
+                        <button
+                            onClick={() => setProject(p => ({ ...p, result: null, progress: 0 }))}
+                            className="px-8 py-4 bg-emerald-500 text-black font-black rounded-2xl hover:bg-emerald-400 hover:scale-105 transition-all shadow-lg shadow-emerald-500/20 whitespace-nowrap"
+                        >
+                            خطة جديدة 🔄
+                        </button>
                     </div>
-                    <button
-                        onClick={() => setProject(p => ({ ...p, result: null, progress: 0 }))}
-                        className="px-8 py-4 bg-white/10 text-white font-black rounded-2xl hover:bg-white/20 transition-all border border-white/10"
-                    >
-                        خطة جديدة 🔄
-                    </button>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -264,19 +271,19 @@ const OrganicViralStudio: React.FC<OrganicViralStudioProps> = ({ project, setPro
                     <button
                         onClick={handleGenerate}
                         disabled={isGenerating || !project.description || !project.targetAudience}
-                        className="w-full h-24 bg-emerald-500 text-black font-black rounded-[2.5rem] text-2xl md:text-3xl shadow-[0_20px_60px_rgba(16,185,129,0.4)] transition-all active:scale-95 disabled:opacity-50 disabled:grayscale flex items-center justify-center gap-6 group overflow-hidden relative"
+                        className="w-full h-24 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-black font-black rounded-[2.5rem] text-2xl md:text-3xl shadow-[0_20px_60px_rgba(16,185,129,0.3)] transition-all active:scale-95 disabled:opacity-50 disabled:grayscale flex items-center justify-center gap-6 group overflow-hidden relative border border-white/20"
                     >
-                        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
+                        <div className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/30 to-transparent -skew-x-12 -translate-x-full group-hover:animate-[shimmer_2s_infinite]"></div>
                         <span className="relative z-10">
                             {isGenerating ? (
                                 <div className="flex flex-col items-center">
-                                    <span className="text-xl animate-pulse">{reasoningMsg} {project.progress}%</span>
-                                    <div className="w-80 h-2 bg-black/20 rounded-full mt-4 overflow-hidden">
-                                        <div className="h-full bg-black transition-all duration-500" style={{ width: `${project.progress}%` }}></div>
+                                    <span className="text-xl animate-pulse font-black uppercase tracking-widest">{reasoningMsg}</span>
+                                    <div className="w-64 h-1.5 bg-black/20 rounded-full mt-3 overflow-hidden">
+                                        <div className="h-full bg-black transition-all duration-700 ease-out" style={{ width: `${project.progress}%` }}></div>
                                     </div>
                                 </div>
                             ) : (
-                                <>توليد الخطة الفيروسية (25 نقطة) 🚀</>
+                                <>توليد الخطة الفيروسية 🚀</>
                             )}
                         </span>
                     </button>

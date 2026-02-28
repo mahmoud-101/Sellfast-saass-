@@ -11,11 +11,13 @@ interface FooterProps {
 
 const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenPricing }) => {
     return (
-        <footer className="w-full mt-32 border-t border-white/5 bg-black py-24 px-10 relative overflow-hidden">
-            <div className="absolute -top-24 -right-24 w-96 h-96 bg-yellow-600/5 rounded-full blur-[100px] opacity-50"></div>
+        <footer className="w-full mt-32 border-t border-white/5 bg-[#050505] py-24 px-10 relative overflow-hidden group/footer">
+            <div className="absolute -top-24 -right-24 w-96 h-96 bg-yellow-500/10 rounded-full blur-[120px] opacity-30 group-hover/footer:opacity-50 transition-opacity duration-1000"></div>
+            <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px] opacity-30 group-hover/footer:opacity-50 transition-opacity duration-1000"></div>
+
             <div className="max-w-7xl mx-auto relative z-10">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-20 text-right" dir="rtl">
-                    
+
                     <div className="space-y-8">
                         <div className="flex items-center justify-start gap-3">
                             <img src={LOGO_IMAGE_URL} alt="Ebdaa Pro" className="h-10 w-auto" />
@@ -53,10 +55,14 @@ const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenPricing }) => {
                         </ul>
                     </div>
                 </div>
-                
-                <div className="mt-24 pt-10 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">
-                    <p>Ebdaa Pro Intelligence © 2025</p>
-                    <div className="flex items-center gap-2">Built for growth <div className="w-1 h-1 bg-[#FFD700] rounded-full"></div> Cairo, Egypt</div>
+
+                <div className="mt-24 pt-10 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] font-black text-slate-600 uppercase tracking-[0.4em]">
+                    <p className="hover:text-white transition-colors">Ebdaa Pro Intelligence © 2025</p>
+                    <div className="flex items-center gap-2">
+                        <span>Built for growth</span>
+                        <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(234,179,8,0.8)]"></div>
+                        <span>Cairo, Egypt</span>
+                    </div>
                 </div>
             </div>
         </footer>

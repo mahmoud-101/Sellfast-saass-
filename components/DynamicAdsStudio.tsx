@@ -131,22 +131,27 @@ const DynamicAdsStudio: React.FC<{
                     </div>
 
                     <div className="lg:w-2/3 flex flex-col gap-8">
-                        <div className="space-y-4">
-                            <label className="text-sm text-slate-400 font-bold block">1. اختر القالب (Style Template)</label>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                {DYNAMIC_STYLES.map(style => (
-                                    <button
-                                        key={style.id}
-                                        onClick={() => {
-                                            setProject(s => ({ ...s, selectedStyleId: style.id, variableValues: {} })); // Reset vars on change
-                                        }}
-                                        className={`p-4 rounded-[1.5rem] border-2 transition-all text-right flex flex-col gap-2 ${project.selectedStyleId === style.id ? 'bg-blue-500/10 border-blue-500 text-white shadow-[0_0_20px_rgba(59,130,246,0.2)]' : 'bg-white/5 border-white/10 text-slate-400 hover:border-white/30'}`}
-                                    >
-                                        <span className="font-black text-sm">{style.styleName.replace(/_/g, ' ')}</span>
-                                        <span className="text-[10px] opacity-70 line-clamp-2 md:line-clamp-3 leading-relaxed">{style.styleDescription}</span>
-                                    </button>
-                                ))}
-                            </div>
+                        <label className="text-sm text-slate-400 font-black block">1. اختر القالب (Style Template)</label>
+                        <div className="flex overflow-x-auto no-scrollbar gap-4 pb-4 -mx-2 px-2 snap-x">
+                            {DYNAMIC_STYLES.map(style => (
+                                <button
+                                    key={style.id}
+                                    onClick={() => {
+                                        setProject(s => ({ ...s, selectedStyleId: style.id, variableValues: {} })); // Reset vars on change
+                                    }}
+                                    className={`flex-shrink-0 w-64 p-6 rounded-[2rem] border-2 transition-all duration-500 text-right flex flex-col gap-3 snap-start relative overflow-hidden group/style ${project.selectedStyleId === style.id ? 'bg-gradient-to-br from-blue-600/20 to-indigo-600/10 border-blue-500 text-white shadow-[0_15px_40px_rgba(59,130,246,0.25)] ring-1 ring-blue-500/30' : 'bg-white/5 border-white/5 text-slate-400 hover:border-white/10 hover:bg-white/10'}`}
+                                >
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl mb-1 ${project.selectedStyleId === style.id ? 'bg-blue-500 text-white' : 'bg-white/5'}`}>
+                                        🎭
+                                    </div>
+                                    <span className="font-black text-sm tracking-tighter">{style.styleName.replace(/_/g, ' ')}</span>
+                                    <span className="text-[10px] opacity-60 line-clamp-2 leading-relaxed font-medium">{style.styleDescription}</span>
+
+                                    {project.selectedStyleId === style.id && (
+                                        <div className="absolute top-4 left-4 w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,1)]"></div>
+                                    )}
+                                </button>
+                            ))}
                         </div>
 
                         {selectedStyle && (
@@ -195,10 +200,11 @@ const DynamicAdsStudio: React.FC<{
                                 <button
                                     onClick={handleGenerate}
                                     disabled={project.isGenerating}
-                                    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 shadow-[0_10px_30px_-10px_rgba(59,130,246,0.6)] disabled:opacity-50 transition-all"
+                                    className="w-full mt-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black py-5 rounded-3xl flex items-center justify-center gap-3 shadow-[0_15px_30px_rgba(59,130,246,0.3)] hover:shadow-[0_20px_40px_rgba(59,130,246,0.5)] active:scale-95 disabled:opacity-50 transition-all border border-white/10 overflow-hidden relative group/gen"
                                 >
-                                    {project.isGenerating ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <span className="text-xl">🧪</span>}
-                                    {project.isGenerating ? 'جاري التوليد بدقة فائقة...' : `توليد الإعلان الديناميكي الآن`}
+                                    <div className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover/gen:animate-[shimmer_2s_infinite]"></div>
+                                    {project.isGenerating ? <div className="w-6 h-6 border-4 border-white/30 border-t-white rounded-full animate-spin" /> : <span className="text-2xl animate-bounce">🧪</span>}
+                                    <span className="text-lg">{project.isGenerating ? 'جاري التوليد بدقة فائقة...' : `توليد الإعلان الديناميكي الآن`}</span>
                                 </button>
                             </div>
                         )}

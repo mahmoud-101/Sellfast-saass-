@@ -68,15 +68,15 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId, onUpscale }
     const [reasoningMsg, setReasoningMsg] = useState('في انتظار الانطلاق...');
 
     const reasoningLibrary: Record<PipelineStatus, string[]> = {
-        idle: ['في انتظار الانطلاق...'],
-        analyzing: ['جاري تحليل المنتج...', 'جاري دراسة الجمهور...', 'جاري تحديد المزايا...'],
-        strategizing: ['جاري بناء خطة البيع...', 'جاري اختيار زوايا الإقناع...', 'جاري تجهيز الاستراتيجية...'],
-        hooking: ['جاري كتابة الهوكات...', 'جاري صياغة العناوين...', 'جاري اختبار قوة الجذب...'],
-        copywriting: ['جاري كتابة الإعلان...', 'جاري تجهيز نداء الفعل...', 'جاري مراجعة النص...'],
-        visualizing: ['جاري رسم اللوحة الإعلانية...', 'جاري معالجة المشاهد...', 'جاري توليد الصور...'],
-        objections: ['جاري توقع شكوك العميل...', 'جاري تجهيز الردود...', 'جاري تأمين البيعة...'],
+        idle: ['في انتظارك تبدأ...'],
+        analyzing: ['بنذاكر المنتج بتاعك...', 'بنشوف الناس محتاجة إيه من منتجك...', 'بنحدد إيه اللي بيميزك عن غيرك...'],
+        strategizing: ['بنخطط لك إزاي تقنع الزبون يشتري...', 'بنشوف أحسن زاوية بيع ليك...', 'بنجهز خطة الهجوم الإعلانية...'],
+        hooking: ['بنكتب لك هوكات تخطف العين...', 'بنصيغ عناوين تخلي الزبون يقف...', 'بنختبر إيه اللي هيوقف السكرول...'],
+        copywriting: ['بنجهز لك كلام بيبيع بجد...', 'بنكتب لك نداء فعل (CTA) قوي...', 'بنراجع الإعلان كلمة بكلمة...'],
+        visualizing: ['بنرسم لك صور مبهره لإعلانك...', 'بنتخيل شكل المشهد الإعلاني...', 'جاري توليد الصور بالذكاء الاصطناعي...'],
+        objections: ['بنشوف الزبون ممكن يتردد في إيه...', 'بنجهز الردود اللي تطمن الزبون...', 'بنقفل لك البيعة قبل ما تبدأ...'],
         completed: ['المهمة تمت بنجاح! 🚀'],
-        error: ['حدث خطأ في النظام ⚠️']
+        error: ['وقعنا في مشكلة بسيطة، جرب تاني ⚠️']
     };
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -220,13 +220,17 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId, onUpscale }
 
                     <div className="relative z-10 flex flex-col md:flex-row gap-8 items-center justify-between text-center md:text-right">
                         <div className="flex flex-col md:flex-row gap-8 items-center">
-                            <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-5xl shadow-[0_0_50px_rgba(168,85,247,0.5)] animate-pulse">
-                                🤖
+                            <div className="relative w-24 h-24 shrink-0">
+                                <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-3xl blur-xl opacity-50 animate-pulse"></div>
+                                <div className="relative w-full h-full rounded-3xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-5xl shadow-2xl border border-white/20 overflow-hidden group">
+                                    <div className="absolute inset-0 bg-[conic-gradient(from_0deg,transparent_0,white_0.1,transparent_0.2)] animate-[spin_4s_linear_infinite] opacity-30"></div>
+                                    <span className="relative z-10 group-hover:scale-110 transition-transform duration-500">🤖</span>
+                                </div>
                             </div>
                             <div>
                                 <h1 className="text-4xl md:text-6xl font-black text-white mb-3 tracking-tighter uppercase italic">الوضع الاحترافي <span className="text-purple-500">PRO MODE</span></h1>
                                 <p className="text-slate-400 text-lg md:text-xl font-medium max-w-2xl leading-relaxed">
-                                    نظام ذكاء اصطناعي متكامل يعمل في تناغم استراتيجي لبناء إمبراطوريتك الإعلانية من الصفر.
+                                    نظام ذكاء اصطناعي متكامل بيشتغل معاك علشان يبني البيزنس بتاعك من الصفر.
                                 </p>
                             </div>
                         </div>
@@ -246,17 +250,17 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId, onUpscale }
             {/* Main Content Grid: Split Screen Command Center */}
             <div className="grid grid-cols-1 xl:grid-cols-20 gap-10">
 
-                {/* Left/Control Column: Input Form (8/20) */}
-                <div className="xl:col-span-6 flex flex-col gap-8">
+                {/* Left/Control Column: Input Form (8/20 on Desktop, 100% on Mobile) */}
+                <div className="xl:col-span-8 flex flex-col gap-8 order-2 xl:order-1">
                     <div className="bg-[#0a0a0e] border border-white/5 rounded-[2.5rem] p-8 shadow-3xl glass sticky top-8">
                         <h2 className="text-2xl font-black text-white mb-8 flex items-center gap-3">
-                            <span className="p-2 bg-purple-500/20 rounded-xl">📦</span> قمرة القيادة
+                            <span className="p-2 bg-purple-500/20 rounded-xl">⚙️</span> لوحة التحكم
                         </h2>
 
                         <div className="space-y-6">
                             {/* Image Upload: More prominent */}
                             <div className="group/upload">
-                                <label className="text-xs text-slate-500 font-black mb-2 block uppercase tracking-tighter">1. البصمة البصرية (صورة المنتج)</label>
+                                <label className="text-xs text-slate-500 font-black mb-2 block uppercase tracking-tighter">1. صورة المنتج</label>
                                 <div className="relative">
                                     <div className={`w-full aspect-video rounded-3xl border-2 border-dashed flex flex-col items-center justify-center overflow-hidden transition-all duration-500 ${productImage ? 'border-purple-500 shadow-[0_0_30px_rgba(168,85,247,0.2)]' : 'border-white/10 hover:border-purple-500/50 bg-white/5'}`}>
                                         {productImage ? (
@@ -285,7 +289,7 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId, onUpscale }
 
                             <div className="space-y-4">
                                 <div>
-                                    <label className="text-xs text-slate-500 font-black mb-2 block uppercase tracking-tighter">2. الهوية الرقمية</label>
+                                    <label className="text-xs text-slate-500 font-black mb-2 block uppercase tracking-tighter">2. اسم المنتج والبراند</label>
                                     <input
                                         type="text"
                                         value={productForm.name}
@@ -295,7 +299,7 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId, onUpscale }
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-xs text-slate-500 font-black mb-2 block uppercase tracking-tighter">3. القيمة المالية</label>
+                                    <label className="text-xs text-slate-500 font-black mb-2 block uppercase tracking-tighter">3. سعره كام؟</label>
                                     <input
                                         type="text"
                                         value={productForm.price}
@@ -305,7 +309,7 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId, onUpscale }
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-xs text-slate-500 font-black mb-2 block uppercase tracking-tighter">4. الحمض النووي للمنتج (الشرح)</label>
+                                    <label className="text-xs text-slate-500 font-black mb-2 block uppercase tracking-tighter">4. وصف المنتج وفوائده</label>
                                     <textarea
                                         value={productForm.description}
                                         onChange={e => setProductForm({ ...productForm, description: e.target.value })}
@@ -324,13 +328,13 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId, onUpscale }
 
                                 {pipeline.status === 'idle' || pipeline.status === 'completed' || pipeline.status === 'error' ? (
                                     <>
-                                        <span className="text-3xl animate-bounce">☄️</span>
-                                        <span>إطلاق المصنع الذكي</span>
+                                        <span className="text-3xl animate-bounce">✨</span>
+                                        <span>يلا ابدأ السحر</span>
                                     </>
                                 ) : (
                                     <>
                                         <div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                        <span>جاري التنفيذ...</span>
+                                        <span>ثواني والنتائج هتبهرك...</span>
                                     </>
                                 )}
                             </button>
@@ -344,20 +348,20 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId, onUpscale }
                     </div>
                 </div>
 
-                {/* Right Column: Output & Mega Previews (14/20) */}
-                <div className="xl:col-span-14 flex flex-col gap-10">
+                {/* Right Column: Output & Mega Previews (12/20 on Desktop, 100% on Mobile) */}
+                <div className="xl:col-span-12 flex flex-col gap-10 order-1 xl:order-2">
 
                     {/* Intelligence Briefing: Market Analysis (Sleeker style) */}
                     {pipeline.marketAnalysis && (
                         <div className="bg-[#0f1219] border border-blue-500/20 rounded-[3rem] p-10 relative overflow-hidden glass animate-in slide-in-from-top-10 duration-700">
                             <div className="absolute top-0 left-0 w-64 h-64 bg-blue-500/5 blur-[80px] rounded-full"></div>
                             <h3 className="text-3xl font-black text-blue-400 mb-8 flex items-center gap-4">
-                                <span className="p-3 bg-blue-500/20 rounded-2xl">📊</span> موجز الاستخبارات التسويقية
+                                <span className="p-3 bg-blue-500/20 rounded-2xl">📊</span> خلاصة دراسة السوق والزبائن
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
-                                <InsightBox label="الجمهور المستهدف" value={pipeline.marketAnalysis.targetAudience} icon="👥" />
-                                <InsightBox label="الرغبة العميقة" value={pipeline.marketAnalysis.coreDesire} icon="💎" />
-                                <InsightBox label="الألم الأكبر" value={pipeline.marketAnalysis.biggestPain} icon="⚡" />
+                                <InsightBox label="مين الناس اللي هنستهدفها؟" value={pipeline.marketAnalysis.targetAudience} icon="👥" />
+                                <InsightBox label="إيه اللي بيدوروا عليه فعلاً؟" value={pipeline.marketAnalysis.coreDesire} icon="💎" />
+                                <InsightBox label="أكبر مشكلة بتواجههم" value={pipeline.marketAnalysis.biggestPain} icon="⚡" />
                             </div>
                         </div>
                     )}
@@ -479,9 +483,9 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId, onUpscale }
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
                                 <div>
                                     <h3 className="text-4xl font-black text-orange-400 mb-2 flex items-center gap-4">
-                                        <span className="p-3 bg-orange-500/20 rounded-2xl">🛡️</span> درع الاعتراضات المنيع
+                                        <span className="p-3 bg-orange-500/20 rounded-2xl">🛡️</span> الردود الذكية على تردد الزبائن
                                     </h3>
-                                    <p className="text-slate-400 font-bold">توقع مخاوف العميل واهزمها قبل أن تظهر.</p>
+                                    <p className="text-slate-400 font-bold">توقع أسئلة العميل ورد عليها قبل ما يسألها.</p>
                                 </div>
                                 <div className="text-5xl opacity-20">🥷</div>
                             </div>
@@ -497,12 +501,12 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId, onUpscale }
                                                 </div>
                                                 <div className="space-y-4">
                                                     <div>
-                                                        <p className="text-xs font-black text-red-500 uppercase tracking-widest mb-1">خوف العميل (Objection)</p>
+                                                        <p className="text-xs font-black text-red-500 uppercase tracking-widest mb-1">تردد أو سؤال الزبون</p>
                                                         <p className="text-xl font-bold text-white">{obj.objection}</p>
                                                     </div>
                                                     <div className="h-0.5 w-12 bg-white/10"></div>
                                                     <div>
-                                                        <p className="text-xs font-black text-emerald-500 uppercase tracking-widest mb-1">الرد الساحق (The Kill)</p>
+                                                        <p className="text-xs font-black text-emerald-500 uppercase tracking-widest mb-1">الرد اللي بيقفل البيعة</p>
                                                         <p className="text-lg text-slate-300 font-medium leading-relaxed">{obj.rebuttal}</p>
                                                     </div>
                                                 </div>
@@ -534,7 +538,7 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId, onUpscale }
 
                             <button className="flex items-center gap-3 bg-white text-black px-10 py-5 rounded-[2rem] font-black text-xl hover:bg-yellow-400 hover:scale-105 transition-all shadow-2xl">
                                 <Share2 className="w-6 h-6" />
-                                شارك البطاقة الآن
+                                شارك البطاقة دلوقتي
                             </button>
                         </div>
                     )}

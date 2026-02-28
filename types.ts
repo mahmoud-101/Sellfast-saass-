@@ -29,7 +29,7 @@ export type AppView =
   | 'branding_mockups' | 'strategy_engine' | 'trend_engine' | 'brand_kit' | 'pricing'
   | 'library' | 'auth' | 'suite_view' | 'power' | 'ads_studio' | 'faq' | 'privacy_policy' | 'terms_of_service'
   | 'admin' | 'performance_studio' | 'content_library' | 'storyboard_studio'
-  | 'market_intelligence_hub' | 'campaign_builder_hub' | 'creative_studio_hub' | 'launch_brief_hub' | 'voiceover_studio' | 'dynamic_ads' | 'pro_mode' | 'ugc_studio' | 'hook_generator' | 'failed_ad_optimizer' | 'referral' | 'organic_studio' | 'funnel_architect';
+  | 'market_intelligence_hub' | 'campaign_builder_hub' | 'creative_studio_hub' | 'launch_brief_hub' | 'voiceover_studio' | 'dynamic_ads' | 'pro_mode' | 'ugc_studio' | 'hook_generator' | 'failed_ad_optimizer' | 'referral' | 'organic_studio' | 'funnel_architect' | 'content_calendar';
 
 export interface EliteChatMessage {
   role: 'user' | 'bot';
@@ -476,5 +476,28 @@ export interface OrganicStudioProject extends ProjectBase {
     reels: { title: string; script: string; tone: string }[];
     ideas: string[];
   } | null;
+  error: string | null;
+}
+export interface CalendarDay {
+  id: string;
+  date: string;
+  type: 'product' | 'viral' | 'engagement' | 'video';
+  title: string;
+  caption: string;
+  visualPrompt: string;
+  script?: string;
+  image: ImageFile | null;
+  isLoading: boolean;
+  error: string | null;
+}
+
+export interface ContentCalendarProject extends ProjectBase {
+  productImages: ImageFile[];
+  prompt: string;
+  targetMarket: string;
+  dialect: string;
+  days: CalendarDay[];
+  isGenerating: boolean;
+  isUploading: boolean;
   error: string | null;
 }
