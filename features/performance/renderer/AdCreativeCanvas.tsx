@@ -1,41 +1,35 @@
-/**
- * AdCreativeCanvas.tsx
- * Composites a product image + performance ad copy into
- * a publish-ready visual ad creative. Exports as PNG.
- * RTL-compatible. Mobile-first. Memory-safe.
- */
-
 import React, { useRef, useCallback, useState } from 'react';
-import type { AdCard } from '../types/ad.types';
+import type { AdCard, Platform, AudienceSegment } from '../types';
+import { PLATFORM_SPECS, calculateSafeLayout } from '../engine/PlatformAdaptationEngine';
+import { SEGMENT_STYLES } from '../engine/AudienceSegmenter';
 
 interface Props {
     variant: AdCard;
     productImageSrc: string; // data URL or object URL
+    platform?: Platform;
+    segment?: AudienceSegment;
     onExported?: (objectUrl: string) => void;
 }
 
-// ─── Layout configs keyed by angle ────────────────────────────────────────────
-const ANGLE_CONFIG: Record<string, {
-    gradient: string;
-    badgeColor: string;
-    badgeText: string;
-    textPosition: 'top' | 'bottom';
-}> = {
-    pain: { gradient: 'linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(180,20,20,0.6) 100%)', badgeColor: '#EF4444', badgeText: '⚠️ مشكلة حقيقية', textPosition: 'bottom' },
-    compare: { gradient: 'linear-gradient(180deg, rgba(10,40,100,0.85) 0%, rgba(0,0,0,0.7) 100%)', badgeColor: '#3B82F6', badgeText: '⚡ الفرق واضح', textPosition: 'bottom' },
-    bold: { gradient: 'linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(120,80,0,0.8) 100%)', badgeColor: '#F59E0B', badgeText: '🔥 ضمان النتيجة', textPosition: 'bottom' },
-    transform: { gradient: 'linear-gradient(180deg, rgba(0,60,40,0.8) 0%, rgba(0,0,0,0.75) 100%)', badgeColor: '#10B981', badgeText: '✨ التحول الحقيقي', textPosition: 'bottom' },
-    urgency: { gradient: 'linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(150,50,0,0.9) 100%)', badgeColor: '#F97316', badgeText: '⏰ عرض محدود', textPosition: 'bottom' },
-};
-
-const AdCreativeCanvas: React.FC<Props> = ({ variant, productImageSrc, onExported }) => {
+const AdCreativeCanvas: React.FC<Props> = ({
+    variant,
+    productImageSrc,
+    platform = 'facebook_feed',
+    segment,
+    onExported
+}) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const blobRef = useRef<string | null>(null);
     const [isExporting, setIsExporting] = useState(false);
     const [exportReady, setExportReady] = useState(false);
 
-    const config = ANGLE_CONFIG[variant.style] ?? ANGLE_CONFIG.bold;
-    const accentColor = config.badgeColor;
+    const platformSpec = PLATFORM_SPECS[platform];
+    const safeLayout = calculateSafeLayout(platform);
+
+    // Determine visual style based on segment or fallback to variant style
+    const segmentStyle = segment ? SEGMENT_STYLES[segment.colorScheme] : null;
+    const gradient = segmentStyle?.gradient || 'linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.9) 100%)';
+    const accentColor = segmentStyle?.accent || '#FFD700';
 
     const handleExport = useCallback(async () => {
         if (!containerRef.current || isExporting) return;
@@ -45,11 +39,13 @@ const AdCreativeCanvas: React.FC<Props> = ({ variant, productImageSrc, onExporte
         try {
             const { default: html2canvas } = await import('html2canvas');
             const canvas = await html2canvas(containerRef.current, {
-                scale: 2.5,
+                scale: 2.0, // Reduced from 2.5 for memory safety on mobile
                 useCORS: true,
                 allowTaint: true,
                 backgroundColor: '#000000',
                 logging: false,
+                width: platformSpec.dimensions.width,
+                height: platformSpec.dimensions.height,
             });
 
             if (blobRef.current) {
@@ -67,25 +63,32 @@ const AdCreativeCanvas: React.FC<Props> = ({ variant, productImageSrc, onExporte
                     setIsExporting(false);
                 },
                 'image/png',
-                0.95
+                0.90
             );
         } catch (err) {
             console.error('[AdCreativeCanvas] Export error:', err);
             setIsExporting(false);
         }
-    }, [isExporting, onExported]);
+    }, [isExporting, onExported, platformSpec]);
+
+    const aspectActive = platformSpec.dimensions.width / platformSpec.dimensions.height;
 
     return (
         <div className="flex flex-col gap-3">
             {/* ── Creative Preview ── */}
-            <div className="relative w-full rounded-2xl overflow-hidden shadow-2xl" style={{ aspectRatio: '1 / 1' }}>
+            <div className="relative w-full rounded-2xl overflow-hidden shadow-2xl bg-black" style={{ aspectRatio: aspectActive }}>
 
                 {/* This div is what html2canvas captures */}
                 <div
                     ref={containerRef}
                     dir="rtl"
-                    className="relative w-full h-full overflow-hidden"
-                    style={{ aspectRatio: '1 / 1', minHeight: 320 }}
+                    className="relative overflow-hidden mx-auto"
+                    style={{
+                        width: platformSpec.dimensions.width,
+                        height: platformSpec.dimensions.height,
+                        transform: 'scale(var(--preview-scale, 1))',
+                        transformOrigin: 'top center'
+                    }}
                 >
                     {/* Product Image */}
                     <img
@@ -98,95 +101,97 @@ const AdCreativeCanvas: React.FC<Props> = ({ variant, productImageSrc, onExporte
                     {/* Gradient Overlay */}
                     <div
                         className="absolute inset-0"
-                        style={{ background: config.gradient }}
+                        style={{ background: gradient }}
                     />
 
-                    {/* ── Text Layer ── */}
-                    <div className="absolute inset-0 flex flex-col justify-end p-6 gap-3">
-
-                        {/* Badge */}
-                        <div className="flex justify-end">
-                            <span
-                                className="text-xs font-black px-3 py-1 rounded-full text-black shadow-lg"
-                                style={{ background: accentColor }}
-                            >
-                                {config.badgeText}
-                            </span>
-                        </div>
+                    {/* ── Safe Zone Guided Layer ── */}
+                    <div
+                        className="absolute inset-0 flex flex-col p-8"
+                        style={{
+                            paddingTop: `${safeLayout.topOffset}%`,
+                            paddingBottom: `${safeLayout.bottomOffset}%`,
+                            paddingLeft: `${safeLayout.leftOffset}%`,
+                            paddingRight: `${safeLayout.rightOffset}%`,
+                            justifyContent: platformSpec.textPosition === 'top' ? 'flex-start' : platformSpec.textPosition === 'center' ? 'center' : 'flex-end',
+                            gap: '1.5rem'
+                        }}
+                    >
+                        {/* ── Brand Layout ── */}
 
                         {/* Main Hook */}
                         <p
-                            className="text-white font-black leading-snug text-right"
+                            className="text-white font-black leading-tight text-right tracking-tight"
                             style={{
-                                fontSize: 'clamp(16px, 4.5vw, 22px)',
-                                textShadow: '0 2px 12px rgba(0,0,0,0.9)',
+                                fontSize: `${28 * platformSpec.fontScale}px`,
+                                textShadow: '0 4px 16px rgba(0,0,0,0.95)',
                             }}
                         >
-                            {variant.headline}
+                            {segment?.headlinePrefix || ''}{variant.headline}
                         </p>
 
-                        {/* Bullets (top 2 only) */}
-                        <div className="flex flex-col gap-1.5">
-                            {variant.hooks.slice(0, 2).map((h, i) => (
-                                <div key={i} className="flex items-center justify-end gap-2">
+                        {/* Bullets */}
+                        <div className="flex flex-col gap-3">
+                            {variant.hooks.map((h, i) => (
+                                <div key={i} className="flex items-center justify-end gap-3 bg-black/30 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 self-end">
                                     <p
-                                        className="text-white/90 text-right font-semibold"
-                                        style={{
-                                            fontSize: 'clamp(11px, 2.8vw, 13px)',
-                                            textShadow: '0 1px 8px rgba(0,0,0,0.9)',
-                                        }}
+                                        className="text-white font-bold"
+                                        style={{ fontSize: `${14 * platformSpec.fontScale}px` }}
                                     >
                                         {h}
                                     </p>
-                                    <span
-                                        className="text-xs w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-black font-black"
-                                        style={{ background: accentColor }}
-                                    >
-                                        ✓
-                                    </span>
+                                    <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0" style={{ background: accentColor }}>
+                                        <span className="text-black text-[10px] font-black">✓</span>
+                                    </div>
                                 </div>
                             ))}
                         </div>
 
-                        {/* CTA Bar */}
-                        <div
-                            className="flex items-center justify-center rounded-xl py-3 mt-1 shadow-lg"
-                            style={{
-                                background: accentColor,
-                                boxShadow: `0 4px 20px ${accentColor}80`,
-                            }}
-                        >
-                            <p className="text-black font-black text-center" style={{ fontSize: 'clamp(13px, 3.5vw, 16px)' }}>
-                                {variant.ctaButton}
-                            </p>
+                        {/* CTA Section */}
+                        <div className="mt-4">
+                            {platformSpec.ctaStyle === 'swipe_up' ? (
+                                <div className="flex flex-col items-center gap-2 animate-bounce">
+                                    <div className="w-6 h-6 border-t-4 border-l-4 border-white rotate-45 mb-[-10px]" />
+                                    <span className="text-white font-black text-xl uppercase tracking-widest" style={{ textShadow: '0 0 10px rgba(0,0,0,0.5)' }}>اسحب للأعلى</span>
+                                </div>
+                            ) : (
+                                <div
+                                    className="flex items-center justify-center rounded-2xl py-4 shadow-xl border-b-4 border-black/20 active:translate-y-1 transition-transform"
+                                    style={{
+                                        background: accentColor,
+                                        boxShadow: `0 8px 30px ${accentColor}40`,
+                                    }}
+                                >
+                                    <p className="text-black font-black text-center" style={{ fontSize: `${18 * platformSpec.fontScale}px` }}>
+                                        {variant.ctaButton}
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
 
-                    {/* Score watermark */}
-                    <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-sm rounded-lg px-2 py-1">
-                        <p className="text-white text-[10px] font-black">{variant.hookScore}% قوة الهوك</p>
+                    {/* Performance Watermark - Only in preview */}
+                    <div className="absolute top-4 left-4 bg-emerald-500/90 text-black text-[10px] font-black px-2 py-1 rounded shadow-lg uppercase tracking-tighter">
+                        PRO Performance Output
                     </div>
                 </div>
             </div>
 
-            {/* ── Export Button ── */}
-            <button
-                onClick={handleExport}
-                disabled={isExporting}
-                className="w-full py-3 rounded-xl font-black text-sm transition-all disabled:opacity-60 flex items-center justify-center gap-2"
-                style={{ background: isExporting ? '#374151' : 'linear-gradient(90deg, #10B981, #059669)', color: '#000' }}
-            >
-                {isExporting ? (
-                    <>
-                        <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                        جاري التصدير...
-                    </>
-                ) : exportReady ? (
-                    '✅ جاهز للتحميل — اضغط مرة أخرى للتحديث'
-                ) : (
-                    '📥 تصدير الكريتف كصورة PNG'
-                )}
-            </button>
+            {/* ── Export Controls ── */}
+            <div className="grid grid-cols-2 gap-2">
+                <button
+                    onClick={handleExport}
+                    disabled={isExporting}
+                    className="py-4 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2 bg-white text-black hover:bg-white/90"
+                >
+                    {isExporting ? <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> : 'تصدير PNG'}
+                </button>
+                <a
+                    href="#"
+                    className="py-4 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2 bg-emerald-500 text-black hover:bg-emerald-400"
+                >
+                    مشاركة
+                </a>
+            </div>
         </div>
     );
 };

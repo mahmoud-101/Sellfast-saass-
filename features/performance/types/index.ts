@@ -3,6 +3,8 @@
  * Arabic Ecom Performance Intelligence System
  */
 
+export * from './ad.types';
+
 // ─── Angle Types ────────────────────────────────────────────────────────────
 export type PerformanceAngleType =
     | 'pain'
@@ -112,44 +114,55 @@ export interface TestingSuggestion {
     testingNote: string;
 }
 
-// ============================================================================
-// ==================== PRO MODE: 6-AGENT PIPELINE TYPES =======================
-// ============================================================================
+// ─── Diamond Engine: Tagged Elements ───────────────────────────────────────
+export type ElementTag = 'emotional' | 'logical' | 'urgent' | 'social_proof' | 'benefit' | 'feature';
 
-export interface AgentMarketAnalysis {
-    targetAudience: string;
-    marketAwareness: string;
-    coreDesire: string;
-    biggestPain: string;
-    marketSophistication: string;
+export interface TaggedElement {
+    content: string;
+    tags: ElementTag[];
+    weight: number; // 1-10
 }
 
-export interface AgentAngle {
+// ─── Diamond Engine: Platform Specs ──────────────────────────────────────────
+export type Platform = 'facebook_feed' | 'instagram_story' | 'instagram_feed' |
+    'tiktok' | 'snapchat' | 'linkedin' | 'google_display' | 'twitter';
+
+export interface PlatformSpec {
+    id: Platform;
+    name: string;
+    dimensions: { width: number; height: number };
+    maxHeadlineLength: number;
+    maxDescriptionLength: number;
+    safeZone: { top: number; bottom: number; left: number; right: number };
+    fontScale: number;
+    ctaStyle: 'button' | 'swipe_up' | 'text_link';
+    textPosition: 'top' | 'center' | 'bottom';
+}
+
+// ─── Diamond Engine: Audience Segments ───────────────────────────────────────
+export type BuyingMotivation = 'price' | 'quality' | 'status' | 'convenience';
+
+export interface AudienceSegment {
     id: string;
-    title: string;
-    concept: string;
+    name: string;
+    buyingMotivation: BuyingMotivation;
+    colorScheme: 'warm' | 'premium' | 'luxury' | 'corporate';
+    urgencyLevel: 0 | 1 | 2 | 3;
+    headlinePrefix?: string;
 }
 
-export interface AgentAdCopy {
-    adBody: string;
-    callToAction: string;
-}
+// ─── Diamond Engine: Dialects ────────────────────────────────────────────────
+export type Dialect = 'eg' | 'sa';
 
-export interface AgentVisual {
-    selectedStyleName: string;
-    variables: Record<string, string>;
-    imagePrompt: string;
-    generatedImageUrl?: string;
-}
-
-export interface AgentObjection {
-    objection: string;
-    rebuttal: string;
-}
-
-export interface FinalProModeAd {
-    angle: AgentAngle;
-    hooks: string[];
-    copy: AgentAdCopy;
-    visual: AgentVisual;
+// ─── Diamond Engine: Ad Score Factors ────────────────────────────────────────
+export interface AdScoreFactors {
+    headlineLength: number;
+    hasNumber: boolean;
+    hasEmoji: boolean;
+    hasQuestion: boolean;
+    urgencyLevel: 0 | 1 | 2 | 3;
+    imageType: 'product' | 'lifestyle' | 'ugc' | 'graphic';
+    colorContrast: number;
+    textToImageRatio: number;
+    ctaClarity: number;
 }

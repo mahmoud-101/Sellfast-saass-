@@ -16,6 +16,8 @@ import type { GenerationResult, AdCard as AdCardType, ProductFormData } from './
 import { buildAdPrompt } from './engine/PromptBuilder';
 import { parseGeminiResponse, isValidResult } from './engine/ResponseAnalyzer';
 import { generateImage, generateAdsWithEnrichment } from '../../services/geminiService';
+import { generateMetaCSV, AdExportData } from './engine/ExportPipeline';
+import { predictCTR } from './engine/ScoringPredictor';
 
 // ─── Loading State Component ──────────────────────────────────────────────────
 const STEPS = [
@@ -99,11 +101,13 @@ const PerformanceLoadingState: React.FC = () => {
 interface FormState {
     productDescription: string;
     price: string;
+    dialect: 'eg' | 'sa';
 }
 
 const INITIAL_FORM: FormState = {
     productDescription: '',
     price: '',
+    dialect: 'eg',
 };
 
 // ─── Select Helper ────────────────────────────────────────────────────────────
@@ -234,6 +238,7 @@ const PerformancePanel: React.FC = () => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [isIntelligenceOpen, setIsIntelligenceOpen] = useState(false);
     const [globalError, setGlobalError] = useState<string | null>(null);
+    const [isExportingCSV, setIsExportingCSV] = useState(false);
 
     // Product image for visual creative
     const [productImageSrc, setProductImageSrc] = useState<string | null>(null);
@@ -285,6 +290,7 @@ const PerformancePanel: React.FC = () => {
         const formData: ProductFormData = {
             productDescription: form.productDescription,
             price: form.price,
+            dialect: form.dialect,
             imageFile: file,
             referenceImageFile: refFile,
         };
@@ -338,6 +344,67 @@ const PerformancePanel: React.FC = () => {
             setIsGenerating(false);
             setGlobalError(error.message || "حدث خطأ غير متوقع أثناء توليد الإعلانات. يرجى المحاولة مرة أخرى.");
         }
+    };
+
+    const handleExportBatchCSV = () => {
+        if (!adSet) return;
+        setIsExportingCSV(true);
+
+        setTimeout(() => {
+            const headlines = adSet.ads.filter(a => a.headline).map(ad => ad.headline);
+            const descriptions = adSet.ads.filter(a => a.primaryText || a.adPost).map(ad => ad.primaryText || ad.adPost);
+            const images = adSet.ads.filter(a => a.generatedImageUrl || productImageSrc).map(ad => ad.generatedImageUrl || productImageSrc);
+            const ctas = ["اطلب دلوقتي والخصم شغال", "سجل بياناتك الآن", "احصل على العرض", "تواصل معنا", "مراسلة"];
+
+            const exportData: AdExportData[] = [];
+
+            headlines.forEach((h, hIdx) => {
+                descriptions.forEach((d, dIdx) => {
+                    images.forEach((img, iIdx) => {
+                        const cIdx = (hIdx + dIdx + iIdx) % ctas.length;
+
+                        const ctr = predictCTR({
+                            headlineLength: h.length,
+                            hasNumber: /\d/.test(h),
+                            hasEmoji: /[\p{Emoji}]/u.test(h),
+                            hasQuestion: h.includes('؟') || h.includes('?'),
+                            urgencyLevel: 2,
+                            imageType: 'ugc',
+                            colorContrast: 0.8,
+                            textToImageRatio: 0.1,
+                            ctaClarity: 0.9,
+                        });
+
+                        exportData.push({
+                            headline: h,
+                            description: d,
+                            cta: ctas[cIdx],
+                            imageUrl: img || '',
+                            campaignName: `Ebdaa_Performance_${new Date().toISOString().split('T')[0]}`,
+                            audienceSegment: adSet.advancedAnalysis?.market || 'Broad',
+                            platform: 'meta',
+                            hIdx, dIdx, iIdx, cIdx,
+                            ctrScore: ctr
+                        } as any);
+                    });
+                });
+            });
+
+            exportData.sort((a: any, b: any) => b.ctrScore - a.ctrScore);
+            const top50 = exportData.slice(0, 50);
+            const csvString = generateMetaCSV(top50);
+
+            const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvString], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", `ebdaa_ads_batch_${new Date().getTime()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            setIsExportingCSV(false);
+        }, 800);
     };
 
     return (
@@ -429,10 +496,24 @@ const PerformancePanel: React.FC = () => {
                 <div className="md:col-span-2 border-t border-white/5 my-4" />
 
                 {/* ── Group 1: Product Core ── */}
-                <div className="md:col-span-2 mb-2">
+                <div className="md:col-span-1 mb-2">
                     <div className="flex items-center gap-2 mb-1">
                         <span className="text-orange-500 text-lg">📦</span>
-                        <h3 className="text-lg text-white font-black">2. تفاصيل المنتج</h3>
+                        <h3 className="text-lg text-white font-black">2. تفاصيل المنتج والجمهور</h3>
+                    </div>
+                </div>
+
+                <div className="md:col-span-1 mb-2 flex justify-end">
+                    <div className="w-full max-w-[200px]">
+                        <Select
+                            label="لهجة الإعلان *"
+                            value={form.dialect}
+                            onChange={(v) => setField('dialect', v)}
+                            options={[
+                                { value: 'eg', label: '🇪🇬 عامية مصرية (افتراضي)' },
+                                { value: 'sa', label: '🇸🇦 عامية خليجية / سعودية' }
+                            ]}
+                        />
                     </div>
                 </div>
 
@@ -513,6 +594,34 @@ const PerformancePanel: React.FC = () => {
                         {adSet.ads.map((v, idx) => (
                             <AdCard key={idx} variant={v} productImageSrc={productImageSrc} index={idx} />
                         ))}
+                    </div>
+
+                    {/* ── Diamond Factory Export ── */}
+                    <div className="mt-8 p-6 bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/30 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden shadow-lg">
+                        <div className="relative z-10">
+                            <h3 className="text-xl font-black text-white flex items-center gap-2">
+                                <span>💎</span> وضع مصنع الألماس (Diamond Factory)
+                            </h3>
+                            <p className="text-sm text-slate-300 mt-2 max-w-lg leading-relaxed">
+                                قم بتوليد وتصنيف <span className="text-purple-400 font-bold">50 تركيبة إعلانية للـ A/B Testing</span> جاهزة لحظياً، وتصديرها كملف CSV للرفع المباشر على صفحة مدير إعلانات <strong>Meta Ads</strong>.
+                            </p>
+                        </div>
+                        <button
+                            onClick={handleExportBatchCSV}
+                            disabled={isExportingCSV}
+                            className="relative z-10 w-full md:w-auto px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-black rounded-2xl transition-all shadow-[0_0_20px_rgba(168,85,247,0.4)] hover:shadow-[0_0_30px_rgba(168,85,247,0.6)] active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
+                        >
+                            {isExportingCSV ? (
+                                <>
+                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    <span>جاري المعالجة والتصدير...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span>📥</span> تصدير 50 إعلان لفيسبوك (CSV)
+                                </>
+                            )}
+                        </button>
                     </div>
 
                     {/* ── Advanced Intelligence Accordion ── */}

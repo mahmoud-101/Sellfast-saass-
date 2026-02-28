@@ -9,7 +9,13 @@ import { DYNAMIC_STYLES } from '../../../lib/dynamicTemplates'
 import { AD_FRAMEWORKS, SWIPE_FILE, HOOK_LIBRARY, CTA_LIBRARY } from '../../../lib/adFrameworks'
 
 // ─── قواعد اللغة العامة ───────────────────────────────────────────────────────
-const LANGUAGE_RULES = `
+function getLanguageRules(dialect?: 'eg' | 'sa'): string {
+  const isGulf = dialect === 'sa';
+  const dialectInstruction = isGulf
+    ? "✅ اكتب بالعامية السعودية أو الخليجية زي ما الناس بتكتب في السوشيال ميديا (استخدم كلمات مثل: الحين، واجد، باجر، كفو، أبشر)"
+    : "✅ اكتب بالعامية المصرية زي ما الناس بتكتب في واتساب (استخدم كلمات مثل: دلوقتي، كتير، بكرة، جامد)";
+
+  return `
 ══════════════════════════════════
 قواعد اللغة — ممنوع تخالفها:
 ══════════════════════════════════
@@ -19,12 +25,13 @@ const LANGUAGE_RULES = `
 ❌ ممنوع أي إعلانين يبدأوا بنفس الكلمة
 ❌ ممنوع الكلام العام اللي ينفع لأي منتج تاني
 
-✅ اكتب بالعامية المصرية زي ما الناس بتكتب في واتساب
+${dialectInstruction}
 ✅ كل جملة لازم تخدم البيع مباشرة — مفيش كلام زيادة
 ✅ استخدم أرقام وتفاصيل حقيقية من بيانات المنتج
 ✅ كل إعلان ليه صوت وشخصية مختلفة تماماً
 ✅ الـ primaryText يبدأ بجملة تخلي الواحد يوقف إصبعه فوراً
-`
+`;
+}
 
 const DYNAMIC_TEMPLATES_INSTRUCTION = `
 ══════════════════════════════════
@@ -203,7 +210,7 @@ export function buildAdPrompt(data: ProductFormData, enrichment?: EnrichmentResu
 
 ${enrichmentData}
 
-${LANGUAGE_RULES}
+${getLanguageRules(data.dialect)}
 
 ${DYNAMIC_TEMPLATES_INSTRUCTION}
 

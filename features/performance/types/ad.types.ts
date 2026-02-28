@@ -51,6 +51,7 @@ export interface ProductFormData {
   mainPain?: string
   uniqueDifferentiator?: string
   market?: string
+  dialect?: 'eg' | 'sa'
   awarenessLevel?: string
   competitionLevel?: string
   imageFile: File | null
