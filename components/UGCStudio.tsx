@@ -93,11 +93,13 @@ export function UGCStudio({ userId }: UGCStudioProps) { // Updated component sig
 
         // Credit Deduction
         try {
-            const success = await deductCredits(userId, CREDIT_COSTS.IMAGE_PRO); // Deduct credits
-            if (!success) {
-                setError('عفواً، رصيدك غير كافٍ. يرجى شحن الرصيد للمتابعة.');
-                setIsGenerating(false);
-                return;
+            if (userId !== 'guest') {
+                const success = await deductCredits(userId, CREDIT_COSTS.IMAGE_PRO); // Deduct credits
+                if (!success) {
+                    setError('عفواً، رصيدك غير كافٍ. يرجى شحن الرصيد للمتابعة.');
+                    setIsGenerating(false);
+                    return;
+                }
             }
         } catch (deductionError) {
             console.error("Credit deduction failed:", deductionError);

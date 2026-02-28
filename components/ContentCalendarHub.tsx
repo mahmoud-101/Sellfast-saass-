@@ -14,7 +14,7 @@ interface Props {
     project: ContentCalendarProject;
     setProject: React.Dispatch<React.SetStateAction<ContentCalendarProject>>;
     onBridgeToPhotoshoot: (context: string) => void;
-    userId: string;
+    userId?: string;
 }
 
 const ContentCalendarHub: React.FC<Props> = ({ project, setProject, onBridgeToPhotoshoot, userId }) => {
@@ -93,7 +93,9 @@ const ContentCalendarHub: React.FC<Props> = ({ project, setProject, onBridgeToPh
                 error: null
             }));
 
-            await saveGeneratedAsset(userId, 'CONTENT_CALENDAR_30', { calendar_content: JSON.stringify(plan) }, { prompt: project.prompt, market: project.targetMarket });
+            if (userId && userId !== 'guest') {
+                await saveGeneratedAsset(userId, 'CONTENT_CALENDAR_30', { calendar_content: JSON.stringify(plan) }, { prompt: project.prompt, market: project.targetMarket });
+            }
 
             setProject(s => ({ ...s, days, isGenerating: false }));
 

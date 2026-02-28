@@ -53,21 +53,23 @@ const VideoStudio: React.FC<VideoStudioProps> = ({ userId, refreshCredits, initi
 
     const handleGenerate = async () => {
         if (productImages.length === 0 || !userId) return;
-        
+
         setIsGenerating(true);
         setStatusText('جاري تحليل الصور وابتكار 9 أفكار إبداعية...');
-        
+
         try {
-            const deducted = await deductCredits(userId, 30); 
-            if (!deducted) {
-                setStatusText('رصيد غير كافٍ');
-                setIsGenerating(false);
-                return;
+            if (userId !== 'guest') {
+                const deducted = await deductCredits(userId, 30);
+                if (!deducted) {
+                    setStatusText('رصيد غير كافٍ');
+                    setIsGenerating(false);
+                    return;
+                }
             }
 
             // Step 1: Generate Dynamic Storyboard
             const dynamicShots = await generateDynamicStoryboard(productImages, referenceImages, prompt);
-            
+
             // Step 2: Initialize Results
             const initialResults: StoryboardResult[] = dynamicShots.map((name, i) => ({
                 id: i,
@@ -136,12 +138,12 @@ const VideoStudio: React.FC<VideoStudioProps> = ({ userId, refreshCredits, initi
         <main className="w-full flex flex-col gap-10 pt-4 pb-12 animate-in fade-in duration-700 text-right font-tajawal" dir="rtl">
             <div className="bg-black/40 border border-white/5 rounded-[3.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-                    
+
                     {/* Control Panel */}
                     <div className="lg:col-span-4 space-y-8">
                         <div className="space-y-2">
-                             <h2 className="text-3xl font-black text-white tracking-tighter italic">استوديو تصميم الفيديوهات <span className="text-[#FFD700]">9-Individual</span></h2>
-                             <p className="text-slate-500 text-sm font-bold leading-relaxed">ادمج المنتج والرفرنس للحصول على 9 صور احترافية منفصلة بجودة الـ 4K.</p>
+                            <h2 className="text-3xl font-black text-white tracking-tighter italic">استوديو تصميم الفيديوهات <span className="text-[#FFD700]">9-Individual</span></h2>
+                            <p className="text-slate-500 text-sm font-bold leading-relaxed">ادمج المنتج والرفرنس للحصول على 9 صور احترافية منفصلة بجودة الـ 4K.</p>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
@@ -162,14 +164,14 @@ const VideoStudio: React.FC<VideoStudioProps> = ({ userId, refreshCredits, initi
                         <div className="space-y-4">
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-2">أوضاع الكتابة التلقائية</label>
                             <div className="grid grid-cols-2 gap-3">
-                                <button 
+                                <button
                                     onClick={() => setPrompt(PROMPT_TEMPLATES.FUSION)}
                                     className="flex flex-col items-center justify-center p-4 rounded-2xl border border-white/10 bg-white/5 hover:bg-[#FFD700]/20 hover:border-[#FFD700] transition-all gap-2 group"
                                 >
                                     <FusionIcon />
                                     <span className="text-[9px] font-black uppercase text-slate-400 group-hover:text-white">دمج الأنماط</span>
                                 </button>
-                                <button 
+                                <button
                                     onClick={() => setPrompt(PROMPT_TEMPLATES.PLACEMENT)}
                                     className="flex flex-col items-center justify-center p-4 rounded-2xl border border-white/10 bg-white/5 hover:bg-[#FFD700]/20 hover:border-[#FFD700] transition-all gap-2 group"
                                 >
@@ -180,18 +182,18 @@ const VideoStudio: React.FC<VideoStudioProps> = ({ userId, refreshCredits, initi
                         </div>
 
                         <div className="space-y-4">
-                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-2">وصف السيناريو</label>
-                             <textarea 
-                                value={prompt} 
-                                onChange={(e) => setPrompt(e.target.value)} 
-                                placeholder="اكتب وصفك أو اختر وضعاً من الأعلى..." 
-                                className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-sm font-bold text-white focus:border-[#FFD700] outline-none min-h-[140px] resize-none leading-relaxed" 
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-2">وصف السيناريو</label>
+                            <textarea
+                                value={prompt}
+                                onChange={(e) => setPrompt(e.target.value)}
+                                placeholder="اكتب وصفك أو اختر وضعاً من الأعلى..."
+                                className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-sm font-bold text-white focus:border-[#FFD700] outline-none min-h-[140px] resize-none leading-relaxed"
                             />
                         </div>
 
-                        <button 
-                            onClick={handleGenerate} 
-                            disabled={isGenerating || productImages.length === 0} 
+                        <button
+                            onClick={handleGenerate}
+                            disabled={isGenerating || productImages.length === 0}
                             className="w-full h-20 bg-[#FFD700] hover:bg-yellow-400 disabled:opacity-30 text-black rounded-2xl font-black text-xl flex items-center justify-center gap-4 transition-all shadow-[0_20px_50px_rgba(255,215,0,0.2)]"
                         >
                             {isGenerating ? (
@@ -225,18 +227,18 @@ const VideoStudio: React.FC<VideoStudioProps> = ({ userId, refreshCredits, initi
                                                 </div>
                                             )}
                                         </div>
-                                        
+
                                         <div className="space-y-1">
                                             <p className="text-[8px] font-black text-[#FFD700] uppercase tracking-widest">لقطة 0{res.id + 1}</p>
                                             <p className="text-[10px] font-bold text-slate-300 truncate">{res.shotName}</p>
                                         </div>
 
                                         {res.image && (
-                                            <button 
+                                            <button
                                                 onClick={() => {
                                                     const a = document.createElement('a');
                                                     a.href = `data:${res.image!.mimeType};base64,${res.image!.base64}`;
-                                                    a.download = `EbdaaPro-Shot-0${res.id+1}.png`;
+                                                    a.download = `EbdaaPro-Shot-0${res.id + 1}.png`;
                                                     a.click();
                                                 }}
                                                 className="w-full py-2.5 bg-white text-black rounded-xl text-[10px] font-black opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0"
@@ -250,7 +252,7 @@ const VideoStudio: React.FC<VideoStudioProps> = ({ userId, refreshCredits, initi
                         ) : (
                             <div className="w-full h-full min-h-[500px] flex flex-col items-center justify-center opacity-10 space-y-8">
                                 <div className="grid grid-cols-3 gap-4">
-                                    {[1,2,3,4,5,6,7,8,9].map(i => <div key={i} className="w-16 h-10 border-2 border-white rounded-xl"></div>)}
+                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => <div key={i} className="w-16 h-10 border-2 border-white rounded-xl"></div>)}
                                 </div>
                                 <p className="font-black uppercase tracking-[0.5em] text-sm">9 لقطات إبداعية جاهزة</p>
                             </div>
@@ -260,18 +262,18 @@ const VideoStudio: React.FC<VideoStudioProps> = ({ userId, refreshCredits, initi
             </div>
 
             <div className="grid grid-cols-3 gap-4">
-                 <div className="bg-emerald-500/10 border border-emerald-500/20 p-5 rounded-3xl text-center">
-                     <p className="text-[10px] font-black text-emerald-500 uppercase mb-1">Ultra HD</p>
-                     <p className="text-[11px] font-bold text-slate-400">تحميل كل صورة بشكل مستقل</p>
-                 </div>
-                 <div className="bg-[#FFD700]/10 border border-[#FFD700]/20 p-5 rounded-3xl text-center">
-                     <p className="text-[10px] font-black text-[#FFD700] uppercase mb-1">Identity Lock</p>
-                     <p className="text-[11px] font-bold text-slate-400">ثبات كامل لشعار المنتج</p>
-                 </div>
-                 <div className="bg-yellow-500/10 border border-yellow-500/20 p-5 rounded-3xl text-center">
-                     <p className="text-[10px] font-black text-yellow-500 uppercase mb-1">Cinema Flow</p>
-                     <p className="text-[11px] font-bold text-slate-400">9 زوايا إخراجية عالمية</p>
-                 </div>
+                <div className="bg-emerald-500/10 border border-emerald-500/20 p-5 rounded-3xl text-center">
+                    <p className="text-[10px] font-black text-emerald-500 uppercase mb-1">Ultra HD</p>
+                    <p className="text-[11px] font-bold text-slate-400">تحميل كل صورة بشكل مستقل</p>
+                </div>
+                <div className="bg-[#FFD700]/10 border border-[#FFD700]/20 p-5 rounded-3xl text-center">
+                    <p className="text-[10px] font-black text-[#FFD700] uppercase mb-1">Identity Lock</p>
+                    <p className="text-[11px] font-bold text-slate-400">ثبات كامل لشعار المنتج</p>
+                </div>
+                <div className="bg-yellow-500/10 border border-yellow-500/20 p-5 rounded-3xl text-center">
+                    <p className="text-[10px] font-black text-yellow-500 uppercase mb-1">Cinema Flow</p>
+                    <p className="text-[11px] font-bold text-slate-400">9 زوايا إخراجية عالمية</p>
+                </div>
             </div>
         </main>
     );

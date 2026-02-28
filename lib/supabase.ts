@@ -147,6 +147,7 @@ export const getReferralStats = async (userId: string) => {
 
 export const getUserCredits = async (userId: string): Promise<number> => {
     if (!userId) return 0;
+    if (userId === 'guest') return 10000; // رصيد ضخم للضيوف لتجنب أي عوائق 🎁
     const profile = await getUserProfile(userId);
     return profile?.credits ?? 0;
 };
@@ -155,7 +156,7 @@ export const getUserCredits = async (userId: string): Promise<number> => {
  * خصم النقاط من رصيد المستخدم بعد التأكد من كفايته
  */
 export const deductCredits = async (userId: string, amount: number): Promise<boolean> => {
-    if (!userId || !isSupabaseConfigured()) return true; // وضع التجربة (Preview)
+    if (!userId || userId === 'guest' || !isSupabaseConfigured()) return true; // وضع التجربة (Preview) أو الضيف 🔓
     try {
         const currentCredits = await getUserCredits(userId);
         if (currentCredits < amount) return false;

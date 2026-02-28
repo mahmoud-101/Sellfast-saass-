@@ -5,15 +5,19 @@ import { generateAdScript } from '../services/geminiService';
 import { processFullAdProduction } from '../services/videoService';
 import { deductCredits, createVideoJob, getUserVideoJobs, CREDIT_COSTS, updateVideoJob } from '../lib/supabase';
 
-const AdsStudio: React.FC<{ userId: string; refreshCredits: () => void; }> = ({ userId, refreshCredits }) => {
+const AdsStudio: React.FC<{ userId?: string; refreshCredits: () => void; }> = ({ userId, refreshCredits }) => {
     const [project, setProject] = useState<AdsStudioProject & { reviewScript: string | null, isDrafting: boolean }>({
-        id: '1', name: 'New Ad Project', productName: '', benefits: '', price: '', language: 'ar', template: 'ugc', 
+        id: '1', name: 'New Ad Project', productName: '', benefits: '', price: '', language: 'ar', template: 'ugc',
         isGenerating: false, isDrafting: false, reviewScript: null, currentStep: '', jobs: [], error: null
     });
     const [activeTab, setActiveTab] = useState<'create' | 'history'>('create');
 
     useEffect(() => { if (userId) loadHistory(); }, [userId]);
-    const loadHistory = async () => { const jobs = await getUserVideoJobs(userId); setProject(prev => ({ ...prev, jobs })); };
+    const loadHistory = async () => {
+        if (!userId || userId === 'guest') return;
+        const jobs = await getUserVideoJobs(userId);
+        setProject(prev => ({ ...prev, jobs }));
+    };
 
     const handleStartDraft = async () => {
         if (!project.productName) return;
@@ -28,19 +32,26 @@ const AdsStudio: React.FC<{ userId: string; refreshCredits: () => void; }> = ({ 
         if (!project.reviewScript || !userId) return;
         setProject(p => ({ ...p, isGenerating: true, currentStep: 'جاري الرندرة النهائية...' }));
         try {
-            const deducted = await deductCredits(userId, CREDIT_COSTS.AD_VIDEO);
-            if (!deducted) { setProject(p => ({ ...p, isGenerating: false, error: 'رصيد غير كافٍ' })); return; }
-            const job = await createVideoJob(userId, { product_name: project.productName, script: project.reviewScript, status: 'pending' });
-            
-            // Fix: Updated call parameters to match processFullAdProduction signature
-            await processFullAdProduction(job.id, { 
-                product: project.productName, 
-                benefits: project.benefits,
-                price: project.price,
-                lang: project.language,
-                template: project.template,
-                script: project.reviewScript 
-            }, (step) => setProject(p => ({ ...p, currentStep: step.text })));
+            if (userId !== 'guest') {
+                const deducted = await deductCredits(userId, CREDIT_COSTS.AD_VIDEO);
+                if (!deducted) { setProject(p => ({ ...p, isGenerating: false, error: 'رصيد غير كافٍ' })); return; }
+                const job = await createVideoJob(userId, { product_name: project.productName, script: project.reviewScript, status: 'pending' });
+
+                // Fix: Updated call parameters to match processFullAdProduction signature
+                await processFullAdProduction(job.id, {
+                    product: project.productName,
+                    benefits: project.benefits,
+                    price: project.price,
+                    lang: project.language,
+                    template: project.template,
+                    script: project.reviewScript
+                }, (step) => setProject(p => ({ ...p, currentStep: step.text })));
+            } else {
+                // وضع الضيف: محاكاة الإنتاج بدون قاعدة بيانات
+                setProject(p => ({ ...p, currentStep: 'جاري التوليد التجريبي...' }));
+                // يمكن إضافة تأخير بسيط للمحاكاة
+                await new Promise(r => setTimeout(r, 2000));
+            }
 
             await loadHistory(); refreshCredits(); setProject(p => ({ ...p, isGenerating: false, reviewScript: null })); setActiveTab('history');
         } catch (err) { setProject(p => ({ ...p, isGenerating: false, error: 'فشل الإنتاج' })); }
@@ -87,8 +98,8 @@ const AdsStudio: React.FC<{ userId: string; refreshCredits: () => void; }> = ({ 
                             )}
                         </div>
                         <div className="lg:w-1/3 flex flex-col items-center justify-center bg-white/5 rounded-[3rem] border border-dashed border-white/10 p-12 text-center opacity-40">
-                             <div className="text-8xl mb-6">🎬</div>
-                             <p className="font-black text-xs text-white">Video Engine Ready</p>
+                            <div className="text-8xl mb-6">🎬</div>
+                            <p className="font-black text-xs text-white">Video Engine Ready</p>
                         </div>
                     </div>
                 </div>
@@ -96,11 +107,11 @@ const AdsStudio: React.FC<{ userId: string; refreshCredits: () => void; }> = ({ 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {project.jobs.map(job => (
                         <div key={job.id} className="bg-white/5 p-8 rounded-[3rem] border border-white/10 shadow-sm hover:border-[#FFD700] transition-all group">
-                             <div className="flex justify-between items-center mb-4">
+                            <div className="flex justify-between items-center mb-4">
                                 <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase ${job.status === 'completed' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-yellow-500/10 text-yellow-500'}`}>{job.status}</span>
-                             </div>
-                             <h4 className="text-xl font-black text-white">{job.product_name}</h4>
-                             {job.video_url && <a href={job.video_url} target="_blank" className="mt-8 block w-full py-4 bg-[#FFD700] text-black rounded-xl text-center text-xs font-black hover:bg-yellow-400">تحميل الفيديو</a>}
+                            </div>
+                            <h4 className="text-xl font-black text-white">{job.product_name}</h4>
+                            {job.video_url && <a href={job.video_url} target="_blank" className="mt-8 block w-full py-4 bg-[#FFD700] text-black rounded-xl text-center text-xs font-black hover:bg-yellow-400">تحميل الفيديو</a>}
                         </div>
                     ))}
                 </div>

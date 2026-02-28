@@ -27,8 +27,10 @@ const PhotoshootDirector: React.FC<PhotoshootDirectorProps> = ({ project, setPro
 
   const onGenerate = useCallback(async () => {
     if (!project || project.productImages.length === 0 || project.selectedShotTypes.length === 0 || !userId) {
-      setProject(s => ({ ...s, error: 'ارفع صورة المنتج واختر نوعاً واحداً من اللقطات على الأقل.' }));
-      return;
+      if (userId !== 'guest') {
+        setProject(s => ({ ...s, error: 'ارفع صورة المنتج واختر نوعاً واحداً من اللقطات على الأقل.' }));
+        return;
+      }
     }
 
     const totalCost = project.selectedShotTypes.length * CREDIT_COSTS.IMAGE_BASIC;
