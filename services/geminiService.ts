@@ -336,10 +336,10 @@ export async function generateCampaignPlan(productImages: ImageFile[], goal: str
     } catch { return []; }
 }
 
-export async function generateContentCalendar30Days(productImages: ImageFile[], goal: string, market: string, dialect: string): Promise<any[]> {
+export async function generateContentCalendar7Days(productImages: ImageFile[], goal: string, market: string, dialect: string): Promise<any[]> {
     const prompt = `
     You are a World-Class Content Strategist for the Arabic/MENA market.
-    Create a 30-day content calendar for:
+    Create a 7-day content calendar for:
     - Goal: ${goal}
     - Market: ${market}
     - Dialect: ${dialect}
@@ -350,9 +350,9 @@ export async function generateContentCalendar30Days(productImages: ImageFile[], 
     - 20% Engagement (Questions, polls, memes)
     - 10% Video/Reel Scripts (High impact)
     
-    Return ONLY a JSON array of 30 objects. Each object MUST have:
+    Return ONLY a JSON array of 7 objects. Each object MUST have:
     {
-      "id": "day-1 to day-30",
+      "id": "day-1 to day-7",
       "date": "Day 1",
       "type": "product | viral | engagement | video",
       "title": "Short catchy title",
@@ -368,7 +368,7 @@ export async function generateContentCalendar30Days(productImages: ImageFile[], 
     try {
         const plan = parseRobustJSON(res);
         if ((import.meta as any).env.VITE_USER_ID) {
-            await awardPoints((import.meta as any).env.VITE_USER_ID, 100, "برمجة خطة محتوى 30 يوم");
+            await awardPoints((import.meta as any).env.VITE_USER_ID, 100, "برمجة خطة محتوى 7 أيام");
         }
         return plan;
     } catch { return []; }

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { ContentCalendarProject, ImageFile, CalendarDay } from '../types';
 import { resizeImage } from '../utils';
-import { generateContentCalendar30Days, generateImage } from '../services/geminiService';
+import { generateContentCalendar7Days, generateImage } from '../services/geminiService';
 import ImageWorkspace from './ImageWorkspace';
 import { saveGeneratedAsset } from '../lib/supabase';
 import { Calendar, LayoutGrid, List, Sparkles, ShoppingBag, Video, MessageSquare, ChevronRight, ChevronLeft } from 'lucide-react';
@@ -83,9 +83,7 @@ const ContentCalendarHub: React.FC<Props> = ({ project, setProject, onBridgeToPh
         if (!project.prompt.trim()) return;
         setProject(s => ({ ...s, isGenerating: true, error: null, days: [] }));
         try {
-            const plan = await generateContentCalendar30Days(project.productImages, project.prompt, project.targetMarket, project.dialect);
-
-            // Map the API results to our CalendarDay structure
+            const plan = await generateContentCalendar7Days(project.productImages, project.prompt, project.targetMarket, project.dialect);
             const days: CalendarDay[] = plan.map((p: any) => ({
                 ...p,
                 image: null,
@@ -99,9 +97,8 @@ const ContentCalendarHub: React.FC<Props> = ({ project, setProject, onBridgeToPh
 
             setProject(s => ({ ...s, days, isGenerating: false }));
 
-            // Background step: Generate actual images for some key posts (to avoid massive parallel cost/latency, we generate sequentially or on demand)
-            // For now, let's start generating the first 5 images as a preview
-            const previewLimit = 5;
+            // Set limit to 7 so it generates all images
+            const previewLimit = 7;
             for (let i = 0; i < Math.min(days.length, previewLimit); i++) {
                 const day = days[i];
                 try {
@@ -159,7 +156,7 @@ const ContentCalendarHub: React.FC<Props> = ({ project, setProject, onBridgeToPh
                             <span className="text-[10px] font-black uppercase tracking-widest"> content strategy 3.0</span>
                         </div>
                         <h1 className="text-5xl font-black text-white tracking-tighter">تقويم المحتوى الذكي 🗓️✨</h1>
-                        <p className="text-slate-400 text-lg font-bold">خطة محتوى هجينة (بيع + فيرال) لـ 30 يوم قادم بضغطة واحدة.</p>
+                        <p className="text-slate-400 text-lg font-bold">خطة محتوى هجينة (بيع + فيرال) لـ 7 أيام قادمة بضغطة واحدة، مع توليد صور لكل يوم.</p>
                     </div>
                     {project.days.length > 0 && (
                         <div className="flex items-center gap-3 bg-white/5 p-1.5 rounded-2xl border border-white/10">
@@ -236,7 +233,7 @@ const ContentCalendarHub: React.FC<Props> = ({ project, setProject, onBridgeToPh
                                     disabled={project.isGenerating || !project.prompt.trim()}
                                     className="w-full bg-gradient-to-r from-orange-600 to-orange-400 text-black font-black py-6 rounded-2xl text-2xl shadow-[0_20px_40px_rgba(249,115,22,0.2)] hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:grayscale"
                                 >
-                                    {project.isGenerating ? 'جاري تصميم الخطة الكاملة...' : 'توليد تقويم الـ 30 يوم 🚀'}
+                                    {project.isGenerating ? 'جاري تصميم الخطة الكاملة...' : 'توليد تقويم محتوى الأسبوع 🚀'}
                                 </button>
                             </div>
                         </div>
