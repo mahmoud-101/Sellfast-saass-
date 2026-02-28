@@ -45,33 +45,8 @@ const getOpenRouterKey = () => {
  * when Gemini hits rate limits. Supports all models via a single paid key.
  */
 async function askOpenRouter(prompt: string, sys?: string): Promise<string> {
-    const messages: any[] = [];
-    if (sys) messages.push({ role: 'system', content: sys });
-    messages.push({ role: 'user', content: prompt });
-
-    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${getOpenRouterKey()}`,
-            'HTTP-Referer': 'https://sellfast-saass-8qqf.vercel.app',
-            'X-Title': 'Ebdaa Pro'
-        },
-        body: JSON.stringify({
-            model: 'google/gemini-2.5-flash',
-            messages,
-            temperature: 0.7,
-            max_tokens: 2048
-        })
-    });
-
-    if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`OpenRouter error ${res.status}: ${errText}`);
-    }
-
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content || '';
+    console.warn("OpenRouter credits exhausted, falling back to Gemini for all OpenRouter requests.");
+    return await askGemini(prompt, sys);
 }
 
 export function parseRobustJSON(text: string): any {
