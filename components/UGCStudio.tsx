@@ -180,7 +180,7 @@ export function UGCStudio({ userId }: UGCStudioProps) { // Updated component sig
                                     <div className="space-y-1 text-center">
                                         {productImage ? (
                                             <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-gray-200">
-                                                <img src={`data:${productImage.mimeType}; base64, ${productImage.base64} `} alt="Product" className="w-full h-full object-contain bg-white" />
+                                                <img src={`data:${productImage.mimeType};base64,${productImage.base64}`} alt="Product" className="w-full h-full object-contain bg-white" />
                                                 <button onClick={() => setProductImage(null)} className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full shadow-lg hover:bg-red-600">
                                                     ✕
                                                 </button>
@@ -209,7 +209,7 @@ export function UGCStudio({ userId }: UGCStudioProps) { // Updated component sig
                                     <div className="space-y-1 text-center">
                                         {referenceImage ? (
                                             <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-gray-200">
-                                                <img src={`data:${referenceImage.mimeType}; base64, ${referenceImage.base64} `} alt="Reference" className="w-full h-full object-contain bg-white" />
+                                                <img src={`data:${referenceImage.mimeType};base64,${referenceImage.base64}`} alt="Reference" className="w-full h-full object-contain bg-white" />
                                                 <button onClick={() => setReferenceImage(null)} className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full shadow-lg hover:bg-red-600">
                                                     ✕
                                                 </button>
@@ -290,7 +290,7 @@ export function UGCStudio({ userId }: UGCStudioProps) { // Updated component sig
                                         ) : shot.image ? (
                                             <>
                                                 <img
-                                                    src={`data:${shot.image.mimeType}; base64, ${shot.image.base64} `}
+                                                    src={`data:${shot.image.mimeType};base64,${shot.image.base64}`}
                                                     alt={shot.config.title}
                                                     className="w-full h-full object-cover"
                                                 />
@@ -303,7 +303,7 @@ export function UGCStudio({ userId }: UGCStudioProps) { // Updated component sig
                                                         تعديل وتصميم
                                                     </button>
                                                     <button
-                                                        onClick={() => downloadImage(`data:${shot.image?.mimeType}; base64, ${shot.image?.base64} `, `${shot.config.id} _result.png`)}
+                                                        onClick={() => downloadImage(`data:${shot.image?.mimeType};base64,${shot.image?.base64}`, `${shot.config.id}_result.png`)}
                                                         className="font-bold bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded-md flex items-center text-sm"
                                                     >
                                                         <Download className="w-4 h-4 mr-2" />

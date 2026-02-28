@@ -79,17 +79,25 @@ export function parseRobustJSON(text: string): any {
     let clean = text.trim();
     clean = clean.replace(/```json/gi, '');
     clean = clean.replace(/```/g, '');
+
     try {
         return JSON.parse(clean.trim());
     } catch (e) {
+        // Fallback: try to match a JSON array or object block
+        const match = clean.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
+        if (match) {
+            try { return JSON.parse(match[0]); } catch { }
+        }
         console.warn("Failed to parse JSON, returning raw string to avoid crash:", clean);
         throw e;
     }
 }
 
 async function askOpenRouterJSON(prompt: string, sys?: string): Promise<any> {
-    const text = await askOpenRouter(prompt, sys);
-    return parseRobustJSON(text);
+    return executeWithRetry(async () => {
+        const text = await askOpenRouter(prompt, sys);
+        return parseRobustJSON(text);
+    });
 }
 
 /**
@@ -104,11 +112,11 @@ async function executeWithRetry<T>(operation: () => Promise<T>, maxRetries = 4):
         } catch (error: any) {
             attempt++;
             const msg = error?.message?.toLowerCase() || "";
-            // 429: Rate Limit, 503: Timeout, fetch failed: network drop
-            if (msg.includes("429") || msg.includes("503") || msg.includes("500") || msg.includes("timeout") || msg.includes("fetch failed") || msg.includes("quota") || msg.includes("overloaded")) {
+            // 429: Rate Limit, 503: Timeout, fetch failed: network drop, syntaxerror: json mapping
+            if (msg.includes("429") || msg.includes("503") || msg.includes("500") || msg.includes("timeout") || msg.includes("fetch failed") || msg.includes("quota") || msg.includes("overloaded") || msg.includes("json") || msg.includes("syntax")) {
                 if (attempt >= maxRetries) throw error;
                 const delayMs = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
-                console.warn(`[AI Engine] Server busy (Attempt ${attempt}/${maxRetries}). Retrying in ${Math.round(delayMs)}ms...`);
+                console.warn(`[AI Engine] Server busy or Data error (Attempt ${attempt}/${maxRetries}). Retrying in ${Math.round(delayMs)}ms... Error: ${msg.slice(0, 50)}`);
                 await new Promise(resolve => setTimeout(resolve, delayMs));
             } else {
                 throw error;
@@ -284,6 +292,7 @@ export async function generateImage(productImages: ImageFile[], prompt: string, 
     }
 
     const enhancedPrompt = `
+    [Variation Seed: ${Math.random().toString(36).substring(2, 10)}]
     ${prompt}
     
     TECHNICAL ADDITIONS:
