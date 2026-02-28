@@ -52,6 +52,7 @@ import ImageUpscaler from './components/ImageUpscaler';
 import GettingStartedWizard from './components/GettingStartedWizard';
 import DynamicAdsStudio from './components/DynamicAdsStudio';
 import { BalanceBadge } from './components/BalanceBadge';
+import { FunnelArchitect } from './components/FunnelArchitect';
 import { ImageFile, DynamicAdsStudioProject } from './types';
 
 import { ProductIntelligenceProvider } from './context/ProductIntelligenceContext';
@@ -245,6 +246,7 @@ export default function App() {
                   <button onClick={() => setView('failed_ad_optimizer')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'failed_ad_optimizer' ? 'bg-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'text-slate-400 hover:text-white'}`}>💔 إنعاش الإعلانات</button>
                   <button onClick={() => setView('ugc_studio')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'ugc_studio' ? 'bg-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'text-slate-400 hover:text-white'}`}>📸 التصوير و UGC</button>
                   <button onClick={() => setView('organic_studio')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'organic_studio' ? 'bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'text-slate-400 hover:text-white'}`}>🌿 محتوى فيروسي (Viral)</button>
+                  <button onClick={() => setView('funnel_architect')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'funnel_architect' ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-400 hover:text-white'}`}>📐 مهندس الأقماع</button>
                   <button onClick={() => setView('brand_kit')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'brand_kit' ? 'bg-orange-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}>🎨 هويتي</button>
                   <button onClick={() => setView('content_library')} className={`px-5 py-2 rounded-xl text-[11px] font-black transition-all ${view === 'content_library' ? 'bg-orange-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}>📚 الإعلانات المحفوظة</button>
                   <button onClick={() => setIsWizardOpen(true)} className="px-5 py-2 rounded-xl text-[11px] font-black text-purple-400 hover:bg-purple-500/10 transition-all border border-purple-500/20">🚀 ابدأ من هنا</button>
@@ -298,6 +300,13 @@ export default function App() {
                   className={`w-full p-4 rounded-2xl text-right font-black ${view === 'failed_ad_optimizer' ? 'bg-red-500 text-white' : 'bg-white/5 text-white'}`}
                 >
                   💔 إنعاش الإعلانات
+                </button>
+                <button
+                  onClick={() => { setView('funnel_architect'); setIsMenuOpen(false); }}
+                  className={`w-full p-4 rounded-2xl text-right font-black flex items-center justify-between ${view === 'funnel_architect' ? 'bg-blue-600 text-white' : 'bg-white/5 text-white'}`}
+                >
+                  <span>📐 مهندس الأقماع (Funnel)</span>
+                  <span className="text-[10px] bg-blue-500/20 px-2 py-0.5 rounded-full border border-blue-500/30">جديد</span>
                 </button>
                 <button
                   onClick={() => { setView('ugc_studio'); setIsMenuOpen(false); }}
@@ -375,6 +384,7 @@ export default function App() {
           {view === 'hook_generator' && userId && <HookGeneratorHub userId={userId} />}
           {view === 'failed_ad_optimizer' && userId && <FailedAdOptimizerHub userId={userId} />}
           {view === 'pro_mode' && userId && <ProModeDashboard userId={userId} onUpscale={(url) => setUpscalingImage(url)} />}
+          {view === 'funnel_architect' && userId && <FunnelArchitect dialect={planStudio.dialect} />}
 
           {/* Mobile Bottom Navigation 📱 */}
           {userId && (
@@ -421,7 +431,7 @@ export default function App() {
           )}
         </div>
 
-        <Footer onNavigate={setView} onOpenPricing={() => setIsPricingOpen(true)} />
+        <Footer onNavigate={(v) => setView(v as AppView)} onOpenPricing={() => setIsPricingOpen(true)} />
         <ChatWidget />
         <WhatsAppButton />
         {isPricingOpen && userId && <PricingModal userId={userId} onClose={() => setIsPricingOpen(false)} />}

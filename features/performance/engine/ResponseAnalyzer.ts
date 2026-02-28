@@ -13,10 +13,12 @@ export const CARD_STYLES: Record<CardStyle, {
     bold: { bg: '#0c0814', badge: '#7c3aed', button: '#8b5cf6', border: '#4c1d95', glow: 'rgba(124,58,237,0.15)' },
     transform: { bg: '#08110c', badge: '#16a34a', button: '#22c55e', border: '#14532d', glow: 'rgba(22,163,74,0.15)' },
     urgency: { bg: '#110b08', badge: '#ea580c', button: '#f97316', border: '#7c2d12', glow: 'rgba(234,88,12,0.15)' },
+    story: { bg: '#081414', badge: '#06b6d4', button: '#22d3ee', border: '#164e63', glow: 'rgba(6,182,212,0.15)' },
 }
 
 // ─── Style order (للتأكد من الترتيب الصحيح) ──────────────────────────────────
-const EXPECTED_STYLES: CardStyle[] = ['pain', 'compare', 'bold', 'transform', 'urgency']
+const EXPECTED_STYLES: CardStyle[] = ['pain', 'compare', 'bold', 'transform', 'urgency', 'story']
+const EXPECTED_ANGLES: any[] = ['pain', 'proof', 'objection', 'urgency', 'story']
 
 // ─── Parser ───────────────────────────────────────────────────────────────────
 export function parseGeminiResponse(rawText: string): GenerationResult {
@@ -59,6 +61,11 @@ export function parseGeminiResponse(rawText: string): GenerationResult {
                 imageStyleName: item.content?.imageStyleName || 'Smart Style',
                 imageVariables: item.content?.imageVariables || {},
                 imagePrompt: item.content?.imagePrompt || '',
+                frameworkUsed: item.content?.frameworkUsed || 'AIDA',
+                whyItWorks: item.content?.whyItWorks || 'مناسب لجذب انتباه العميل بسرعة.',
+                format: item.content?.format || 'Single Image',
+                placement: item.content?.placement || 'Feed',
+                qualityScore: item.content?.qualityScore || 85,
             }))
         } as any;
     } else {
@@ -78,6 +85,7 @@ export function parseGeminiResponse(rawText: string): GenerationResult {
     // نعالج كل ad
     parsed.ads = parsed.ads.slice(0, 5).map((ad, index) => {
         const style = EXPECTED_STYLES[index]
+        const angle = EXPECTED_ANGLES[index] || 'pain'
         return {
             ...ad,
             id: `ad-${index + 1}`,
@@ -95,6 +103,12 @@ export function parseGeminiResponse(rawText: string): GenerationResult {
             imagePrompt: (ad as any).imagePrompt || buildFallbackImagePrompt(style),
             hookScore: typeof ad.hookScore === 'number' ? Math.min(100, Math.max(0, ad.hookScore)) : 60,
             ctaButton: ad.ctaButton || defaultCTA(style),
+            frameworkUsed: (ad as any).frameworkUsed || 'AIDA',
+            whyItWorks: (ad as any).whyItWorks || 'النموذج الكلاسيكي الأنسب للبداية.',
+            format: (ad as any).format || 'Single Image',
+            placement: (ad as any).placement || 'Feed',
+            qualityScore: (ad as any).qualityScore || 85,
+            angle: angle as any,
         }
     })
 
@@ -164,6 +178,7 @@ function defaultCTA(style: CardStyle): string {
         bold: 'جرب وشوف',
         transform: 'غيّر حياتك',
         urgency: 'الحق قبل ما يخلص',
+        story: 'اقرأ الحكاية',
     }
     return ctas[style]
 }
@@ -175,6 +190,7 @@ function buildFallbackImagePrompt(style: CardStyle): string {
         bold: 'Confident Egyptian person, dramatic lighting, bold hero product shot, commercial photography, photorealistic, 8K',
         transform: 'Happy glowing Egyptian person, warm golden lighting, genuine smile, transformation visible, commercial photography, photorealistic, 8K',
         urgency: 'Limited stock display, warm urgent lighting, few remaining products, Egyptian shopping context, commercial photography, photorealistic, 8K',
+        story: 'Candid lifestyle shot of person storytelling, authentic Egyptian home environment, warm natural lighting, high-end commercial photography, 8K',
     }
     return prompts[style]
 }
@@ -197,6 +213,8 @@ function createFallbackAd(style: CardStyle, index: number): AdCard & { imageProm
         isLoading: false,
         imagePrompt: buildFallbackImagePrompt(style),
         imageStyleName: '',
+        frameworkUsed: 'AIDA',
+        whyItWorks: 'النموذج الكلاسيكي الأنسب للبداية.',
     }
 }
 

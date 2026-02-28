@@ -12,6 +12,8 @@ interface AdVariation {
 
 interface DiagnosisResult {
     diagnosis: string;
+    severity: 'Critical' | 'Medium' | 'Low';
+    rootCause: string;
     variations: AdVariation[];
 }
 
@@ -142,13 +144,34 @@ export const FailedAdOptimizerHub: React.FC<FailedAdOptimizerHubProps> = ({ user
                     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
                         {/* Diagnosis */}
                         <div className="bg-red-500/5 border border-red-500/20 rounded-3xl p-6 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-2 h-full bg-red-500"></div>
-                            <h3 className="text-xl font-black text-red-400 mb-3 flex items-center gap-2">
-                                <span>⚠️</span> تقرير التشخيص الطبي
-                            </h3>
-                            <p className="text-lg text-red-100/80 leading-relaxed font-semibold">
-                                {result.diagnosis}
-                            </p>
+                            <div className={`absolute top-0 right-0 w-2 h-full ${result.severity === 'Critical' ? 'bg-red-600' :
+                                    result.severity === 'Medium' ? 'bg-orange-500' : 'bg-yellow-400'
+                                }`}></div>
+
+                            <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+                                <h3 className="text-xl font-black text-red-400 flex items-center gap-2">
+                                    <span>⚠️</span> تقرير التشخيص الطبي
+                                </h3>
+                                <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${result.severity === 'Critical' ? 'bg-red-600 text-white animate-pulse' :
+                                        result.severity === 'Medium' ? 'bg-orange-500 text-white' : 'bg-yellow-400 text-black'
+                                    }`}>
+                                    {result.severity === 'Critical' ? 'حالة حرجة' :
+                                        result.severity === 'Medium' ? 'حالة متوسطة' : 'حالة بسيطة'}
+                                </span>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter mb-1">السبب الجذري للمشكلة:</p>
+                                    <p className="text-lg font-black text-white">{result.rootCause}</p>
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter mb-1">التحليل الطبي المفصل:</p>
+                                    <p className="text-md text-red-100/80 leading-relaxed font-semibold">
+                                        {result.diagnosis}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Variations */}

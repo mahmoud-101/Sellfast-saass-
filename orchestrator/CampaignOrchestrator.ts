@@ -8,6 +8,7 @@ import {
 } from '../services/geminiService';
 import { askPerplexityJSON } from '../services/perplexityService';
 import { getCinematicMotionPrompt, runGrokStrategy } from '../services/xaiService';
+import { AD_FRAMEWORKS, SWIPE_FILE, HOOK_LIBRARY, CTA_LIBRARY } from '../lib/adFrameworks';
 
 export type OrchestrationMode = 'Quick' | 'Advanced' | 'Full';
 
@@ -273,6 +274,12 @@ JSON فقط بدون markdown.`;
             // 1. نصوص إعلانات مباشرة
             askGemini(
                 `أنت كاتب إعلانات Direct Response للأسواق العربية. اكتب 3 إعلانات مختلفة بـ${dial} لـ: ${p}. ${d}. السوق: ${m}. الزاوية: ${angle}.
+استخدم نماذج الكتابة التالية للإلهام:
+${AD_FRAMEWORKS.slice(0, 3).map(f => `- ${f.name}: ${f.structure}`).join('\n')}
+
+أمثلة من الـ Swipe File:
+${[...SWIPE_FILE.ecommerce, ...SWIPE_FILE.agency].slice(0, 2).map(s => `- ${s.title}: ${s.copy.slice(0, 50)}...`).join('\n')}
+
 أعطني JSON array: [{"headline":"عنوان جذاب","body":"نص الإعلان 50-80 كلمة بالعامية","cta":"دعوة للشراء","format":"Facebook/TikTok"}] JSON فقط.`,
                 'أنت خبير إعلانات مباشرة للأسواق العربية.'
             ),
@@ -287,6 +294,9 @@ JSON فقط بدون markdown.`;
             // 3. 10 خطافات فيرال
             askGemini(
                 `اكتب 10 hooks فيرال بـ${dial} لمنتج: ${p}. ${d}. تنوع: سؤال/صدمة/فضول/ألم/وعد.
+استلهم من مكتبة الهوكات:
+${HOOK_LIBRARY.text.slice(0, 5).map(h => `- ${h.text}`).join('\n')}
+
 JSON array: [{"hook":"الجملة","type":"نوع","why":"لماذا يوقف التمرير"}] JSON فقط.`,
                 'أنت خبير Viral Hooks للأسواق العربية.'
             ),
@@ -328,7 +338,12 @@ JSON array: [{"angle":"الاسم","concept":"الفكرة","exampleHook":"مث�
 
             // 1. سكريبت ريلز
             askGemini(
-                `اكتب سكريبت ريلز كامل بـ${dial} للمنتج: ${p} بالزاوية: ${angle}. 30-45 ثانية، Hook قوي، ينتهي بـ CTA. نص متصل فقط.`,
+                `اكتب سكريبت ريلز كامل بـ${dial} للمنتج: ${p} بالزاوية: ${angle}. 30-45 ثانية، Hook قوي، ينتهي بـ CTA.
+استخدم نموذج (HSO) أو (AIDA) في بناء السكريبت.
+استلهم من هوكات الفيديو الناجحة:
+${HOOK_LIBRARY.video.slice(0, 3).map(h => h.text).join(' | ')}
+
+نص متصل فقط.`,
                 'أنت كاتب سكريبت ريلز للأسواق العربية.'
             ),
 
@@ -435,5 +450,92 @@ JSON: {"concept":"الفكرة البصرية","backgrounds":["خلفية 1","خ
         } catch (e: any) {
             return { success: false, message: e.message };
         }
+    }
+
+    /**
+     * Generate a detailed 5-stage campaign workflow.
+     */
+    static async generateCampaignWorkflow(product: string, goal: string, dialect: string) {
+        const prompt = `
+            أنت Strategist Campaign متخصص في الماركتنج للسوق العربي.
+            مهمتك عمل خطة إطلاق حملة إعلانية كاملة للمنتج: ${product} والهدف: ${goal}.
+            
+            الخطة يجب أن تتبع 5 مراحل صارمة:
+            1. التأسيس (Foundation): Pixel, Landing Page, Trust Signals.
+            2. الاختبار (Testing): CBO/ABO, Ad Sets, Broad vs Interests.
+            3. التحليل (Analysis): Kill Rules, Retention KPIs.
+            4. التحسين (Optimization): Scaling winners, refreshing creative.
+            5. التوسع (Scaling): Vertical and Horizontal scaling.
+
+            لكل خطوة اكتب: الأكشن المطلوب، الوقت المتوقع، الخطأ الشائع، والـ KPI.
+            اللغة: ${dialect}.
+            أخرج النتيجة كـ JSON Array لكل مرحلة.
+        `;
+
+        const res = await askGemini(prompt, "You are a Senior Campaign Strategist.");
+    }
+
+    /**
+     * Generate a 3-2-1 Launch Strategy (3 Angles x 3 Audiences = 9 Test Sets).
+     */
+    static async generateLaunch321(product: string, goal: string, dialect: string) {
+        const prompt = `
+            أنت Senior Media Buyer متخصص في استراتيجية الـ 3-2-1.
+            الهدف: إطلاق حملة اختبار سريعة للمنتج: ${product} والهدف: ${goal}.
+            
+            الخطة الإجبارية:
+            - 3 زوايا إعلانية: (Pain Point, Social Proof, Story/Narrative).
+            - 3 جماهير: (Broad, Interest-based, Lookalike).
+            - المجموع: 9 Ad Sets متميزة.
+            
+            لكل Ad Set حدد: الجمهور الدقيق، الزاوية المستخدمة، والميزانية المقترحة (CBO vs ABO).
+            اللغة: ${dialect}.
+            أخرج النتيجة كـ JSON Array.
+        `;
+        const res = await askGemini(prompt, "You are a Media Buying Expert.");
+        return this.safeJsonParse(res, []);
+    }
+
+    /**
+     * Generate a 4-stage Retargeting Ladder.
+     */
+    static async generateRetargetingLadder(product: string, dialect: string) {
+        const prompt = `
+            أنت متخصص Retargeting للسوق العربي.
+            صمم سلم إعادة الاستهداف (Retargeting Ladder) لمنتج: ${product}.
+            
+            المراحل الأربعة:
+            1. الوعي (Cold): المحتوى التعليمي.
+            2. الاهتمام (Warm): إثبات اجتماعي (Testimonials).
+            3. الرغبة (Hot): عرض لفترة محدودة + إلحاح.
+            4. الولاء (Customers): Upsell / Cross-sell.
+
+            لكل مرحلة حدد: المحتوى المخصص، نسبة الميزانية (Targeting Budget %)، والهدف (CPA vs ROAS).
+            اللغة: ${dialect}.
+            أخرج النتيجة كـ JSON Array.
+        `;
+        const res = await askGemini(prompt, "You are a Retargeting Expert.");
+        return this.safeJsonParse(res, []);
+    }
+
+    /**
+     * Funnel Architect Hub: Generate specialized funnels.
+     */
+    static async generateSpecializedFunnel(product: string, type: 'webinar' | 'quiz' | 'challenge' | 'free_tool', dialect: string) {
+        const prompt = `
+            أنت Funnel Architect متخصص في نوع: ${type}.
+            صمم قمع مبيعات (Sales Funnel) كامل للمنتج: ${product}.
+            
+            المراحل المطلوبة:
+            - الإعلان (Ad): الزاوية والـ Hook.
+            - صفحة الهبوط (Landing Page): النقاط الأساسية.
+            - المتابعة (Email/WhatsApp Sequence): 5 أيام.
+            - العرض النهائي (Offer): الـ Stack Offer القاتل.
+
+            اللغة: ${dialect}.
+            أخرج النتيجة كـ JSON Object مفصل.
+        `;
+        const res = await askGemini(prompt, "You are a Funnel Scientist.");
+        return this.safeJsonParse(res, {});
     }
 }

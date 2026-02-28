@@ -19,7 +19,8 @@ import {
     AgentObjection,
     FinalProModeAd
 } from '../performance/types';
-import { Download, AlertCircle, Zap } from 'lucide-react';
+import { Download, AlertCircle, Zap, Share2 } from 'lucide-react';
+import { ViralResultCard } from '../../components/ViralResultCard';
 
 // ============================================================================
 // Types & State
@@ -62,6 +63,7 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId, onUpscale }
         description: '',
         price: ''
     });
+    const [showViralCard, setShowViralCard] = useState(false);
 
     const [reasoningMsg, setReasoningMsg] = useState('في انتظار الانطلاق...');
 
@@ -124,14 +126,11 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId, onUpscale }
             // 3. Parallel Processing for Hooks, Copy, and Visuals (Per Angle)
             setPipeline(prev => ({ ...prev, status: 'hooking' }));
 
-            const generatedAds: FinalProModeAd[] = [];
-
             // For MVP speed previously it was 3, but user requested 5 distinct images.
             const topAngles = anglesData.slice(0, 5);
-            const preliminaryAds: FinalProModeAd[] = [];
 
             // Step 3a: Parallel Processing of Hooks, Copy, and Visual Prompts for all top angles
-            const preliminaryAds: FinalProModeAd[] = await Promise.all(
+            const preliminaryAdsList: FinalProModeAd[] = await Promise.all(
                 topAngles.map(async (angle) => {
                     const [hooks, visualData] = await Promise.all([
                         agentHookWriter(productForm, angle),
@@ -152,7 +151,7 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId, onUpscale }
 
             // Step 3b: Agent 7 (Result Validator) - Ensure absolute visual diversity
             setPipeline(prev => ({ ...prev, status: 'visualizing' }));
-            const rawVisuals = preliminaryAds.map(ad => ad.visual);
+            const rawVisuals = preliminaryAdsList.map(ad => ad.visual);
             let validatedVisuals = rawVisuals;
             try {
                 validatedVisuals = await agentResultValidator(rawVisuals);
@@ -168,8 +167,8 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId, onUpscale }
             };
 
             // Step 3c: Actually Generate the Images in parallel based on Validated Prompts
-            const generatedAds: FinalProModeAd[] = await Promise.all(
-                preliminaryAds.map(async (ad, i) => {
+            const finalGeneratedAds: FinalProModeAd[] = await Promise.all(
+                preliminaryAdsList.map(async (ad, i) => {
                     const finalVisual = validatedVisuals[i] || ad.visual;
                     ad.visual = finalVisual;
 
@@ -185,10 +184,10 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId, onUpscale }
                 })
             );
 
-            setPipeline(prev => ({ ...prev, status: 'objections', finalAds: generatedAds }));
+            setPipeline(prev => ({ ...prev, status: 'objections', finalAds: finalGeneratedAds }));
 
             // 6. Agent Objection Handler (Analyzing the first ad as a sample)
-            const sampleCopy = generatedAds[0]?.copy.adBody || '';
+            const sampleCopy = finalGeneratedAds[0]?.copy.adBody || '';
             const objectionsData = await agentObjectionHandler(productForm, sampleCopy);
 
             // Finalize
@@ -204,10 +203,13 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId, onUpscale }
         } finally {
             // @ts-ignore
             if (typeof interval !== 'undefined') clearInterval(interval);
+            // Show viral card option when completed
+            if (pipeline.status === 'completed') {
+                setShowViralCard(true);
+            }
         }
     };
 
-    return (
     return (
         <div className="flex flex-col gap-10 animate-in fade-in duration-500 pb-32 w-full mx-auto p-4 md:p-8 overflow-x-hidden" dir="rtl">
             {/* Header: Cinematic Command Center Style */}
@@ -509,6 +511,31 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId, onUpscale }
                                     </div>
                                 ))}
                             </div>
+                        </div>
+                    )}
+
+                    {/* Viral Sharing Template */}
+                    {pipeline.status === 'completed' && (
+                        <div className="flex flex-col items-center gap-6 mt-12 py-12 border-t border-white/5">
+                            <div className="text-center space-y-2">
+                                <h3 className="text-2xl font-black text-white">شارك نجاحك مع العالم! 🌍</h3>
+                                <p className="text-slate-500 font-bold text-sm">اجذب المزيد من العملاء عبر مشاركة أرقام الأداء المتوقعة</p>
+                            </div>
+
+                            <ViralResultCard
+                                data={{
+                                    productName: productForm.name,
+                                    hookStrength: 'High (🔥)',
+                                    conversionConfidence: 9.2, // Simulated high confidence for pro mode
+                                    estimatedRoas: (Math.random() * (5.5 - 3.2) + 3.2).toFixed(1),
+                                    rankEarned: 'Media Buyer Expert'
+                                }}
+                            />
+
+                            <button className="flex items-center gap-3 bg-white text-black px-10 py-5 rounded-[2rem] font-black text-xl hover:bg-yellow-400 hover:scale-105 transition-all shadow-2xl">
+                                <Share2 className="w-6 h-6" />
+                                شارك البطاقة الآن
+                            </button>
                         </div>
                     )}
 

@@ -162,7 +162,14 @@ const AdCard: React.FC<{ variant: AdCardType, productImageSrc: string, index: nu
             </div>
 
             <div className="space-y-6 flex-1 flex flex-col">
-                {/* 1.5 Dynamic Variables (Super Intelligence) */}
+                {/* 1.5 Framework Metadata (New Intelligence) */}
+                <div className="bg-orange-500/5 rounded-2xl p-4 border border-orange-500/20 rtl flex-shrink-0">
+                    <p className="text-[10px] font-black uppercase text-orange-400 mb-2 flex items-center gap-1.5"><span className="text-sm">🧠</span> نموذج الكتابة المستخدم (Framework)</p>
+                    <p className="text-[12px] text-white font-bold mb-1 underline decoration-orange-500/30 underline-offset-4">{variant.frameworkUsed || 'AIDA'}</p>
+                    <p className="text-[10px] text-slate-400 leading-relaxed italic">"{variant.whyItWorks || 'تم اختيار هذا النموذج بناءً على تحليل أداء المنتج وسلوك العميل.'}"</p>
+                </div>
+
+                {/* 1.6 Dynamic Variables (Super Intelligence) */}
                 {variant.imageVariables && Object.keys(variant.imageVariables).length > 0 && (
                     <div className="bg-blue-500/5 rounded-2xl p-4 border border-blue-500/20 rtl flex-shrink-0">
                         <p className="text-[10px] font-black uppercase text-blue-400 mb-2 flex items-center gap-1.5"><span className="text-sm">🧪</span> المتغيرات الديناميكية للمشهد (AI)</p>

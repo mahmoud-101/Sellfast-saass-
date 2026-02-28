@@ -57,6 +57,8 @@ export const getUserProfile = async (userId: string, email?: string, referredBy?
                 .insert([{
                     id: userId,
                     credits: 50,
+                    user_points: 0,
+                    user_rank: 'Media Buyer Beginner',
                     email: email,
                     referral_code: referralCode,
                     referred_by: referredById
@@ -81,7 +83,41 @@ export const getUserProfile = async (userId: string, email?: string, referredBy?
         return data;
     } catch (e) {
         console.error("Supabase Error:", e);
-        return { id: userId, credits: 0, error: true };
+        return { id: userId, credits: 0, user_points: 0, user_rank: 'Media Buyer Beginner', error: true };
+    }
+};
+
+/**
+ * نظام الرتب والنقاط (Gamification Engine) 🏆
+ */
+export const USER_RANKS = {
+    BEGINNER: 'Media Buyer Beginner',
+    PROFESSIONAL: 'Media Buyer Professional',
+    EXPERT: 'Media Buyer Expert',
+    LEGEND: 'Media Buyer Legend'
+};
+
+export const awardPoints = async (userId: string, points: number, reason: string) => {
+    if (!userId || !isSupabaseConfigured()) return;
+    try {
+        const { data: profile } = await supabase.from('profiles').select('user_points').eq('id', userId).single();
+        const currentPoints = profile?.user_points || 0;
+        const newPoints = currentPoints + points;
+
+        // تحديد الرتبة الجديدة
+        let newRank = USER_RANKS.BEGINNER;
+        if (newPoints >= 5000) newRank = USER_RANKS.LEGEND;
+        else if (newPoints >= 2000) newRank = USER_RANKS.EXPERT;
+        else if (newPoints >= 500) newRank = USER_RANKS.PROFESSIONAL;
+
+        await supabase.from('profiles').update({
+            user_points: newPoints,
+            user_rank: newRank
+        }).eq('id', userId);
+
+        await logAction(userId, 'POINTS_AWARDED', `${reason} (+${points} points)`);
+    } catch (e) {
+        console.error("Award Points Error:", e);
     }
 };
 

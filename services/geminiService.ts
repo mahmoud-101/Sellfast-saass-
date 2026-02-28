@@ -3,6 +3,7 @@ import { GoogleGenAI, Modality, Part, Type, Chat } from "@google/genai";
 import { ImageFile, PowerStudioResult, AudioFile, TrendItem } from '../types';
 import { askPerplexity, askPerplexityJSON } from './perplexityService';
 import { DYNAMIC_STYLES } from '../lib/dynamicTemplates';
+import { awardPoints } from '../lib/supabase';
 
 const SMART_MODEL = 'gemini-2.5-flash';
 
@@ -221,6 +222,12 @@ export async function generateFlowVideo(script: string, aspectRatio: "9:16" | "1
         if (!response.ok) throw new Error("فشل تحميل ملف الفيديو النهائي");
 
         const blob = await response.blob();
+
+        // Award points for high-value creation
+        if ((import.meta as any).env.VITE_USER_ID) {
+            await awardPoints((import.meta as any).env.VITE_USER_ID, 100, "إنتاج فيديو احترافي");
+        }
+
         return URL.createObjectURL(blob);
     } catch (error: any) {
         if (error.message?.includes("Requested entity was not found")) {
@@ -310,7 +317,14 @@ export async function generateImage(productImages: ImageFile[], prompt: string, 
 
 export async function generateCampaignPlan(productImages: ImageFile[], goal: string, market: string, dialect: string): Promise<any[]> {
     const res = await askGemini(`Create 9-day content plan for ${goal} in ${market} with ${dialect}. Return JSON array with {id, tov, caption, schedule, scenario}.`);
-    try { return JSON.parse(res.replace(/```json|```/g, '')); } catch { return []; }
+    try {
+        const plan = JSON.parse(res.replace(/```json|```/g, ''));
+        // Award points for planning
+        if ((import.meta as any).env.VITE_USER_ID) {
+            await awardPoints((import.meta as any).env.VITE_USER_ID, 40, "تصميم خطة حملة كاملة");
+        }
+        return plan;
+    } catch { return []; }
 }
 
 export async function analyzeProductForCampaign(images: ImageFile[]): Promise<string> {
@@ -465,7 +479,11 @@ export async function generateStoryboardPlan(i: any, ins: string): Promise<any[]
                 }
             });
             try {
-                return JSON.parse(res.text || "[]");
+                const plan = JSON.parse(res.text || "[]");
+                if (plan.length > 0 && (import.meta as any).env.VITE_USER_ID) {
+                    await awardPoints((import.meta as any).env.VITE_USER_ID, 30, "صناعة سكريبت إعلاني احترافي");
+                }
+                return plan;
             } catch {
                 return [];
             }
@@ -490,6 +508,9 @@ Return exactly 10 items. JSON only, no markdown, no code blocks.`, "You are a vi
         try {
             const cleaned = res.replace(/```json|```/g, '').trim();
             const parsed = JSON.parse(cleaned);
+            if (Array.isArray(parsed) && parsed.length > 0 && (import.meta as any).env.VITE_USER_ID) {
+                await awardPoints((import.meta as any).env.VITE_USER_ID, 20, "تحليل التريندات العالمية");
+            }
             return Array.isArray(parsed) ? parsed : [];
         } catch { return []; }
     } catch { return []; }
@@ -714,7 +735,11 @@ export async function generatePerformanceAdPack(data: {
             });
 
             try {
-                return JSON.parse(res.text || "{}");
+                const result = JSON.parse(res.text || "{}");
+                if (result.strategicIntelligence && (import.meta as any).env.VITE_USER_ID) {
+                    await awardPoints((import.meta as any).env.VITE_USER_ID, 50, "تحليل استراتيجي متكامل");
+                }
+                return result;
             } catch {
                 throw new Error("فشل تحليل استجابة المحرك النخبة");
             }
@@ -1275,20 +1300,22 @@ export async function optimizeFailedAd(adCopy: string, productContext?: string):
     ${productContext ? `معلومات إضافية عن المنتج: ${productContext}` : ''}
 
     مهمتك:
-    1. تحليل سريع لسبب فشل هذا الإعلان (مثلاً: بداية مملة، عدم وجود Call to Action واضح، مفيش لعب على عاطفة المشتري).
-    2. كتابة 3 نسخ إعلانية جديدة كلياً (Optimized Variations) مبنية على زوايا نفسية مختلفة لإنقاذ المبيعات.
+    1. تشخيص الإعلان بناءً على 4 محاور (الفحص: Creative / Targeting / Landing Page / Offer).
+    2. تحديد مستوى الخطورة (Critical / Medium / Low) والسبب الجذري للمشكلة.
+    3. كتابة 3 نسخ إعلانية جديدة كلياً (Optimized Variations) مبنية على زوايا نفسية مختلفة لإنقاذ المبيعات.
 
-    أخرج النتيجة كـ JSON Object فقط بالصيغة الأساسية:
+    أخرج النتيجة كـ JSON Object فقط بالصيغة التالية:
     {
-      "diagnosis": "تشخيص سبب الفشل في سطرين (قاسي ومباشر)",
+      "diagnosis": "نص التشخيص المفصل بالعامية المصرية",
+      "severity": "Critical | Medium | Low",
+      "rootCause": "السبب الجذري للمشكلة في جملة واحدة",
       "variations": [
         {
           "strategy": "الاستراتيجية (مثال: اللعب على الألم)",
           "hook": "الجملة الافتتاحية الخاطفة",
-          "body": "السطور الإقناعية بالعامية المصرية",
+          "body": "السطور الإقنااسية بالعامية المصرية",
           "cta": "طلب الشراء القوي"
         }
-        // (مجموع 3 نسخ)
       ]
     }
     `;

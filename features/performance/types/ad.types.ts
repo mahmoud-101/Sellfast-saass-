@@ -3,11 +3,11 @@
 // ============================================
 
 export type AdAngle =
-  | 'تأثير_الألم'
-  | 'الفارق_المقاس'
-  | 'الادعاء_الجريء'
-  | 'التحول_والنتيجة'
-  | 'الزخم_والإلحاح'
+  | 'pain'      // تأثير الألم
+  | 'proof'     // الإثبات الاجتماعي
+  | 'objection' // كسر الاعتراضات
+  | 'urgency'   // الإلحاح (FOMO)
+  | 'story'     // القصة (Narrative)
 
 export type CardStyle =
   | 'pain'
@@ -15,6 +15,7 @@ export type CardStyle =
   | 'bold'
   | 'transform'
   | 'urgency'
+  | 'story'
 
 export interface AdCard {
   id: string
@@ -29,12 +30,17 @@ export interface AdCard {
   adPost: string
   ctaButton: string
   hookScore: number
+  qualityScore?: number
   imageUrl: string | null
   imagePrompt: string
   imageStyleName: string
   imageVariables?: Record<string, string>
   generatedImageUrl?: string
   isLoading: boolean
+  frameworkUsed?: string
+  whyItWorks?: string
+  format?: string
+  placement?: string
 }
 
 export interface ProductFormData {
