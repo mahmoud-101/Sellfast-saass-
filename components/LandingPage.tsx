@@ -50,15 +50,12 @@ const LandingPage: React.FC<{ onGetStarted: () => void }> = ({ onGetStarted }) =
                     </div>
 
                     <h1 className="text-5xl md:text-7xl lg:text-[5.5rem] font-black leading-[1.1] tracking-tighter animate-in fade-in zoom-in-95 duration-1000 delay-150">
-                        وداعاً للـ Creative Block.<br className="hidden md:block" />
-                        إعلانات تبيع.. <br className="md:hidden" />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500 relative italic">
-                            في أقل من دقيقة ⚡
-                        </span>
+                        منصة <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500 relative">Performance Marketing</span><br className="hidden md:block" />
+                        الذكية الأقوى في الوطن العربي ⚡
                     </h1>
 
                     <p className="text-lg md:text-2xl text-slate-400 max-w-3xl mx-auto font-medium leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
-                        حوّل صورة منتجك لـ <span className="text-white font-bold">5 حملات إعلانية متكاملة</span> بصور احترافية، وكوبي بيلعب على سايكولوجي المشتري المصري، و Hook يوقف الـ Scroll غصب عنه.
+                        تخلص من قيود iOS 14 مع <span className="text-white font-bold">Server-Side Tracking</span>، وأطلق حملاتك باستخدام <span className="text-white font-bold">DCO</span> بضغطة زر. النظام الكامل لنمو الأرباح (ROAS) مصمم خصيصاً للسوق العربي.
                     </p>
 
                     <div className="flex flex-col sm:flex-row gap-5 justify-center pt-8 animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-500">
@@ -102,46 +99,72 @@ const LandingPage: React.FC<{ onGetStarted: () => void }> = ({ onGetStarted }) =
                             {/* Feature 1 */}
                             <div className="bg-white/5 border border-white/10 p-8 rounded-3xl hover:bg-white/10 transition-colors shadow-xl">
                                 <div className="w-14 h-14 bg-blue-600/20 rounded-2xl flex items-center justify-center text-3xl mb-6 shadow-inner border border-blue-500/20">🎯</div>
-                                <h3 className="text-2xl font-black text-white mb-3">5 زوايا بيعية مختلفة</h3>
-                                <p className="text-slate-400 leading-relaxed font-medium">الذكاء الاصطناعي بيقرأ منتجك وبيطلعلك 5 إعلانات من زوايا مختلفة (الألم، المقارنة، الوعد الجريء، التحول، السرعة والندرة) عشان تتست براحتك.</p>
+                                <h3 className="text-2xl font-black text-white mb-3">Server-Side Tracking & Attribution</h3>
+                                <p className="text-slate-400 leading-relaxed font-medium">اقهر الـ Ad Blockers وتحديثات iOS 14 مع تتبع من السيرفر مباشر لـ Meta و Google، ونماذج Multi-Touch Attribution دقيقة للتحليل المتقدم.</p>
                             </div>
 
                             {/* Feature 2 */}
                             <div className="bg-white/5 border border-white/10 p-8 rounded-3xl hover:bg-white/10 transition-colors shadow-xl">
                                 <div className="w-14 h-14 bg-orange-600/20 rounded-2xl flex items-center justify-center text-3xl mb-6 shadow-inner border border-orange-500/20">📸</div>
-                                <h3 className="text-2xl font-black text-white mb-3">دمج احترافية الـ Photoshoot مع عفوية UGC</h3>
-                                <p className="text-slate-400 leading-relaxed font-medium">الصور الناتجة بتدمج بين جودة التصوير التجاري واللمسة العفوية بتاعت الـ UGC عشان تبان طبيعية وماتبانش إنها إعلان مباشر فتزود الـ CTR.</p>
+                                <h3 className="text-2xl font-black text-white mb-3">Dynamic Creative Optimization (DCO)</h3>
+                                <p className="text-slate-400 leading-relaxed font-medium">الذكاء الاصطناعي يولد لك 100 نسخة من الإعلان بصور وكوبي وهوكات مختلفة ويختبرها تلقائياً للوصول لأعلى ROAS ممكن بدون تدخل بشري.</p>
                             </div>
 
                             {/* Feature 3 */}
                             <div className="bg-white/5 border border-white/10 p-8 rounded-3xl hover:bg-white/10 transition-colors shadow-xl border-t-orange-500/30">
-                                <div className="absolute top-0 right-8 -translate-y-1/2 bg-orange-500 text-black text-xs font-black px-3 py-1 rounded-full shadow-lg">جديد وقوي ⚡</div>
-                                <div className="w-14 h-14 bg-purple-600/20 rounded-2xl flex items-center justify-center text-3xl mb-6 shadow-inner border border-purple-500/20">🎨</div>
-                                <h3 className="text-2xl font-black text-white mb-3">نسخ الستايل (Style Match)</h3>
-                                <p className="text-slate-400 leading-relaxed font-medium">عاجبك مود صورة معينة؟ ارفعها كـ Reference Image، والذكاء الاصطناعي هيفهم الإضاءة، والزاوية، والمود ويطبقه على إعلانات منتجك.</p>
+                                <div className="absolute top-0 right-8 -translate-y-1/2 bg-orange-500 text-black text-xs font-black px-3 py-1 rounded-full shadow-lg">وفر وتوسع ⚡</div>
+                                <div className="w-14 h-14 bg-purple-600/20 rounded-2xl flex items-center justify-center text-3xl mb-6 shadow-inner border border-purple-500/20">🤖</div>
+                                <h3 className="text-2xl font-black text-white mb-3">Automated Rules Engine</h3>
+                                <p className="text-slate-400 leading-relaxed font-medium">إدارة ميزانية أوتوماتيكية: لو تكلفة الرسالة (CPA) زادت، الإعلان يتوقف. لو العائد (ROAS) عالي، الميزانية تتضاعف. تحكم آلي كامل 24/7.</p>
                             </div>
 
                             {/* Feature 4 */}
                             <div className="bg-white/5 border border-white/10 p-8 rounded-3xl hover:bg-white/10 transition-colors shadow-xl">
-                                <div className="w-14 h-14 bg-emerald-600/20 rounded-2xl flex items-center justify-center text-3xl mb-6 shadow-inner border border-emerald-500/20">📝</div>
-                                <h3 className="text-2xl font-black text-white mb-3">كوبي بلهجة مصرية بتبيع</h3>
-                                <p className="text-slate-400 leading-relaxed font-medium">بنستخدم أقوى معادلات الكتابة زي PAS و AIDA بس متفصلة على مقاس الشارع المصري والخليجي عشان العميل يحس إن الإعلان بيكلمه هو.</p>
+                                <div className="w-14 h-14 bg-emerald-600/20 rounded-2xl flex items-center justify-center text-3xl mb-6 shadow-inner border border-emerald-500/20">🌍</div>
+                                <h3 className="text-2xl font-black text-white mb-3">Cross-Channel Optimization</h3>
+                                <p className="text-slate-400 leading-relaxed font-medium">ميزانية واحدة تتوزع بذكاء مركزي بين Meta، Google، TikTok، وSnapchat. الذكاء الاصطناعي ينقل الإنفاق للمنصة الأقوى في التحويل.</p>
                             </div>
 
                             {/* Feature 5 */}
                             <div className="bg-white/5 border border-white/10 p-8 rounded-3xl hover:bg-white/10 transition-colors shadow-xl">
-                                <div className="w-14 h-14 bg-yellow-600/20 rounded-2xl flex items-center justify-center text-3xl mb-6 shadow-inner border border-yellow-500/20">🪝</div>
-                                <h3 className="text-2xl font-black text-white mb-3">3 هوكات بديلة لكل إعلان</h3>
-                                <p className="text-slate-400 leading-relaxed font-medium">عشان الـ Testing يكون صح، كل إعلان بيجيلك معاه 3 Hooks إضافيين (خطافات لفت انتباه) تقدر تبدل بينهم عشان توصل لأقل تكلفة للرسالة.</p>
+                                <div className="w-14 h-14 bg-yellow-600/20 rounded-2xl flex items-center justify-center text-3xl mb-6 shadow-inner border border-yellow-500/20">📊</div>
+                                <h3 className="text-2xl font-black text-white mb-3">Real-Time P&L Dashboard</h3>
+                                <p className="text-slate-400 leading-relaxed font-medium">وداعاً للتقارير المتأخرة. داشبورد لحظية تعرض الأرباح الصافية (Net Profit) بعد خصم تكلفة المنتج والشحن والمصاريف الإعلانية بدقة تامة.</p>
                             </div>
 
                             {/* Feature 6 */}
-                            <div className="bg-white/5 border border-white/10 p-8 rounded-3xl hover:bg-white/10 transition-colors shadow-xl flex flex-col items-center justify-center text-center cursor-pointer group" onClick={onGetStarted}>
-                                <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center text-3xl mb-4 group-hover:scale-110 transition-transform duration-300">✨</div>
-                                <h3 className="text-xl font-black text-white mt-2">اكتشف المميزات بنفسك</h3>
-                                <span className="text-orange-400 font-bold border-b border-orange-400/30 pb-0.5 mt-2">ابدأ التجربة المجانية &larr;</span>
+                            <div className="bg-white/5 border border-white/10 p-8 rounded-3xl hover:bg-white/10 transition-colors shadow-xl flex flex-col items-center justify-center text-center">
+                                <div className="w-16 h-16 bg-[#25D366]/20 rounded-full flex items-center justify-center text-3xl mb-4 transition-transform duration-300">💬</div>
+                                <h3 className="text-xl font-black text-white mt-2 mb-2">WhatsApp Commerce & Local Culture</h3>
+                                <p className="text-slate-400 font-medium text-sm leading-relaxed">مصمم للسوق العربي 100%، يدعم قوانين الـ PDPL وأدوات التجارة عبر الواتساب التي تعتبر شريان المبيعات في المنطقة.</p>
                             </div>
                         </div>
+                    </div>
+                </section>
+
+                {/* Integrations Marquee */}
+                <section className="w-full border-b border-white/5 py-12 bg-black/40 overflow-hidden relative">
+                    <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-[#060913] to-transparent z-10"></div>
+                    <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-[#060913] to-transparent z-10"></div>
+
+                    <div className="text-center mb-8">
+                        <p className="text-slate-500 font-bold text-sm tracking-widest uppercase">متكامل مع أقوى المنصات والأدوات العالمية</p>
+                    </div>
+
+                    <div className="flex w-max animate-[marquee_30s_linear_infinite] opacity-50 hover:opacity-100 transition-opacity">
+                        {[1, 2].map((i) => (
+                            <div key={i} className="flex items-center gap-16 px-8">
+                                <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-blue-300">Meta APIs</span>
+                                <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-yellow-500">Google Ads</span>
+                                <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#00f2fe] to-[#4facfe]">TikTok</span>
+                                <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-yellow-200">Snapchat</span>
+                                <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-500 to-green-400">WhatsApp Business</span>
+                                <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-purple-300">Shopify</span>
+                                <span className="text-2xl font-bold text-white">سلة</span>
+                                <span className="text-2xl font-bold text-white">زد</span>
+                                <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-200">Paymob</span>
+                            </div>
+                        ))}
                     </div>
                 </section>
 

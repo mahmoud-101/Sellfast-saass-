@@ -4,22 +4,43 @@ import { ImageFile, PowerStudioResult, AudioFile, TrendItem } from '../types';
 import { askPerplexity, askPerplexityJSON } from './perplexityService';
 import { DYNAMIC_STYLES } from '../lib/dynamicTemplates';
 import { awardPoints } from '../lib/supabase';
+import { runHookScoringEngine } from '../features/performance/optimization/HookScoringEngine';
+import { predictCTR, getPerformanceLabel } from '../features/performance/engine/ScoringPredictor';
+import { getMasterAgentInstructions } from '../features/performance/engine/PromptBuilder';
 
 const SMART_MODEL = 'gemini-2.5-flash';
 
-/**
- * Key Rotation: Supports multiple comma-separated keys. 
- * Randomly picks one per request to multiply rate limits.
- */
-const getApiKey = () => {
+let availableGeminiKeys: string[] | null = null;
+let currentKeyIndex = 0;
+
+const initKeys = () => {
+    if (availableGeminiKeys !== null) return;
     let rawKeys = '';
     try { rawKeys = (import.meta as any).env.VITE_GEMINI_API_KEY || (import.meta as any).env.VITE_API_KEY || ''; } catch (e) { }
     if (!rawKeys) {
         try { rawKeys = process.env.GEMINI_API_KEY || process.env.API_KEY || ''; } catch (e) { }
     }
-    const keys = rawKeys.split(',').map((k: any) => k.trim()).filter((k: any) => k.length > 0);
-    if (keys.length === 0) return '';
-    return keys[Math.floor(Math.random() * keys.length)];
+    availableGeminiKeys = rawKeys.split(',').map((k: any) => k.trim()).filter((k: any) => k.length > 0);
+    // Shuffle initially
+    availableGeminiKeys.sort(() => Math.random() - 0.5);
+};
+
+export const getApiKey = () => {
+    initKeys();
+    if (!availableGeminiKeys || availableGeminiKeys.length === 0) return '';
+    const key = availableGeminiKeys[currentKeyIndex % availableGeminiKeys.length];
+    currentKeyIndex++;
+    return key;
+};
+
+export const reportExhaustedKey = (failedKey: string) => {
+    if (!availableGeminiKeys) return;
+    if (availableGeminiKeys.length > 1) {
+        console.warn(`[Key Manager] Removing exhausted key: ...${failedKey.slice(-4)}`);
+        availableGeminiKeys = availableGeminiKeys.filter(k => k !== failedKey);
+    } else {
+        console.warn(`[Key Manager] Only one key left, cannot remove exhausted key: ...${failedKey.slice(-4)}`);
+    }
 };
 
 const getPerplexityKey = () => {
@@ -107,14 +128,12 @@ export function createEliteAdChat(mode: string): any {
         let history: any[] = [];
         return {
             sendMessage: async (req: { message: string }) => {
-                const sys = `أنت الآن محرك "إبداع برو" للذكاء الاصطناعي الاستراتيجي.
+                const sys = getMasterAgentInstructions('eg') + `
+                
+                أنت الآن محرك "إبداع برو" المحادثة الاستراتيجية.
                 مهمتك: قيادة المستخدم عبر 9 مراحل لبناء سكريبت إعلاني فيرال (Viral) يحقق مبيعات حقيقية.
                 
-                قواعد اللغة:
-                - تحدث فقط بالعامية المصرية الطبيعية (Egyptian Colloquial Arabic).
-                - ممنوع تماماً استخدام اللغة العربية الفصحى أو المصطلحات الروبوتية.
-                - ممنوع استخدام اللغة الإنجليزية إلا في الضرورة القصوى.
-                - كن حماسياً، عملياً، ومباشراً.
+                (تذكر تطبيق قواعد العامية المصرية والهوكات الموجودة في التعليمات المسبقة)
                 
                 المراحل الـ 9 التي ستقود المستخدم فيها:
                 1. الهوية: تحديد شخصية البراند.
@@ -220,7 +239,7 @@ export async function generateFlowVideo(script: string, aspectRatio: "9:16" | "1
     }
 }
 
-export async function askGemini(prompt: string, sys?: string): Promise<string> {
+export async function askGemini(prompt: string, sys?: string, temperature: number = 0.7): Promise<string> {
     const pKey = getPerplexityKey();
     if (pKey) {
         try {
@@ -232,32 +251,44 @@ export async function askGemini(prompt: string, sys?: string): Promise<string> {
 
     try {
         return await executeWithRetry(async () => {
-            // Get fresh key on every retry
-            const ai = new GoogleGenAI({ apiKey: getApiKey() });
-            const res = await ai.models.generateContent({
-                model: SMART_MODEL,
-                contents: prompt,
-                config: {
-                    systemInstruction: sys,
-                    temperature: 0.7,
-                    maxOutputTokens: 2048,
-                    topK: 40
+            const currentKey = getApiKey();
+            try {
+                const ai = new GoogleGenAI({ apiKey: currentKey });
+                const res = await ai.models.generateContent({
+                    model: SMART_MODEL,
+                    contents: prompt,
+                    config: {
+                        systemInstruction: sys,
+                        temperature: temperature,
+                        maxOutputTokens: 2048,
+                        topK: 40
+                    }
+                });
+                return res.text || "";
+            } catch (innerError: any) {
+                const msg = innerError?.message?.toLowerCase() || "";
+                if (msg.includes("429") || msg.includes("quota") || msg.includes("exhausted")) {
+                    reportExhaustedKey(currentKey);
                 }
-            });
-            return res.text || "";
+                throw innerError;
+            }
         });
     } catch (e) {
-        console.warn("[AI Engine] Gemini exhausted, falling back to OpenRouter...", e);
-        return await askOpenRouter(prompt, sys);
+        console.error("[AI Engine] All API keys are exhausted or failed.", e);
+        throw e;
     }
 }
 
-export async function generateUGCScript(data: any): Promise<string> { return askGemini(`Generate viral UGC script for ${data.productSelling}`, "Expert Content Creator"); }
-export async function generateShortFormIdeas(data: any): Promise<string[]> {
-    const res = await askGemini(`Generate 30 short-form ideas for ${data.product}. Output as simple list.`, "Content Strategist");
-    return res.split('\n').filter(l => l.trim().length > 0).slice(0, 30);
+export async function generateUGCScript(data: any): Promise<string> {
+    return askGemini(`Generate viral UGC script for ${data.productSelling}`, getMasterAgentInstructions('eg') + "\\n\\nExpert Content Creator");
 }
-export async function generateFinalContentScript(topic: string, type: string): Promise<string> { return askGemini(`Write a ${type} script for: ${topic}`); }
+export async function generateShortFormIdeas(data: any): Promise<string[]> {
+    const res = await askGemini(`Generate 30 short-form ideas for ${data.product}. Output as simple list.`, getMasterAgentInstructions('eg') + "\\n\\nContent Strategist");
+    return res.split('\\n').filter(l => l.trim().length > 0).slice(0, 30);
+}
+export async function generateFinalContentScript(topic: string, type: string): Promise<string> {
+    return askGemini(`Write a ${type} script for: ${topic}`, getMasterAgentInstructions('eg') + "\\n\\nVideo Script Writer");
+}
 
 export async function generateImage(productImages: ImageFile[], prompt: string, styleImages: ImageFile[] | null = null, aspectRatio: string = "1:1"): Promise<ImageFile> {
     const parts: Part[] = productImages.map(img => ({ inlineData: { data: img.base64, mimeType: img.mimeType } }));
@@ -266,17 +297,23 @@ export async function generateImage(productImages: ImageFile[], prompt: string, 
         styleImages.forEach(img => parts.push({ inlineData: { data: img.base64, mimeType: img.mimeType } }));
     }
 
+    const randomAngles = ["Eye-level portrait", "Dramatic low angle", "Top-down flatlay", "Extreme close-up macro", "Dynamic Dutch angle", "Wide environmental shot"];
+    const randomLighting = ["Neon Cyberpunk Glow", "Soft Morning Sunlight", "Harsh Studio Strobes", "Cinematic Moody Shadows", "Vibrant Pop-Art colors", "Natural Golden Hour"];
+    const currentAngle = randomAngles[Math.floor(Math.random() * randomAngles.length)];
+    const currentLighting = randomLighting[Math.floor(Math.random() * randomLighting.length)];
+
     const enhancedPrompt = `
-    [Variation Seed: ${Math.random().toString(36).substring(2, 10)}]
+    [Drastic Variation Seed: ${Math.random().toString(36).substring(2, 12)}]
     ${prompt}
     
     TECHNICAL ADDITIONS:
     - TARGET ASPECT RATIO: ${aspectRatio}
-    - photorealistic, hyperrealistic, 8k resolution, sharp focus, detailed texture, cinematic lighting, DSLR photo, editorial photography, high detail, commercial quality.
+    - photorealistic, hyperrealistic, 8k resolution, sharp focus, detailed texture, commercial quality.
+    - MANDATORY STYLE OVERRIDES: ${currentLighting} with ${currentAngle} camera perspective.
     
     STRICT INSTRUCTIONS: 
     1. Place the provided product in a completely NEW environment and background according to the prompt. 
-    2. DO NOT return the exact original image. You MUST generate a new background/composition.
+    2. DO NOT return the exact original image or anything similar. You MUST generate a RADICALLY NEW background/composition.
     3. Keep the product's original details, logos, and text intact, but integrate it seamlessly into the new scene.
   `.trim();
 
@@ -300,7 +337,8 @@ export async function generateImage(productImages: ImageFile[], prompt: string, 
 }
 
 export async function generateCampaignPlan(productImages: ImageFile[], goal: string, market: string, dialect: string): Promise<any[]> {
-    const res = await askGemini(`Create 9-day content plan for ${goal} in ${market} with ${dialect}. Return JSON array with {id, tov, caption, schedule, scenario}.`);
+    const sysPrompt = getMasterAgentInstructions(dialect as any) + `\n\nأنت خبير إطلاق حملات محترف.`;
+    const res = await askGemini(`Create 9-day content plan for ${goal} in ${market} with ${dialect}. Return JSON array with {id, tov, caption, schedule, scenario}. \nCRITICAL INSTRUCTION: Make sure EVERY visualPrompt and scenario is drastically visually different from the others.`, sysPrompt, 0.4);
     try {
         const plan = JSON.parse(res.replace(/```json|```/g, ''));
         // Award points for planning
@@ -332,14 +370,15 @@ export async function generateContentCalendar7Days(productImages: ImageFile[], g
       "type": "product | viral | engagement | video",
       "title": "Short catchy title",
       "caption": "Full social media caption in ${dialect}",
-      "visualPrompt": "Detailed AI image generation prompt for this day",
+      "visualPrompt": "Detailed AI image generation prompt for this day. CRITICAL: Every single visualPrompt MUST be completely different in setting, lighting, and style.",
       "script": "If type is video, provide a 30s script, else null"
     }
 
     Respond ONLY with the JSON array.
     `;
 
-    const res = await askGemini(prompt, "Senior Social Media Strategist");
+    const sysPrompt = getMasterAgentInstructions(dialect as any) + `\n\nYou are a Senior Social Media Strategist.`;
+    const res = await askGemini(prompt, sysPrompt, 0.4);
     try {
         const plan = parseRobustJSON(res);
         if ((import.meta as any).env.VITE_USER_ID) {
@@ -389,7 +428,10 @@ export async function runPowerProduction(images: ImageFile[], context: string, m
     return { analysis: "Strategic Plan", visualPrompt: "Prompt", fbAds: { primaryText: "Ad Copy", headline: "Headline" }, visual };
 }
 
-export async function generateAdScript(p: string, b: string, pr: string, l: string, t: string): Promise<string> { return askGemini(`Write an ad script for ${p}`); }
+export async function generateAdScript(p: string, b: string, pr: string, l: string, t: string): Promise<string> {
+    const sysPrompt = getMasterAgentInstructions(l as any) + `\n\nأنت كاتب سكريبتات إعلانية محترف.`;
+    return askGemini(`Write an ad script for ${p} targeting ${b} with price ${pr} and tone ${t}`, sysPrompt);
+}
 
 export async function generateDynamicStoryboard(productImages: ImageFile[], referenceImages: ImageFile[], userInstructions: string): Promise<string[]> {
     try {
@@ -409,6 +451,7 @@ export async function generateDynamicStoryboard(productImages: ImageFile[], refe
     }
 }
 export async function generateMarketingAnalysis(d: any, l: string): Promise<string> {
+    const sysPrompt = getMasterAgentInstructions(l as any) + `\n\nYou are a Senior Marketing Strategist specialized in the Arabic/MENA market.`;
     return askGemini(`Perform a comprehensive marketing & competitor analysis for this brand:
 Brand: ${d.brandName || 'Unknown'}
 Specialty: ${d.specialty || 'General'}
@@ -420,7 +463,7 @@ Provide:
 2. Competitor strengths & weaknesses
 3. Unique positioning opportunities
 4. Recommended channels & tactics
-5. Action plan for first 30 days`, "You are a Senior Marketing Strategist specialized in the Arabic/MENA market.");
+5. Action plan for first 30 days`, sysPrompt, 0.2);
 }
 export async function generateStoryboardPlan(i: any, ins: string): Promise<any[]> {
     const ai = new GoogleGenAI({ apiKey: getApiKey() });
@@ -647,7 +690,7 @@ export async function generatePerformanceAdPack(data: {
                 config: {
                     systemInstruction,
                     responseMimeType: "application/json",
-                    temperature: 0.5,
+                    temperature: 0.2,
                     topK: 40,
                     responseSchema: {
                         type: Type.OBJECT,
@@ -758,6 +801,36 @@ export async function generatePerformanceAdPack(data: {
 
             try {
                 const result = JSON.parse(res.text || "{}");
+
+                // --- Inject Validation Engines ---
+                if (result.launchPack) {
+                    const marketParam = data.targetMarket.includes('Egypt') || data.dialect.includes('Egyptian') ? 'egypt' : 'gulf';
+
+                    if (Array.isArray(result.launchPack.hooks)) {
+                        result.launchPack.hooks = result.launchPack.hooks.map((h: string) => {
+                            const evalResult = runHookScoringEngine(h, marketParam);
+                            const badge = evalResult.score.total >= 80 ? '🔥 قوي جداً' : evalResult.score.total >= 60 ? '✅ جيد' : '⚠️ متوسط';
+                            return `[التقييم: ${evalResult.score.total}/100 ${badge}] ${evalResult.finalHook}`;
+                        });
+                    }
+
+                    if (result.launchPack.adCopy) {
+                        const ctr = predictCTR({
+                            headlineLength: 50,
+                            hasNumber: /\d/.test(result.launchPack.adCopy),
+                            hasEmoji: /[\u{1F300}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u.test(result.launchPack.adCopy),
+                            hasQuestion: result.launchPack.adCopy.includes('؟') || result.launchPack.adCopy.includes('?'),
+                            urgencyLevel: result.launchPack.adCopy.includes('الآن') || result.launchPack.adCopy.includes('محدود') ? 3 : 1,
+                            imageType: 'product',
+                            colorContrast: 0.8,
+                            textToImageRatio: 0.1,
+                            ctaClarity: result.launchPack.cta ? 0.9 : 0.5
+                        });
+                        const perf = getPerformanceLabel(ctr);
+                        result.launchPack.adCopy = `[توقع الـ CTR: ${ctr}% - ${perf.label}]\n\n${result.launchPack.adCopy}`;
+                    }
+                }
+
                 if (result.strategicIntelligence && (import.meta as any).env.VITE_USER_ID) {
                     await awardPoints((import.meta as any).env.VITE_USER_ID, 50, "تحليل استراتيجي متكامل");
                 }
@@ -889,6 +962,7 @@ export async function generateFullCampaignVisuals(strategy: string, angles: any[
     Task: Create a full visual and storyboard campaign for each angle.
     For each angle, provide:
     1. A highly detailed AI image generation prompt for the main ad visual.
+    CRITICAL INSTRUCTION: EVERY SINGLE visualPrompt MUST BE DRASTICALLY DIFFERENT FROM THE OTHERS. Use completely different locations, color palettes, models, props, and lighting for EACH angle. If angle 1 is a studio shot, angle 2 must be outdoors, angle 3 must be lifestyle, etc.
     2. A 6-frame storyboard for a video ad.
     
     Output 6 to 8 ad sets.
@@ -928,6 +1002,7 @@ export async function generateFullCampaignVisuals(strategy: string, angles: any[
                 contents: prompt,
                 config: {
                     systemInstruction,
+                    temperature: 0.3,
                     responseMimeType: "application/json",
                     responseSchema: {
                         type: Type.OBJECT,

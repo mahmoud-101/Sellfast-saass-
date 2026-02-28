@@ -9,6 +9,9 @@ import {
 import { askPerplexityJSON } from '../services/perplexityService';
 import { getCinematicMotionPrompt, runGrokStrategy } from '../services/xaiService';
 import { AD_FRAMEWORKS, SWIPE_FILE, HOOK_LIBRARY, CTA_LIBRARY } from '../lib/adFrameworks';
+import { runHookScoringEngine } from '../features/performance/optimization/HookScoringEngine';
+import { predictCTR, getPerformanceLabel } from '../features/performance/engine/ScoringPredictor';
+import { buildTestingSuggestion } from '../features/performance/engine/TestingSuggestionBuilder';
 
 export type OrchestrationMode = 'Quick' | 'Advanced' | 'Full';
 
@@ -314,12 +317,41 @@ JSON array: [{"angle":"الاسم","concept":"الفكرة","exampleHook":"مث�
             return this.safeJsonParse(r.value, fallback);
         };
 
+        const parsedHooks = parseJ(hooksR, []).map((h: any) => {
+            if (h.hook) {
+                const analysis = runHookScoringEngine(h.hook, m.includes('مصر') || dial.includes('مصر') ? 'egypt' : 'gulf');
+                return { ...h, hook: analysis.finalHook, score: analysis.score.total, originalHook: h.hook, isEnhanced: analysis.score.wasEnhanced };
+            }
+            return h;
+        });
+
+        const parsedAds = parseJ(adsR, []).map((ad: any) => {
+            if (ad.headline && ad.body) {
+                const ctr = predictCTR({
+                    headlineLength: ad.headline?.length || 50,
+                    hasNumber: /\d/.test(ad.headline || ''),
+                    hasEmoji: /[\u{1F300}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u.test(ad.headline || ''),
+                    hasQuestion: (ad.headline || '').includes('؟') || (ad.headline || '').includes('?'),
+                    urgencyLevel: (ad.body || '').includes('الآن') || (ad.body || '').includes('محدود') ? 3 : 1,
+                    imageType: 'product',
+                    colorContrast: 0.8,
+                    textToImageRatio: 0.1,
+                    ctaClarity: ad.cta ? 0.9 : 0.5
+                });
+                const perf = getPerformanceLabel(ctr);
+                const marketParam = m.includes('مصر') || dial.includes('مصر') ? 'egypt' : 'gulf';
+                const testing = buildTestingSuggestion({ type: 'pain', name: 'Pain Angle', description: '' } as any, { market: marketParam, productCategory: p } as any);
+                return { ...ad, expectedCTR: ctr, performanceLabel: perf.label, testingSuggestion: testing, performanceColor: perf.color };
+            }
+            return ad;
+        });
+
         return {
             success: true,
             data: {
-                performanceAds: parseJ(adsR, []),
+                performanceAds: parsedAds,
                 ugcScript: ugcR.status === 'fulfilled' ? ugcR.value.trim() : null,
-                viralHooks: parseJ(hooksR, []),
+                viralHooks: parsedHooks,
                 salesAngles: parseJ(anglesR, []),
             }
         };
