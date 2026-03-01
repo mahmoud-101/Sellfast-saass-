@@ -166,3 +166,46 @@ export interface AdScoreFactors {
     textToImageRatio: number;
     ctaClarity: number;
 }
+
+// ─── ProMode Agent Pipeline Types ────────────────────────────────────────────
+
+export interface AgentMarketAnalysis {
+    targetAudience: string;
+    coreDesire: string;
+    biggestPain: string;
+    competitorWeakness?: string;
+    marketInsight?: string;
+}
+
+export interface AgentAngle {
+    title: string;
+    description?: string;
+    trigger?: string;
+    principle?: string;
+    marketReason?: string;
+}
+
+export interface AgentAdCopy {
+    adBody: string;
+    callToAction: string;
+    headline?: string;
+}
+
+export interface AgentVisual {
+    imagePrompt: string;
+    selectedStyleName: string;
+    generatedImageUrl?: string | null;
+    rationale?: string;
+}
+
+export interface AgentObjection {
+    objection: string;
+    rebuttal: string;
+}
+
+export interface FinalProModeAd {
+    angle: AgentAngle;
+    hooks: string[];
+    copy: AgentAdCopy;
+    visual: AgentVisual;
+}
