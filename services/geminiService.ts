@@ -576,30 +576,47 @@ CRITICAL RULES:
         throw new Error('⚠️ لتوليد الصور، أضف مفتاح Gemini جديد في إعدادات Vercel (VITE_GEMINI_API_KEY). الأدوات النصية كلها شغالة عادي على Perplexity.');
     }
 
+    // Image model priority chain (best → fallback)
+    const IMAGE_MODELS = [
+        'gemini-3.1-flash-image-preview',  // Nano Banana 2 — Best quality/speed balance (recommended by Google)
+        'gemini-2.5-flash-image',           // Nano Banana — Fast, 1024px, high-volume
+        'gemini-3-pro-image-preview',       // Nano Banana Pro — 4K, thinking process (slower but highest quality)
+    ];
+
     return executeWithRetry(async () => {
         const currentKey = getApiKey() || geminiKey;
-        try {
-            const ai = new GoogleGenAI({ apiKey: currentKey });
-            const res = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: { parts },
-                config: {
-                    temperature: 2.0,
-                    // @ts-ignore
-                    responseModalities: ["TEXT", "IMAGE"],
+        const ai = new GoogleGenAI({ apiKey: currentKey });
+
+        let lastError: any = null;
+        for (const modelName of IMAGE_MODELS) {
+            try {
+                const res = await ai.models.generateContent({
+                    model: modelName,
+                    contents: { parts },
+                    config: {
+                        temperature: 1.0,
+                        responseModalities: ["IMAGE"],
+                    }
+                });
+                for (const part of res.candidates?.[0]?.content?.parts || []) {
+                    if (part.inlineData) {
+                        console.log(`[IMG] ✅ Generated with ${modelName}`);
+                        return { base64: part.inlineData.data, mimeType: part.inlineData.mimeType || 'image/png', name: 'img.png' };
+                    }
                 }
-            });
-            for (const part of res.candidates?.[0]?.content?.parts || []) {
-                if (part.inlineData) return { base64: part.inlineData.data, mimeType: part.inlineData.mimeType || 'image/png', name: 'img.png' };
+                throw new Error(`No image in response from ${modelName}`);
+            } catch (err: any) {
+                lastError = err;
+                const msg = err?.message?.toLowerCase() || '';
+                if (msg.includes('permission') || msg.includes('leaked') || msg.includes('403')) {
+                    reportExhaustedKey(currentKey);
+                    throw err; // Key issue — don't try other models, retry with new key
+                }
+                console.warn(`[IMG] ⚠️ ${modelName} failed, trying next...`, err.message);
+                continue; // Try next model
             }
-            throw new Error('No image returned from Gemini');
-        } catch (err: any) {
-            const msg = err?.message?.toLowerCase() || '';
-            if (msg.includes('permission') || msg.includes('leaked') || msg.includes('403')) {
-                reportExhaustedKey(currentKey);
-            }
-            throw err;
         }
+        throw lastError || new Error('All image models failed');
     });
 }
 
