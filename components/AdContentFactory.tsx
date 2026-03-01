@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { PerformanceStudioProject, MasterFactoryProject } from '../types';
-import { 
-    generatePerformanceAdPack, 
-    generateFullCampaignVisuals, 
+import {
+    generatePerformanceAdPack,
+    generateFullCampaignVisuals,
     generateImage,
     createEliteAdChat,
     generateShortFormIdeas,
@@ -31,18 +31,18 @@ const STEPS_LABELS: { [key: number]: string } = {
     1: 'الهوية', 2: 'المنتج', 3: 'التحول', 4: 'القوة', 5: 'الزمن', 6: 'الألم', 7: 'الإغلاق', 8: 'المعاينة', 9: 'السكريبت'
 };
 
-const AdContentFactory: React.FC<AdContentFactoryProps> = ({ 
-    performanceProject, 
-    setPerformanceProject, 
+const AdContentFactory: React.FC<AdContentFactoryProps> = ({
+    performanceProject,
+    setPerformanceProject,
     masterProject,
     setMasterProject,
-    userId, 
+    userId,
     refreshCredits,
     onBridgeToVideo
 }) => {
     const [activeMode, setActiveMode] = useState<'elite' | 'guided' | 'machine' | 'transformer'>('elite');
     const [activeTab, setActiveTab] = useState<'inputs' | 'intelligence' | 'matrix' | 'launch_pack' | 'visuals' | 'profit' | 'simulation' | 'full_campaign'>('inputs');
-    
+
     // Master Factory States
     const [input, setInput] = useState('');
     const [chatSession, setChatSession] = useState<Chat | null>(null);
@@ -61,7 +61,7 @@ const AdContentFactory: React.FC<AdContentFactoryProps> = ({
         if (!performanceProject.result || !userId) return;
         setPerformanceProject(s => ({ ...s, isGeneratingFull: true, error: null }));
         try {
-            const deducted = await deductCredits(userId, 50); 
+            const deducted = await deductCredits(userId, 50);
             if (deducted) {
                 const strategyContext = `
                     Product Type: ${performanceProject.result.strategicIntelligence.productType}
@@ -69,11 +69,11 @@ const AdContentFactory: React.FC<AdContentFactoryProps> = ({
                     Archetype: ${performanceProject.result.strategicIntelligence.archetype}
                 `;
                 const campaignData = await generateFullCampaignVisuals(strategyContext, performanceProject.result.creativeStrategyMatrix.angles);
-                
-                setPerformanceProject(s => ({ 
-                    ...s, 
-                    fullCampaign: { adSets: campaignData.adSets }, 
-                    isGeneratingFull: false 
+
+                setPerformanceProject(s => ({
+                    ...s,
+                    fullCampaign: { adSets: campaignData.adSets },
+                    isGeneratingFull: false
                 }));
                 setActiveTab('full_campaign');
 
@@ -82,10 +82,10 @@ const AdContentFactory: React.FC<AdContentFactoryProps> = ({
                     const set = campaignData.adSets[i];
                     try {
                         if (i > 0) await new Promise(resolve => setTimeout(resolve, 1500));
-                        
-                        const img = await generateImage(performanceProject.referenceImage ? [performanceProject.referenceImage] : [], set.visualPrompt, null, "1:1");
+
+                        const img = await generateImage(performanceProject.referenceImage ? [performanceProject.referenceImage] : [], set.visualPrompt, null, "1:1", i);
                         const imageUrl = `data:${img.mimeType};base64,${img.base64}`;
-                        
+
                         setPerformanceProject(s => {
                             if (!s.fullCampaign) return s;
                             const newAdSets = [...s.fullCampaign.adSets];
@@ -161,12 +161,12 @@ const AdContentFactory: React.FC<AdContentFactoryProps> = ({
             const botText = response.text || '';
             setMasterProject(s => {
                 const nextStep = s.step + 1;
-                return { 
-                    ...s, 
-                    messages: [...s.messages, { role: 'bot', text: botText }], 
-                    isGenerating: false, 
+                return {
+                    ...s,
+                    messages: [...s.messages, { role: 'bot', text: botText }],
+                    isGenerating: false,
                     step: nextStep,
-                    finalScript: nextStep >= 9 ? botText : null 
+                    finalScript: nextStep >= 9 ? botText : null
                 };
             });
         } catch (err) { setMasterProject(s => ({ ...s, isGenerating: false, error: "فشل الاتصال." })); }
@@ -174,12 +174,12 @@ const AdContentFactory: React.FC<AdContentFactoryProps> = ({
 
     const handleResetGuided = () => {
         setChatSession(null);
-        setMasterProject(s => ({ 
-            ...s, 
-            messages: [], 
-            step: 0, 
-            finalScript: null, 
-            error: null 
+        setMasterProject(s => ({
+            ...s,
+            messages: [],
+            step: 0,
+            finalScript: null,
+            error: null
         }));
         setSocialPosts([]);
         setReelsScript(null);
@@ -264,7 +264,7 @@ const AdContentFactory: React.FC<AdContentFactoryProps> = ({
             if (deducted) {
                 const prompts = await generateImagePromptsFromStrategy(masterProject.finalScript);
                 setImagePrompts(prompts);
-                
+
                 // Generate images one by one but update state immediately for gradual feel
                 for (const p of prompts) {
                     try {
@@ -307,7 +307,7 @@ const AdContentFactory: React.FC<AdContentFactoryProps> = ({
                     <h1 className="text-5xl font-black text-white tracking-tighter italic">مصنع المحتوى الإعلاني <span className="text-[#FFD700]">🏭</span></h1>
                     <p className="text-slate-400 text-xl font-bold">المحرك المتكامل لصناعة الحملات والسكريبتات الإبداعية.</p>
                 </div>
-                
+
                 <div className="bg-white/5 p-1.5 rounded-2xl border border-white/10 flex flex-wrap gap-2 justify-center">
                     <button onClick={() => setActiveMode('elite')} className={`px-6 py-3 rounded-xl text-xs font-black transition-all ${activeMode === 'elite' ? 'bg-[#FFD700] text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}>حملة بيعية كاملة (النخبة) 💎</button>
                     <button onClick={() => setActiveMode('guided')} className={`px-6 py-3 rounded-xl text-xs font-black transition-all ${activeMode === 'guided' ? 'bg-[#FFD700] text-black shadow-lg' : 'text-slate-400 hover:text-white'}`}>سكريبت استراتيجي 🪄</button>
@@ -395,11 +395,11 @@ const AdContentFactory: React.FC<AdContentFactoryProps> = ({
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                                 <div className="lg:col-span-2 space-y-3">
                                     <label className="text-xs font-black text-slate-500 uppercase tracking-widest">وصف المنتج / الخدمة</label>
-                                    <textarea 
-                                        value={performanceProject.productDescription} 
-                                        onChange={e => setPerformanceProject(s => ({ ...s, productDescription: e.target.value }))} 
-                                        className="w-full h-48 bg-black/40 border border-white/10 rounded-3xl p-6 font-bold text-white outline-none focus:border-[#FFD700] shadow-inner resize-none" 
-                                        placeholder="اوصف منتجك بالتفصيل، إيه المشكلة اللي بيحلها؟ ومين العميل المثالي؟" 
+                                    <textarea
+                                        value={performanceProject.productDescription}
+                                        onChange={e => setPerformanceProject(s => ({ ...s, productDescription: e.target.value }))}
+                                        className="w-full h-48 bg-black/40 border border-white/10 rounded-3xl p-6 font-bold text-white outline-none focus:border-[#FFD700] shadow-inner resize-none"
+                                        placeholder="اوصف منتجك بالتفصيل، إيه المشكلة اللي بيحلها؟ ومين العميل المثالي؟"
                                     />
                                 </div>
                                 <div className="space-y-3">
@@ -420,9 +420,9 @@ const AdContentFactory: React.FC<AdContentFactoryProps> = ({
                                 </div>
                             </div>
 
-                            <button 
-                                onClick={handleGenerateElite} 
-                                disabled={performanceProject.isGenerating || !performanceProject.productDescription} 
+                            <button
+                                onClick={handleGenerateElite}
+                                disabled={performanceProject.isGenerating || !performanceProject.productDescription}
                                 className="w-full h-20 bg-[#FFD700] text-black font-black rounded-[2rem] text-xl shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-4"
                             >
                                 {performanceProject.isGenerating ? (
@@ -477,7 +477,7 @@ const AdContentFactory: React.FC<AdContentFactoryProps> = ({
                                                 )}
                                                 <div className="absolute -top-4 -right-4 w-10 h-10 bg-[#FFD700] text-black rounded-full flex items-center justify-center font-black shadow-lg">#{angle.rank}</div>
                                                 <div className="flex justify-between items-center">
-                                                    <span className="text-[10px] font-black text-[#FFD700] bg-[#FFD700]/10 px-3 py-1 rounded-full uppercase tracking-widest">Angle {i+1}</span>
+                                                    <span className="text-[10px] font-black text-[#FFD700] bg-[#FFD700]/10 px-3 py-1 rounded-full uppercase tracking-widest">Angle {i + 1}</span>
                                                     <span className="text-2xl">🎯</span>
                                                 </div>
                                                 <h4 className="text-xl font-black text-white">{angle.title}</h4>
@@ -516,7 +516,7 @@ const AdContentFactory: React.FC<AdContentFactoryProps> = ({
                                                     <div className="space-y-3">
                                                         {performanceProject.result.launchPack.hooks.map((hook, i) => (
                                                             <div key={i} className="p-4 bg-black/40 border border-white/5 rounded-2xl font-black text-white text-sm">
-                                                                {i+1}. "{hook}"
+                                                                {i + 1}. "{hook}"
                                                             </div>
                                                         ))}
                                                     </div>
@@ -564,7 +564,7 @@ const AdContentFactory: React.FC<AdContentFactoryProps> = ({
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                                             {performanceProject.result.visualMatchingEngine.imageConcepts.map((concept, i) => (
                                                 <div key={i} className="p-6 bg-black/40 border border-white/5 rounded-3xl space-y-4">
-                                                    <h4 className="text-lg font-black text-white">مفهوم بصري #{i+1}</h4>
+                                                    <h4 className="text-lg font-black text-white">مفهوم بصري #{i + 1}</h4>
                                                     <p className="text-sm text-slate-200 leading-relaxed font-bold">{concept.description}</p>
                                                     <div className="grid grid-cols-2 gap-2 text-[10px] font-bold text-slate-400">
                                                         <span>Angle: {concept.angle}</span>
@@ -628,10 +628,9 @@ const AdContentFactory: React.FC<AdContentFactoryProps> = ({
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                                         <div className="p-8 bg-black/40 rounded-3xl border border-white/5 text-center space-y-2">
                                             <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">قوة الخطاف (Hook)</h4>
-                                            <p className={`text-3xl font-black ${
-                                                performanceProject.result.performanceSimulation.hookStrength === 'High' ? 'text-emerald-500' :
-                                                performanceProject.result.performanceSimulation.hookStrength === 'Medium' ? 'text-[#FFD700]' : 'text-red-500'
-                                            }`}>{performanceProject.result.performanceSimulation.hookStrength}</p>
+                                            <p className={`text-3xl font-black ${performanceProject.result.performanceSimulation.hookStrength === 'High' ? 'text-emerald-500' :
+                                                    performanceProject.result.performanceSimulation.hookStrength === 'Medium' ? 'text-[#FFD700]' : 'text-red-500'
+                                                }`}>{performanceProject.result.performanceSimulation.hookStrength}</p>
                                         </div>
                                         <div className="p-8 bg-black/40 rounded-3xl border border-white/5 text-center space-y-2">
                                             <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">ثقة التحويل</h4>
@@ -651,8 +650,8 @@ const AdContentFactory: React.FC<AdContentFactoryProps> = ({
                             {/* I'll include the full campaign generation button here too */}
                             {activeTab !== 'full_campaign' && !performanceProject.fullCampaign && (
                                 <div className="mt-10 flex justify-center">
-                                    <button 
-                                        onClick={handleGenerateFullCampaign} 
+                                    <button
+                                        onClick={handleGenerateFullCampaign}
                                         disabled={performanceProject.isGeneratingFull}
                                         className="bg-[#FFD700] text-black px-12 py-4 rounded-2xl text-lg font-black transition-all shadow-2xl hover:scale-105 active:scale-95 flex items-center gap-4"
                                     >
@@ -665,7 +664,7 @@ const AdContentFactory: React.FC<AdContentFactoryProps> = ({
                                     </button>
                                 </div>
                             )}
-                            
+
                             {/* Full Campaign View */}
                             {activeTab === 'full_campaign' && performanceProject.fullCampaign && (
                                 <div className="space-y-12">
@@ -673,7 +672,7 @@ const AdContentFactory: React.FC<AdContentFactoryProps> = ({
                                         <div key={i} className="bg-white/5 border border-white/10 rounded-[3rem] overflow-hidden shadow-2xl">
                                             <div className="p-10 border-b border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
                                                 <div className="space-y-2">
-                                                    <span className="text-[10px] font-black text-[#FFD700] bg-[#FFD700]/10 px-3 py-1 rounded-full uppercase tracking-widest">Ad Set {i+1}</span>
+                                                    <span className="text-[10px] font-black text-[#FFD700] bg-[#FFD700]/10 px-3 py-1 rounded-full uppercase tracking-widest">Ad Set {i + 1}</span>
                                                     <h3 className="text-3xl font-black text-white">{set.angle}</h3>
                                                 </div>
                                             </div>
@@ -722,7 +721,7 @@ const AdContentFactory: React.FC<AdContentFactoryProps> = ({
                     <div className="lg:col-span-4 space-y-6">
                         <div className="bg-white/5 border border-white/10 rounded-[3rem] p-8 shadow-2xl space-y-8 min-h-[600px]">
                             <h3 className="text-xs font-black text-[#FFD700] uppercase tracking-[0.3em] pr-4 border-r-4 border-[#FFD700]">مركز التحكم</h3>
-                            
+
                             {activeMode === 'guided' && (
                                 <div className="space-y-4">
                                     <div className="space-y-2">
@@ -739,17 +738,17 @@ const AdContentFactory: React.FC<AdContentFactoryProps> = ({
                             {activeMode === 'machine' && (
                                 <div className="space-y-6">
                                     <p className="text-xs text-slate-400 font-bold leading-relaxed">أدخل تفاصيل منتجك وسأقوم بتوليد 30 فكرة ريلز فيرال جاهزة للتصوير.</p>
-                                    <textarea 
-                                        value={masterProject.productInfo.product} 
+                                    <textarea
+                                        value={masterProject.productInfo.product}
                                         onChange={e => setMasterProject(s => ({ ...s, productInfo: { ...s.productInfo, product: e.target.value } }))}
-                                        placeholder="اسم المنتج وميزاته الأساسية..." 
-                                        className="w-full bg-black/40 border border-white/10 rounded-3xl p-6 font-bold text-white outline-none focus:border-[#FFD700] h-48 resize-none" 
+                                        placeholder="اسم المنتج وميزاته الأساسية..."
+                                        className="w-full bg-black/40 border border-white/10 rounded-3xl p-6 font-bold text-white outline-none focus:border-[#FFD700] h-48 resize-none"
                                     />
                                     <button onClick={handleGenerateViralIdeas} disabled={masterProject.isGenerating} className="w-full h-16 bg-white text-black font-black rounded-2xl hover:scale-105 transition-all shadow-xl">توليد 30 فكرة (5 نقاط)</button>
-                                    
+
                                     <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 pt-4 border-t border-white/5">
                                         {masterProject.topicIdeas.map((idea, idx) => (
-                                            <button key={idx} onClick={() => handleSelectIdea(idea)} className="w-full text-right p-4 bg-white/5 hover:bg-[#FFD700] rounded-xl text-[10px] font-bold text-slate-300 hover:text-black transition-all border border-transparent hover:border-white/20">{idx+1}. {idea}</button>
+                                            <button key={idx} onClick={() => handleSelectIdea(idea)} className="w-full text-right p-4 bg-white/5 hover:bg-[#FFD700] rounded-xl text-[10px] font-bold text-slate-300 hover:text-black transition-all border border-transparent hover:border-white/20">{idx + 1}. {idea}</button>
                                         ))}
                                     </div>
                                 </div>
@@ -758,11 +757,11 @@ const AdContentFactory: React.FC<AdContentFactoryProps> = ({
                             {activeMode === 'transformer' && (
                                 <div className="space-y-6">
                                     <p className="text-xs text-slate-400 font-bold leading-relaxed">أدخل السكريبت الإعلاني التقليدي، وسأحوله إلى سكريبت UGC بشري جذاب فوراً.</p>
-                                    <textarea 
-                                        value={masterProject.rawInput} 
+                                    <textarea
+                                        value={masterProject.rawInput}
                                         onChange={e => setMasterProject(s => ({ ...s, rawInput: e.target.value }))}
-                                        placeholder="الصق النص هنا..." 
-                                        className="w-full bg-black/40 border border-white/10 rounded-3xl p-6 font-bold text-white outline-none focus:border-[#FFD700] h-[450px] resize-none" 
+                                        placeholder="الصق النص هنا..."
+                                        className="w-full bg-black/40 border border-white/10 rounded-3xl p-6 font-bold text-white outline-none focus:border-[#FFD700] h-[450px] resize-none"
                                     />
                                     <button onClick={handleTransform} disabled={masterProject.isGenerating} className="w-full h-16 bg-[#FFD700] text-black font-black rounded-2xl hover:bg-yellow-400 transition-all shadow-xl">تحويل لسكريبت بشري ✨</button>
                                 </div>
@@ -781,14 +780,14 @@ const AdContentFactory: React.FC<AdContentFactoryProps> = ({
                             </div>
 
                             {activeMode === 'guided' && !masterProject.finalScript && (
-                                 <div ref={scrollRef} className="flex-grow space-y-6 overflow-y-auto mb-8 no-scrollbar max-h-[500px]">
-                                     {masterProject.messages.map((m, i) => (
-                                         <div key={i} className={`flex ${m.role === 'user' ? 'justify-start' : 'justify-end'}`}>
-                                             <div className={`max-w-[85%] p-6 rounded-[2rem] text-sm md:text-lg font-bold leading-relaxed ${m.role === 'user' ? 'bg-[#FFD700] text-black' : 'bg-white/5 border border-white/5 text-slate-300'}`}>{m.text}</div>
-                                         </div>
-                                     ))}
-                                     {masterProject.isGenerating && <div className="text-[#FFD700] animate-pulse text-xs font-black">جاري المعالجة الذكية...</div>}
-                                 </div>
+                                <div ref={scrollRef} className="flex-grow space-y-6 overflow-y-auto mb-8 no-scrollbar max-h-[500px]">
+                                    {masterProject.messages.map((m, i) => (
+                                        <div key={i} className={`flex ${m.role === 'user' ? 'justify-start' : 'justify-end'}`}>
+                                            <div className={`max-w-[85%] p-6 rounded-[2rem] text-sm md:text-lg font-bold leading-relaxed ${m.role === 'user' ? 'bg-[#FFD700] text-black' : 'bg-white/5 border border-white/5 text-slate-300'}`}>{m.text}</div>
+                                        </div>
+                                    ))}
+                                    {masterProject.isGenerating && <div className="text-[#FFD700] animate-pulse text-xs font-black">جاري المعالجة الذكية...</div>}
+                                </div>
                             )}
 
                             {masterProject.finalScript ? (
@@ -799,7 +798,7 @@ const AdContentFactory: React.FC<AdContentFactoryProps> = ({
 
                                     {/* Action Buttons for Content Factory */}
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <button 
+                                        <button
                                             onClick={handleGenerateImagesFromStrategy}
                                             disabled={isGeneratingExtra}
                                             className="p-6 bg-white/5 border border-white/10 rounded-3xl hover:bg-[#FFD700] hover:text-black transition-all group"
@@ -807,7 +806,7 @@ const AdContentFactory: React.FC<AdContentFactoryProps> = ({
                                             <span className="text-2xl block mb-2">🖼️</span>
                                             <span className="font-black text-sm">توليد صور إعلانية</span>
                                         </button>
-                                        <button 
+                                        <button
                                             onClick={handleGenerateReelsScript}
                                             disabled={isGeneratingExtra}
                                             className="p-6 bg-white/5 border border-white/10 rounded-3xl hover:bg-[#FFD700] hover:text-black transition-all group"
@@ -815,7 +814,7 @@ const AdContentFactory: React.FC<AdContentFactoryProps> = ({
                                             <span className="text-2xl block mb-2">🎬</span>
                                             <span className="font-black text-sm">سكريبت فيديو ريلز</span>
                                         </button>
-                                        <button 
+                                        <button
                                             onClick={handleGenerateSocialPack}
                                             disabled={isGeneratingExtra}
                                             className="p-6 bg-white/5 border border-white/10 rounded-3xl hover:bg-[#FFD700] hover:text-black transition-all group"
@@ -861,7 +860,7 @@ const AdContentFactory: React.FC<AdContentFactoryProps> = ({
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                                 {socialPosts.map((post, i) => (
                                                     <div key={i} className="p-6 bg-black/40 rounded-3xl border border-white/5 space-y-4">
-                                                        <span className="text-[10px] font-black text-[#FFD700]">بوست #{i+1}</span>
+                                                        <span className="text-[10px] font-black text-[#FFD700]">بوست #{i + 1}</span>
                                                         <div className="text-xs text-slate-300 font-bold leading-relaxed whitespace-pre-wrap">
                                                             {post}
                                                         </div>
@@ -871,13 +870,13 @@ const AdContentFactory: React.FC<AdContentFactoryProps> = ({
                                             </div>
                                         </div>
                                     )}
-                                    
+
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-10 border-t border-white/5">
                                         <div className="space-y-4">
-                                             <h4 className="text-sm font-black text-[#FFD700] uppercase tracking-widest">إطلاق الـ Flow للإنتاج</h4>
-                                             <button onClick={handleGenerateFlow} disabled={genStage !== 'IDLE'} className={`w-full py-8 rounded-[2.5rem] font-black text-xl transition-all shadow-2xl ${genStage !== 'IDLE' ? 'bg-slate-800 text-slate-400' : 'bg-[#FFD700] text-black hover:bg-yellow-400'}`}>
+                                            <h4 className="text-sm font-black text-[#FFD700] uppercase tracking-widest">إطلاق الـ Flow للإنتاج</h4>
+                                            <button onClick={handleGenerateFlow} disabled={genStage !== 'IDLE'} className={`w-full py-8 rounded-[2.5rem] font-black text-xl transition-all shadow-2xl ${genStage !== 'IDLE' ? 'bg-slate-800 text-slate-400' : 'bg-[#FFD700] text-black hover:bg-yellow-400'}`}>
                                                 {genStage === 'IDLE' ? '🎬 توليد فيديو ريلز (100 نقطة)' : videoStatus}
-                                             </button>
+                                            </button>
                                         </div>
                                         <div className="aspect-[9/16] bg-black/60 rounded-[3rem] border border-white/10 overflow-hidden relative shadow-2xl flex items-center justify-center">
                                             {videoUrl ? <video src={videoUrl} controls autoPlay loop className="w-full h-full object-cover" /> : <p className="opacity-10 text-xs font-black uppercase tracking-widest">Vertical Preview</p>}
@@ -890,7 +889,7 @@ const AdContentFactory: React.FC<AdContentFactoryProps> = ({
                                     <div className="mt-auto pt-6 flex gap-4">
                                         <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleGuidedSend()} placeholder="أجب على المحرك هنا..." className="flex-grow bg-white/5 border border-white/10 rounded-2xl px-6 py-5 font-bold text-white outline-none focus:border-[#FFD700] shadow-inner" />
                                         <button onClick={() => handleGuidedSend()} disabled={masterProject.isGenerating} className="w-16 h-16 bg-[#FFD700] text-black rounded-2xl flex items-center justify-center shadow-xl hover:bg-yellow-400 transition-all">
-                                            <svg className="w-6 h-6 rotate-180" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/></svg>
+                                            <svg className="w-6 h-6 rotate-180" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
                                         </button>
                                     </div>
                                 ) : (

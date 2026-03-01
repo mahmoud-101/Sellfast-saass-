@@ -10,7 +10,7 @@ const getApiKey = () => {
     return process.env.PERPLEXITY_API_KEY || '';
 };
 
-export async function askPerplexity(prompt: string, systemInstruction?: string, model: string = 'sonar'): Promise<string> {
+export async function askPerplexity(prompt: string, systemInstruction?: string, model: string = 'sonar', temperature: number = 0.2): Promise<string> {
     const apiKey = getApiKey();
     if (!apiKey) {
         throw new Error('PERPLEXITY_API_KEY is missing in environment variables.');
@@ -32,7 +32,7 @@ export async function askPerplexity(prompt: string, systemInstruction?: string, 
             body: JSON.stringify({
                 model,
                 messages,
-                temperature: 0.2,
+                temperature,
                 top_p: 0.9,
                 return_images: false,
                 return_related_questions: false,
@@ -56,9 +56,9 @@ export async function askPerplexity(prompt: string, systemInstruction?: string, 
 /**
  * Helper for structured JSON output
  */
-export async function askPerplexityJSON(prompt: string, systemInstruction?: string, model: string = 'sonar'): Promise<any> {
+export async function askPerplexityJSON(prompt: string, systemInstruction?: string, model: string = 'sonar', temperature: number = 0.2): Promise<any> {
     const fullPrompt = `${prompt}\n\nIMPORTANT: Your response MUST be valid JSON only. Do not include any markdown formatting or extra text.`;
-    const response = await askPerplexity(fullPrompt, systemInstruction, model);
+    const response = await askPerplexity(fullPrompt, systemInstruction, model, temperature);
 
     try {
         // Clean markdown if present

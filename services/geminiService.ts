@@ -290,48 +290,65 @@ export async function generateFinalContentScript(topic: string, type: string): P
     return askGemini(`Write a ${type} script for: ${topic}`, getMasterAgentInstructions('eg') + "\\n\\nVideo Script Writer");
 }
 
-export async function generateImage(productImages: ImageFile[], prompt: string, styleImages: ImageFile[] | null = null, aspectRatio: string = "1:1"): Promise<ImageFile> {
-    const parts: Part[] = productImages.map(img => ({ inlineData: { data: img.base64, mimeType: img.mimeType } }));
+export async function generateImage(productImages: ImageFile[], prompt: string, styleImages: ImageFile[] | null = null, aspectRatio: string = "1:1", variationIndex: number = -1): Promise<ImageFile> {
+    // ========================================================================
+    // VARIATION SYSTEM: Force drastically different outputs per call
+    // ========================================================================
+    const SCENE_PRESETS = [
+        { bg: "luxurious marble studio with soft golden backlighting", mood: "elegant premium", color: "warm gold and ivory tones", angle: "slightly elevated 3/4 angle" },
+        { bg: "vibrant neon-lit urban street at night with rain reflections", mood: "edgy street style", color: "electric blue and magenta neon", angle: "dramatic low angle looking up" },
+        { bg: "bright airy minimalist room with huge windows and natural sunlight", mood: "clean modern lifestyle", color: "soft whites and natural greens", angle: "eye-level straight on" },
+        { bg: "tropical beach at golden hour with palm shadows", mood: "warm vacation energy", color: "sunset oranges and ocean teals", angle: "wide environmental shot" },
+        { bg: "sleek dark studio with single spotlight and smoke effects", mood: "mysterious dramatic", color: "deep blacks with sharp white highlights", angle: "close-up detail shot" },
+        { bg: "colorful pop-art inspired flat background with geometric shapes", mood: "playful bold graphic", color: "saturated primary colors red yellow blue", angle: "perfectly centered symmetrical" },
+        { bg: "cozy coffee shop interior with warm ambient lighting", mood: "authentic relatable", color: "warm browns and cream tones", angle: "casual handheld perspective" },
+        { bg: "futuristic white void with holographic floating elements", mood: "tech-forward innovative", color: "iridescent chrome and white", angle: "top-down bird's eye view" }
+    ];
 
-    if (styleImages && styleImages.length > 0) {
-        styleImages.forEach(img => parts.push({ inlineData: { data: img.base64, mimeType: img.mimeType } }));
+    // Pick a scene: if variationIndex provided use it, otherwise random
+    const sceneIdx = variationIndex >= 0 ? (variationIndex % SCENE_PRESETS.length) : Math.floor(Math.random() * SCENE_PRESETS.length);
+    const scene = SCENE_PRESETS[sceneIdx];
+
+    // Build the prompt - this is the ONLY thing the model should follow
+    const finalPrompt = `Generate a NEW, ORIGINAL commercial photograph.
+
+SCENE DESCRIPTION: ${prompt}
+
+MANDATORY VISUAL DIRECTION (DO NOT IGNORE):
+- Setting: ${scene.bg}
+- Visual Mood: ${scene.mood}
+- Color Palette: ${scene.color}
+- Camera Angle: ${scene.angle}
+- Aspect Ratio: ${aspectRatio}
+
+CRITICAL RULES:
+1. Create a COMPLETELY NEW image composition from scratch.
+2. If a reference product photo is provided, extract ONLY the product itself and place it naturally into the new scene described above. 
+3. The background, lighting, pose, and composition MUST match the scene description above, NOT the reference photo.
+4. Output must be photorealistic, 8K quality, commercially polished.
+5. This image MUST look drastically different from any other image - unique composition, unique framing, unique mood.`;
+
+    // Build parts: text FIRST, then optional reference image
+    const parts: Part[] = [{ text: finalPrompt }];
+
+    // Only include reference image if provided - and limit to ONE to reduce its dominance
+    if (productImages.length > 0) {
+        parts.push({ inlineData: { data: productImages[0].base64, mimeType: productImages[0].mimeType } });
     }
 
-    const randomAngles = ["Eye-level portrait", "Dramatic low angle", "Top-down flatlay", "Extreme close-up macro", "Dynamic Dutch angle", "Wide environmental shot", "Symmetrical centered shot"];
-    const randomLighting = ["Neon Cyberpunk Glow", "Soft Morning Sunlight", "Harsh Studio Strobes", "Cinematic Moody Shadows", "Vibrant Pop-Art colors", "Natural Golden Hour", "High contrast dramatic rim light"];
-    const randomBackgrounds = ["on a luxurious marble podium", "floating in zero gravity with neon particles", "on a rustic wooden table with morning coffee", "in a futuristic cyberpunk city", "surrounded by fresh tropical leaves and water splash", "in a minimalist abstract white space", "set against a vivid solid color backdrop"];
-    const randomColors = ["high contrast vibrant colors", "soft pastel tones", "dark cinematic moody grading", "hyper-saturated neon colors", "monochromatic earthy tones"];
-
-    const currentAngle = randomAngles[Math.floor(Math.random() * randomAngles.length)];
-    const currentLighting = randomLighting[Math.floor(Math.random() * randomLighting.length)];
-    const currentBackground = randomBackgrounds[Math.floor(Math.random() * randomBackgrounds.length)];
-    const currentColor = randomColors[Math.floor(Math.random() * randomColors.length)];
-    const uniqueId = Math.random().toString(36).substring(2, 10);
-
-    const enhancedPrompt = `
-    [IMAGE ID: ${uniqueId}]
-    CORE CONCEPT: ${prompt}
-    
-    CRITICAL VISUAL OVERRIDES (MUST APPLY):
-    - Environment/Setting: ${currentBackground}
-    - Camera & Angle: ${currentAngle}
-    - Lighting Design: ${currentLighting}
-    - Color Grading: ${currentColor}
-    - Aspect Ratio: ${aspectRatio}
-    
-    INSTRUCTIONS: You MUST generate a completely new, visually distinct image. Do not ignore the environment or lighting overrides. Create a professional, hyper-realistic commercial photograph.
-  `.trim();
-
-    parts.push({ text: enhancedPrompt });
+    if (styleImages && styleImages.length > 0) {
+        parts.push({ inlineData: { data: styleImages[0].base64, mimeType: styleImages[0].mimeType } });
+    }
 
     return executeWithRetry(async () => {
         const ai = new GoogleGenAI({ apiKey: getApiKey() });
         const res = await ai.models.generateContent({
-            model: 'gemini-2.5-pro',
+            model: 'gemini-2.5-flash',
             contents: { parts },
             config: {
+                temperature: 2.0,
                 // @ts-ignore
-                responseModalities: ["IMAGE"],
+                responseModalities: ["TEXT", "IMAGE"],
             }
         });
         for (const part of res.candidates?.[0]?.content?.parts || []) {
@@ -993,7 +1010,7 @@ export async function generateFullCampaignVisuals(strategy: string, angles: any[
 
     if (pKey) {
         try {
-            return await askPerplexityJSON(prompt, systemInstruction);
+            return await askPerplexityJSON(prompt, systemInstruction, 'sonar', 0.9);
         } catch (e) {
             console.warn("Perplexity Full Campaign failed, falling back to Gemini", e);
         }
@@ -1007,7 +1024,7 @@ export async function generateFullCampaignVisuals(strategy: string, angles: any[
                 contents: prompt,
                 config: {
                     systemInstruction,
-                    temperature: 0.3,
+                    temperature: 0.9,
                     responseMimeType: "application/json",
                     responseSchema: {
                         type: Type.OBJECT,

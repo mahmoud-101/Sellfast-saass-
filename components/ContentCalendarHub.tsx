@@ -103,7 +103,7 @@ const ContentCalendarHub: React.FC<Props> = ({ project, setProject, onBridgeToPh
                 const day = days[i];
                 try {
                     const scenePrompt = `High-end social media creative for ${project.targetMarket}. Context: ${day.visualPrompt}. Tone: Modern, Luxury, Aesthetic. Commercial photography.`;
-                    const img = await generateImage(project.productImages, scenePrompt, null, "1:1");
+                    const img = await generateImage(project.productImages, scenePrompt, null, "1:1", i);
                     setProject(s => ({
                         ...s,
                         days: s.days.map(d => d.id === day.id ? { ...d, image: img, isLoading: false } : d)
@@ -141,7 +141,8 @@ const ContentCalendarHub: React.FC<Props> = ({ project, setProject, onBridgeToPh
 
         try {
             const scenePrompt = `High-end social media creative for ${project.targetMarket}. Context: ${day.visualPrompt}. Tone: Modern, Luxury, Aesthetic. Commercial photography.`;
-            const img = await generateImage(project.productImages, scenePrompt, null, "1:1");
+            const dayIdx = project.days.findIndex(d => d.id === day.id);
+            const img = await generateImage(project.productImages, scenePrompt, null, "1:1", dayIdx);
 
             setProject(s => ({
                 ...s,

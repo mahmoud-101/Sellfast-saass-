@@ -159,30 +159,33 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId, onUpscale }
                 console.warn("Validation agent failed, using raw visuals", validationErr);
             }
 
-            // Step 3c: Actually Generate the Images based on Validated Prompts
+            // Step 3c: Generate images SEQUENTIALLY with unique variationIndex per image
+            // Sequential = no rate limits + forces unique scene presets
+            setPipeline(prev => ({ ...prev, status: 'visualizing' }));
             const imgFile = {
                 base64: productImage.includes('base64,') ? productImage.split('base64,')[1] : productImage,
                 mimeType: productImage.startsWith('data:') ? productImage.split(';')[0].split(':')[1] : 'image/png',
                 name: 'product.png'
             };
+            const finalGeneratedAds: FinalProModeAd[] = [...preliminaryAdsList];
 
-            // Step 3c: Actually Generate the Images in parallel based on Validated Prompts
-            const finalGeneratedAds: FinalProModeAd[] = await Promise.all(
-                preliminaryAdsList.map(async (ad, i) => {
-                    const finalVisual = validatedVisuals[i] || ad.visual;
-                    ad.visual = finalVisual;
+            for (let i = 0; i < finalGeneratedAds.length; i++) {
+                const ad = finalGeneratedAds[i];
+                const finalVisual = validatedVisuals[i] || ad.visual;
+                ad.visual = finalVisual;
 
-                    try {
-                        const aiImage = await generateImage([imgFile], finalVisual.imagePrompt);
-                        ad.visual.generatedImageUrl = `data:${aiImage.mimeType};base64,${aiImage.base64}`;
-                    } catch (imgError) {
-                        console.error("🖼️ AI Image generation error:", imgError);
-                        ad.visual.generatedImageUrl = productImage; // Fallback
-                    }
+                try {
+                    if (i > 0) await new Promise(resolve => setTimeout(resolve, 2000)); // Rate limit protection
+                    const aiImage = await generateImage([imgFile], finalVisual.imagePrompt, null, "1:1", i);
+                    ad.visual.generatedImageUrl = `data:${aiImage.mimeType};base64,${aiImage.base64}`;
+                } catch (imgError) {
+                    console.error("🖼️ AI Image generation error for angle", i, imgError);
+                    ad.visual.generatedImageUrl = productImage; // Fallback
+                }
 
-                    return ad;
-                })
-            );
+                // Update UI after each image so user sees progress
+                setPipeline(prev => ({ ...prev, finalAds: [...finalGeneratedAds] }));
+            }
 
             setPipeline(prev => ({ ...prev, status: 'objections', finalAds: finalGeneratedAds }));
 

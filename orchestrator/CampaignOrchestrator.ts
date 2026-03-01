@@ -414,7 +414,7 @@ JSON: {"concept":"الفكرة البصرية","backgrounds":["خلفية 1","خ
         const shotsWithImages = await Promise.all(shots.map(async (shot, idx) => {
             if (idx < 3 && productImages.length > 0) {
                 try {
-                    const img = await generateImage(productImages, `Video Shot #${shot.shotNumber}: ${shot.action}. Cinematic lighting, professional ${shot.shotType} camera angle. 8k resolution, photorealistic.`, null, "9:16");
+                    const img = await generateImage(productImages, `Video Shot #${shot.shotNumber}: ${shot.action}. Cinematic lighting, professional ${shot.shotType} camera angle. 8k resolution, photorealistic.`, null, "9:16", idx);
                     return { ...shot, imageUrl: `data:${img.mimeType};base64,${img.base64}` };
                 } catch (e) { return { ...shot, imageUrl: null }; }
             }
@@ -425,7 +425,7 @@ JSON: {"concept":"الفكرة البصرية","backgrounds":["خلفية 1","خ
         let photoshootWithImage = parseJ(photoR, { concept: 'لم يتم توليد بريف.', backgrounds: [], props: [], shots: [], colors: '', lighting: '' });
         if (photoshootWithImage && productImages.length > 0) {
             try {
-                const img = await generateImage(productImages, `Professional Product Photoshoot: ${photoshootWithImage.concept}. Lighting: ${photoshootWithImage.lighting}. Colors: ${photoshootWithImage.colors}. High-end commercial photography, 8k.`, null, "1:1");
+                const img = await generateImage(productImages, `Professional Product Photoshoot: ${photoshootWithImage.concept}. Lighting: ${photoshootWithImage.lighting}. Colors: ${photoshootWithImage.colors}. High-end commercial photography, 8k.`, null, "1:1", 5);
                 photoshootWithImage.conceptImageUrl = `data:${img.mimeType};base64,${img.base64}`;
             } catch (e) { photoshootWithImage.conceptImageUrl = null; }
         }
