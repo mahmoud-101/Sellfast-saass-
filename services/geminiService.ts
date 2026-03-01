@@ -297,24 +297,29 @@ export async function generateImage(productImages: ImageFile[], prompt: string, 
         styleImages.forEach(img => parts.push({ inlineData: { data: img.base64, mimeType: img.mimeType } }));
     }
 
-    const randomAngles = ["Eye-level portrait", "Dramatic low angle", "Top-down flatlay", "Extreme close-up macro", "Dynamic Dutch angle", "Wide environmental shot"];
-    const randomLighting = ["Neon Cyberpunk Glow", "Soft Morning Sunlight", "Harsh Studio Strobes", "Cinematic Moody Shadows", "Vibrant Pop-Art colors", "Natural Golden Hour"];
+    const randomAngles = ["Eye-level portrait", "Dramatic low angle", "Top-down flatlay", "Extreme close-up macro", "Dynamic Dutch angle", "Wide environmental shot", "Symmetrical centered shot"];
+    const randomLighting = ["Neon Cyberpunk Glow", "Soft Morning Sunlight", "Harsh Studio Strobes", "Cinematic Moody Shadows", "Vibrant Pop-Art colors", "Natural Golden Hour", "High contrast dramatic rim light"];
+    const randomBackgrounds = ["on a luxurious marble podium", "floating in zero gravity with neon particles", "on a rustic wooden table with morning coffee", "in a futuristic cyberpunk city", "surrounded by fresh tropical leaves and water splash", "in a minimalist abstract white space", "set against a vivid solid color backdrop"];
+    const randomColors = ["high contrast vibrant colors", "soft pastel tones", "dark cinematic moody grading", "hyper-saturated neon colors", "monochromatic earthy tones"];
+
     const currentAngle = randomAngles[Math.floor(Math.random() * randomAngles.length)];
     const currentLighting = randomLighting[Math.floor(Math.random() * randomLighting.length)];
+    const currentBackground = randomBackgrounds[Math.floor(Math.random() * randomBackgrounds.length)];
+    const currentColor = randomColors[Math.floor(Math.random() * randomColors.length)];
+    const uniqueId = Math.random().toString(36).substring(2, 10);
 
     const enhancedPrompt = `
-    [Drastic Variation Seed: ${Math.random().toString(36).substring(2, 12)}]
-    ${prompt}
+    [IMAGE ID: ${uniqueId}]
+    CORE CONCEPT: ${prompt}
     
-    TECHNICAL ADDITIONS:
-    - TARGET ASPECT RATIO: ${aspectRatio}
-    - photorealistic, hyperrealistic, 8k resolution, sharp focus, detailed texture, commercial quality.
-    - MANDATORY STYLE OVERRIDES: ${currentLighting} with ${currentAngle} camera perspective.
+    CRITICAL VISUAL OVERRIDES (MUST APPLY):
+    - Environment/Setting: ${currentBackground}
+    - Camera & Angle: ${currentAngle}
+    - Lighting Design: ${currentLighting}
+    - Color Grading: ${currentColor}
+    - Aspect Ratio: ${aspectRatio}
     
-    STRICT INSTRUCTIONS: 
-    1. Place the provided product in a completely NEW environment and background according to the prompt. 
-    2. DO NOT return the exact original image or anything similar. You MUST generate a RADICALLY NEW background/composition.
-    3. Keep the product's original details, logos, and text intact, but integrate it seamlessly into the new scene.
+    INSTRUCTIONS: You MUST generate a completely new, visually distinct image. Do not ignore the environment or lighting overrides. Create a professional, hyper-realistic commercial photograph.
   `.trim();
 
     parts.push({ text: enhancedPrompt });
