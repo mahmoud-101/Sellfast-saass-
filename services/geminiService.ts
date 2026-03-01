@@ -12,7 +12,6 @@ const SMART_MODEL = 'gemini-2.5-flash';
 
 let availableGeminiKeys: string[] | null = null;
 let currentKeyIndex = 0;
-
 const initKeys = () => {
     if (availableGeminiKeys !== null) return;
     let rawKeys = '';
@@ -155,6 +154,24 @@ async function executeWithRetry<T>(operation: () => Promise<T>, maxRetries = 4):
         } catch (error: any) {
             attempt++;
             const msg = error?.message?.toLowerCase() || "";
+
+            // LEAKED KEY: Auto-detect and remove permanently
+            if (msg.includes("permission") || msg.includes("leaked") || msg.includes("403")) {
+                console.error(`[AI Engine] 🚨 API Key leaked/blocked! Auto-removing...`);
+                // Remove the bad key from the pool
+                if (availableGeminiKeys && availableGeminiKeys.length > 0) {
+                    const badKey = availableGeminiKeys[currentKeyIndex % availableGeminiKeys.length];
+                    reportExhaustedKey(badKey);
+                }
+                // If more keys available, retry immediately
+                if (availableGeminiKeys && availableGeminiKeys.length > 0) {
+                    console.warn(`[AI Engine] Trying next key...`);
+                    continue;
+                }
+                // No keys left - throw clear error
+                throw new Error('⚠️ مفتاح Gemini محظور. الأدوات النصية شغالة عادي على Perplexity. لتوليد الصور، أضف مفتاح Gemini جديد في إعدادات Vercel.');
+            }
+
             // 429: Rate Limit, 503: Timeout, fetch failed: network drop, syntaxerror: json mapping
             if (msg.includes("429") || msg.includes("503") || msg.includes("500") || msg.includes("timeout") || msg.includes("fetch failed") || msg.includes("quota") || msg.includes("overloaded") || msg.includes("json") || msg.includes("syntax")) {
                 if (attempt >= maxRetries) throw error;
@@ -395,21 +412,36 @@ CRITICAL RULES:
         parts.push({ inlineData: { data: styleImages[0].base64, mimeType: styleImages[0].mimeType } });
     }
 
+    // CHECK: Is Gemini key available?
+    const geminiKey = getApiKey();
+    if (!geminiKey) {
+        throw new Error('⚠️ لتوليد الصور، أضف مفتاح Gemini جديد في إعدادات Vercel (VITE_GEMINI_API_KEY). الأدوات النصية كلها شغالة عادي على Perplexity.');
+    }
+
     return executeWithRetry(async () => {
-        const ai = new GoogleGenAI({ apiKey: getApiKey() });
-        const res = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: { parts },
-            config: {
-                temperature: 2.0,
-                // @ts-ignore
-                responseModalities: ["TEXT", "IMAGE"],
+        const currentKey = getApiKey() || geminiKey;
+        try {
+            const ai = new GoogleGenAI({ apiKey: currentKey });
+            const res = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: { parts },
+                config: {
+                    temperature: 2.0,
+                    // @ts-ignore
+                    responseModalities: ["TEXT", "IMAGE"],
+                }
+            });
+            for (const part of res.candidates?.[0]?.content?.parts || []) {
+                if (part.inlineData) return { base64: part.inlineData.data, mimeType: part.inlineData.mimeType || 'image/png', name: 'img.png' };
             }
-        });
-        for (const part of res.candidates?.[0]?.content?.parts || []) {
-            if (part.inlineData) return { base64: part.inlineData.data, mimeType: part.inlineData.mimeType || 'image/png', name: 'img.png' };
+            throw new Error('No image returned from Gemini');
+        } catch (err: any) {
+            const msg = err?.message?.toLowerCase() || '';
+            if (msg.includes('permission') || msg.includes('leaked') || msg.includes('403')) {
+                reportExhaustedKey(currentKey);
+            }
+            throw err;
         }
-        throw new Error('No image returned from Gemini');
     });
 }
 
@@ -467,47 +499,169 @@ export async function generateContentCalendar7Days(productImages: ImageFile[], g
 
 export async function analyzeProductForCampaign(images: ImageFile[]): Promise<string> {
     try {
+        const geminiKey = getApiKey();
+        if (!geminiKey) {
+            return await askOpenRouter('حلل هذا المنتج من منظور تسويقي. اشرح: ما هو المنتج؟ ما نقاط قوته؟ من الجمهور المستهدف؟ ما أفضل زاوية لبيعه؟ اكتب بالعامية.', getMasterAgentInstructions('eg'));
+        }
         return await executeWithRetry(async () => {
-            const ai = new GoogleGenAI({ apiKey: getApiKey() });
+            const ai = new GoogleGenAI({ apiKey: geminiKey });
             const parts: Part[] = images.map(img => ({ inlineData: { data: img.base64, mimeType: img.mimeType } }));
-            parts.push({ text: "Analyze this product for marketing purposes. What is it? What are its strengths?" });
-            const res = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: { parts } });
-            return res.text || "";
+            parts.push({
+                text: `أنت خبير تسويق رقمي. حلل هذا المنتج من الصور المقدمة وأجب بالعامية المصرية:
+
+1. 📦 إيه المنتج ده بالظبط؟ (اسم + فئة)
+2. 💪 إيه نقاط القوة الفريدة (USP)؟
+3. 👥 مين الجمهور المثالي اللي هيشتريه؟
+4. 😫 إيه أكبر ألم بيحله المنتج ده؟
+5. 🎯 أقوى 3 زوايا تسويقية لبيعه
+6. 💰 اقتراح استراتيجية تسعير نفسي
+7. 🎣 هوك افتتاحي قوي للإعلان` });
+            const res = await ai.models.generateContent({ model: SMART_MODEL, contents: { parts }, config: { systemInstruction: getMasterAgentInstructions('eg') } });
+            return res.text || '';
         });
     } catch (e) {
-        console.warn("[AI] analyzeProductForCampaign falling back to OpenRouter", e);
-        return await askOpenRouter("Analyze this product for marketing purposes. What is it? What are its strengths? Describe it in detail.");
+        console.warn('[AI] analyzeProductForCampaign falling back to Perplexity', e);
+        return await askOpenRouter('حلل المنتج من منظور تسويقي: ما هو؟ نقاط القوة؟ الجمهور المستهدف؟ أقوى زاوية بيع؟ اكتب بالعامية المصرية.', getMasterAgentInstructions('eg'));
     }
 }
 
 export async function editImage(image: ImageFile, prompt: string): Promise<ImageFile> { return generateImage([image], prompt); }
 export async function expandImage(image: ImageFile, prompt: string): Promise<ImageFile> { return generateImage([image], prompt); }
 export async function enhancePrompt(prompt: string): Promise<string> { return askGemini(`Enhance this prompt for AI image generation: ${prompt}`); }
-export async function analyzeLogoForBranding(logos: ImageFile[]): Promise<{ colors: string[] }> { return { colors: ['#4f46e5', '#0f172a', '#f8fafc'] }; }
+export async function analyzeLogoForBranding(logos: ImageFile[]): Promise<{ colors: string[] }> {
+    try {
+        return await executeWithRetry(async () => {
+            const geminiKey = getApiKey();
+            if (!geminiKey || logos.length === 0) return { colors: ['#FFD700', '#0f172a', '#f8fafc', '#10b981', '#6366f1'] };
+            const ai = new GoogleGenAI({ apiKey: geminiKey });
+            const parts: Part[] = logos.map(img => ({ inlineData: { data: img.base64, mimeType: img.mimeType } }));
+            parts.push({ text: `Analyze this logo/brand image. Extract the exact dominant colors used.\nReturn ONLY a valid JSON object: {"colors": ["#hex1", "#hex2", "#hex3", "#hex4", "#hex5"]}\nExtract 5 colors: primary, secondary, accent, dark, light. Return HEX codes only.` });
+            const res = await ai.models.generateContent({ model: SMART_MODEL, contents: { parts } });
+            const text = res.text || '';
+            const cleaned = text.replace(/```json|```/g, '').trim();
+            const parsed = JSON.parse(cleaned);
+            return { colors: Array.isArray(parsed.colors) ? parsed.colors.slice(0, 6) : ['#FFD700', '#0f172a', '#f8fafc'] };
+        });
+    } catch (e) {
+        console.warn('[AI] analyzeLogoForBranding fallback', e);
+        return { colors: ['#FFD700', '#0f172a', '#f8fafc', '#10b981', '#6366f1'] };
+    }
+}
 
 export async function generateSpeech(text: string, style: string, voice: string): Promise<AudioFile> {
     return executeWithRetry(async () => {
-        const ai = new GoogleGenAI({ apiKey: getApiKey() });
+        const geminiKey = getApiKey();
+        if (!geminiKey) throw new Error('⚠️ مفتاح Gemini مطلوب لتوليد الصوت. أضفه في إعدادات Vercel.');
+        const ai = new GoogleGenAI({ apiKey: geminiKey });
+        const styledText = style === 'energetic' ? `(بحماس وطاقة عالية) ${text}` :
+            style === 'calm' ? `(بهدوء وثقة) ${text}` :
+                style === 'serious' ? `(بجدية واحترافية) ${text}` : text;
         const res = await ai.models.generateContent({
             model: 'gemini-2.5-flash-preview-tts',
-            contents: [{ parts: [{ text }] }],
+            contents: [{ parts: [{ text: styledText }] }],
             config: {
                 responseModalities: [Modality.AUDIO],
-                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } }
+                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice || 'Kore' } } }
             }
         });
-        return { base64: res.candidates?.[0]?.content?.parts[0]?.inlineData?.data || '', name: 'v.pcm' };
+        const rawBase64 = res.candidates?.[0]?.content?.parts[0]?.inlineData?.data || '';
+        if (!rawBase64) throw new Error('لم يتم توليد صوت');
+        // Convert raw PCM to playable WAV by adding proper headers
+        const pcmBytes = Uint8Array.from(atob(rawBase64), c => c.charCodeAt(0));
+        const sampleRate = 24000;
+        const numChannels = 1;
+        const bitsPerSample = 16;
+        const dataSize = pcmBytes.length;
+        const wavHeader = new ArrayBuffer(44);
+        const view = new DataView(wavHeader);
+        const writeStr = (offset: number, str: string) => { for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i)); };
+        writeStr(0, 'RIFF');
+        view.setUint32(4, 36 + dataSize, true);
+        writeStr(8, 'WAVE');
+        writeStr(12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, numChannels, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * numChannels * bitsPerSample / 8, true);
+        view.setUint16(32, numChannels * bitsPerSample / 8, true);
+        view.setUint16(34, bitsPerSample, true);
+        writeStr(36, 'data');
+        view.setUint32(40, dataSize, true);
+        const wavBytes = new Uint8Array(44 + dataSize);
+        wavBytes.set(new Uint8Array(wavHeader), 0);
+        wavBytes.set(pcmBytes, 44);
+        const wavBase64 = btoa(String.fromCharCode(...wavBytes));
+        return { base64: wavBase64, name: 'voiceover.wav' };
     });
 }
 
 export async function runPowerProduction(images: ImageFile[], context: string, m: string, d: string, cb: any): Promise<PowerStudioResult> {
-    const visual = await generateImage(images, "High-end commercial photo");
-    return { analysis: "Strategic Plan", visualPrompt: "Prompt", fbAds: { primaryText: "Ad Copy", headline: "Headline" }, visual };
+    const sysPrompt = getMasterAgentInstructions(d as any);
+    if (cb) cb('🔍 جاري تحليل المنتج وبناء الاستراتيجية...');
+
+    const analysisPrompt = `أنت استراتيجي تسويق رقمي محترف. حلل هذا المنتج للسوق العربي:
+السياق: ${context}
+السوق: ${m}
+اللهجة: ${d}
+
+اكتب تحليل استراتيجي شامل يتضمن:
+1. الجمهور المستهدف بدقة (ديموغرافي + نفسي)
+2. نقاط الألم الـ 3 الأقوى
+3. القيمة الفريدة (USP)
+4. الزاوية الإعلانية الأقوى
+5. استراتيجية التسعير النفسي
+arabic only.`;
+    const analysis = await askGemini(analysisPrompt, sysPrompt);
+
+    if (cb) cb('🎨 جاري بناء الاتجاه البصري...');
+    const visualPromptText = `Based on this product analysis:\n${analysis}\n\nCreate a highly detailed, cinematic product photography prompt in English. Include: lighting setup, background props, surface material, atmosphere, camera angle, lens type. Make it premium and editorial quality.`;
+    const visualPrompt = await askGemini(visualPromptText, 'You are a world-class Commercial Photographer and Art Director.');
+
+    if (cb) cb('📝 جاري كتابة الإعلان...');
+    const adPrompt = `بناءً على هذا التحليل الاستراتيجي:
+${analysis}
+
+اكتب إعلان فيسبوك/إنستجرام احترافي يتضمن:
+- Primary Text: نص الإعلان الرئيسي (3-5 أسطر بالعامية)
+- Headline: عنوان قصير جذاب (5-7 كلمات)
+
+أخرج JSON فقط: {"primaryText": "...", "headline": "..."}`;
+    let fbAds;
+    try {
+        fbAds = await askOpenRouterJSON(adPrompt, sysPrompt);
+    } catch {
+        fbAds = { primaryText: analysis.slice(0, 300), headline: context.slice(0, 50) };
+    }
+
+    if (cb) cb('📸 جاري توليد الصورة الاحترافية...');
+    const visual = await generateImage(images, visualPrompt);
+
+    return { analysis, visualPrompt, fbAds, visual };
 }
 
 export async function generateAdScript(p: string, b: string, pr: string, l: string, t: string): Promise<string> {
-    const sysPrompt = getMasterAgentInstructions(l as any) + `\n\nأنت كاتب سكريبتات إعلانية محترف.`;
-    return askGemini(`Write an ad script for ${p} targeting ${b} with price ${pr} and tone ${t}`, sysPrompt);
+    const sysPrompt = getMasterAgentInstructions(l as any) + `\n\nأنت كاتب سكريبتات إعلانية محترف ومخرج فيديوهات TikTok وReels.`;
+    const prompt = `اكتب سكريبت إعلاني احترافي لهذا المنتج:
+المنتج: ${p}
+الجمهور المستهدف: ${b}
+السعر: ${pr}
+الأسلوب/التون: ${t}
+
+السكريبت لازم يتضمن:
+🎬 Hook (0-3 ثواني): جملة صادمة تخطف الانتباه
+📌 المشكلة (3-7 ثواني): وصف الألم اللي العميل حاسس بيه
+💡 الحل (7-15 ثانية): إزاي المنتج بيحل المشكلة
+✅ الإثبات (15-22 ثانية): Social proof أو نتائج
+🛒 CTA (22-30 ثانية): دعوة واضحة للشراء مع urgency
+
+لكل مشهد اكتب:
+- التوجيه المرئي (Visual Direction)
+- النص المنطوق (Voiceover/Dialog)
+- المدة بالثواني
+
+اكتب بالعامية ${l === 'egyptian' ? 'المصرية' : 'الخليجية'} واستخدم أسلوب ${t}.`;
+    return askGemini(prompt, sysPrompt);
 }
 
 export async function generateDynamicStoryboard(productImages: ImageFile[], referenceImages: ImageFile[], userInstructions: string): Promise<string[]> {
@@ -660,17 +814,42 @@ Return exactly 10 items. JSON only, no markdown, no code blocks.`, "You are a vi
 export async function transformScriptToUGC(originalScript: string): Promise<string> { return askGemini(`Transform this to raw UGC script: ${originalScript}`); }
 
 export async function generateSocialContentPack(script: string): Promise<string[]> {
-    const res = await askGemini(`Based on this strategy script: ${script}, generate 9 unique social media posts (Facebook/Instagram). Each post should have a hook, body, and CTA. Output as a numbered list.`, "Social Media Strategist");
+    const sysPrompt = getMasterAgentInstructions('eg') + '\n\nأنت خبير Social Media Content بتكتب بوستات تشد الناس من أول سطر.';
+    const res = await askGemini(`بناءً على هذا السكريبت الاستراتيجي:
+${script}
+
+اكتب 9 بوستات سوشيال ميديا احترافية (فيسبوك/إنستجرام) بالعامية المصرية.
+كل بوست لازم يتضمن:
+- 🎣 Hook قوي (سطر واحد يخطف العين)
+- 📝 Body (2-3 أسطر تشرح القيمة)
+- 🛒 CTA واضح (دعوة للتصرف)
+- إيموجيز في مكانها الصح
+
+نوّع البوستات بين: سؤال، قصة، عرض، إثبات اجتماعي، تعليمي، ترفيهي، UGC.
+اكتب كل بوست بعد رقم (1. ، 2. ، إلخ).`, sysPrompt);
     return res.split(/\d+\./).filter(l => l.trim().length > 0).slice(0, 9);
 }
 
 export async function generateReelsProductionScript(script: string): Promise<string> {
-    return askGemini(`Based on this strategy script: ${script}, write a detailed 30-60 second Reels production script with visual cues and voiceover.`, "Video Creative Director");
+    const sysPrompt = getMasterAgentInstructions('eg') + '\n\nأنت مخرج Reels وTikTok محترف.';
+    return askGemini(`بناءً على السكريبت ده:
+${script}
+
+اكتب سكريبت إنتاج Reels/TikTok (30-60 ثانية) بالعامية المصرية.
+لكل مشهد حدد:
+🎬 المشهد (رقم + اسم)
+⏱️ التوقيت بالثواني
+📹 التوجيه المرئي (Visual Cue): إيه اللي بيظهر على الشاشة
+🎤 التعليق الصوتي (Voiceover): اللي بيتقال
+🎵 الموسيقى/الصوت المقترح
+📝 النص المكتوب على الشاشة (Text Overlay)
+
+خلي الريل يبدأ بـ Hook في أول 2 ثانية يخلي الناس توقف السكرول.`, sysPrompt);
 }
 
 export async function generateImagePromptsFromStrategy(script: string): Promise<string[]> {
-    const res = await askGemini(`Based on this strategy script: ${script}, generate 3 highly detailed AI image generation prompts for ad visuals. Output as a numbered list.`, "Creative Director");
-    return res.split(/\d+\./).filter(l => l.trim().length > 0).slice(0, 3);
+    const res = await askGemini(`Based on this marketing strategy:\n${script}\n\nGenerate 5 highly detailed AI image generation prompts for premium ad visuals. Each prompt MUST include:\n- Core Item: The product in a premium context\n- Background Props: Lifestyle objects that match the target audience\n- Surface Material: marble, wood, concrete, fabric, etc.\n- Atmosphere: warm cozy, urban street, luxury minimal, etc.\n- Lighting: studio softbox, golden hour, neon glow, dramatic, etc.\n- Camera: DSLR 85mm f/1.4, overhead flat-lay, 45-degree angle, etc.\n\nMake each prompt COMPLETELY DIFFERENT in style and composition.\nOutput as numbered list (1. 2. 3. 4. 5.)`, 'You are a world-class Commercial Photography Art Director. Write in English only. Be extremely detailed and specific.');
+    return res.split(/\d+\./).filter(l => l.trim().length > 0).slice(0, 5);
 }
 
 export async function analyzeImageForPrompt(images: ImageFile[], instructions: string): Promise<string> {

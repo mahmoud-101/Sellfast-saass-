@@ -1,28 +1,37 @@
 @echo off
-echo ========================================
-echo   Fixing leaked API key + Deploying...
-echo ========================================
-
 echo.
-echo [1/4] Removing .env from git tracking...
+echo ==========================================
+echo   SELLFAST DEPLOY - Security Fix + Push
+echo ==========================================
+echo.
+
+echo [1/5] Removing .env from git tracking...
 git rm --cached .env 2>nul
-if errorlevel 1 echo .env was not tracked, skipping...
+git rm --cached .env.local 2>nul
 
-echo.
-echo [2/4] Adding all changes...
-git add .
+echo [2/5] Removing deploy scripts from tracking...
+git rm --cached DEPLOY_NOW.bat 2>nul
+git rm --cached push_edits.bat 2>nul
 
-echo.
-echo [3/4] Committing...
-git commit -m "security: remove leaked API key, switch to Perplexity primary engine, add type fixes"
+echo [3/5] Staging all changes...
+git add -A
 
-echo.
-echo [4/4] Pushing to GitHub (triggers Vercel deploy)...
+echo [4/5] Committing...
+git commit -m "security: permanent API key fix - remove .env from tracking, Perplexity primary engine, leaked-key auto-detection"
+
+echo [5/5] Pushing to GitHub...
 git push origin main
 
 echo.
-echo ========================================
-echo   DONE! Now go to Vercel Dashboard and
-echo   add VITE_GEMINI_API_KEY there ONLY.
-echo ========================================
+echo ==========================================
+echo   DONE! Check Vercel for build status.
+echo.
+echo   IMPORTANT: Add these in Vercel Dashboard
+echo   Settings -^> Environment Variables:
+echo.
+echo   VITE_GEMINI_API_KEY = (new key from Google AI Studio)
+echo   VITE_PERPLEXITY_API_KEY = pplx-Oei3N1...
+echo   VITE_SUPABASE_URL = https://xxx.supabase.co
+echo   VITE_SUPABASE_ANON_KEY = eyJhbG...
+echo ==========================================
 pause

@@ -65,8 +65,8 @@ const LandingPage: React.FC<{ onGetStarted: () => void }> = ({ onGetStarted }) =
                     </div>
 
                     <div className="flex items-center justify-center gap-6 pt-10 text-sm font-bold text-slate-500 opacity-80 animate-in fade-in duration-1000 delay-700">
-                        <div className="flex items-center gap-2"><CheckIcon /> <span>لا يتطلب خبرة بالتصميم</span></div>
-                        <div className="flex items-center gap-2"><CheckIcon /> <span>نتائج مخصصة لمنتجك</span></div>
+                        <div className="flex items-center gap-2"><CheckIcon /> <span>66+ أداة AI</span></div>
+                        <div className="flex items-center gap-2"><CheckIcon /> <span>يبدأ من $59/شهر</span></div>
                         <div className="flex items-center gap-2"><CheckIcon /> <span>أسرع بـ 100x من المعتاد</span></div>
                     </div>
                 </section>
@@ -206,11 +206,11 @@ const LandingPage: React.FC<{ onGetStarted: () => void }> = ({ onGetStarted }) =
                     <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-full bg-orange-600/10 blur-[150px] z-0 rounded-full"></div>
 
                     <div className="relative z-10 max-w-4xl mx-auto px-6 text-center space-y-10">
-                        <h2 className="text-5xl md:text-6xl font-black text-white leading-tight">جاهز تكبّر البزنس بتاعك<br />بأقل تكلفة للرسالة؟ 📉</h2>
-                        <p className="text-xl text-slate-300 max-w-2xl mx-auto">أول تجربة مجانية لك الآن. صمم 5 إعلانات لمنتجك بصور احترافية وكوبي جاهز واستمتع بنسبة تحويل (Conversion Rate) عالية جداً.</p>
+                        <h2 className="text-5xl md:text-6xl font-black text-white leading-tight">وفّر $3,000+ شهرياً<br />واشتغل بذكاء مش بجهد 🚀</h2>
+                        <p className="text-xl text-slate-300 max-w-2xl mx-auto">66 أداة ذكاء اصطناعي، 13 قالب بصري، 6 Copywriting Frameworks — كل ده بـ $59/شهر بس. المنصة الوحيدة المصممة لصنّاع الإعلانات في الوطن العربي.</p>
 
-                        <button onClick={onGetStarted} className="bg-white text-black px-12 py-5 text-xl font-black rounded-2xl hover:bg-slate-200 active:scale-95 transition-all inline-flex items-center gap-3 shadow-2xl shadow-white/10">
-                            🚀 جرب إبداع برو مجاناً
+                        <button onClick={onGetStarted} className="bg-gradient-to-r from-orange-500 to-red-600 text-white px-12 py-5 text-xl font-black rounded-2xl hover:scale-105 active:scale-95 transition-all inline-flex items-center gap-3 shadow-[0_15px_40px_-10px_rgba(234,88,12,0.5)] border border-orange-400/50">
+                            🚀 ابدأ اشتراكك — $59/شهر
                         </button>
                     </div>
                 </section>

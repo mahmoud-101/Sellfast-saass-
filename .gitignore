@@ -3,10 +3,14 @@ dist/
 .env
 .env.local
 .env.*.local
+.env.development
+.env.production
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .DS_Store
 .vercel/
 .vercel
-.env*.local
+*.log
+DEPLOY_NOW.bat
+push_edits.bat
