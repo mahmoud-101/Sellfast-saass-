@@ -1,7 +1,11 @@
 @echo off
-echo Pushing updates...
+echo ========================================
+echo   Deploying to Vercel via GitHub...
+echo ========================================
 git add .
-git commit -m "feat: Connect Gemini AI to PerformancePanel via PromptBuilder & ResponseAnalyzer"
+git commit -m "feat: Perplexity primary engine + image diversity fix + type cleanup"
 git push origin main
-echo Done!
+echo ========================================
+echo   Done! Check Vercel for build status.
+echo ========================================
 pause

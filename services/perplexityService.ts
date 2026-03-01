@@ -7,7 +7,10 @@
 const PERPLEXITY_API_URL = 'https://api.perplexity.ai/chat/completions';
 
 const getApiKey = () => {
-    return process.env.PERPLEXITY_API_KEY || '';
+    let key = '';
+    try { key = (import.meta as any).env?.VITE_PERPLEXITY_API_KEY || ''; } catch (e) { }
+    if (!key) { try { key = process.env.PERPLEXITY_API_KEY || ''; } catch (e) { } }
+    return key;
 };
 
 export async function askPerplexity(prompt: string, systemInstruction?: string, model: string = 'sonar', temperature: number = 0.2): Promise<string> {

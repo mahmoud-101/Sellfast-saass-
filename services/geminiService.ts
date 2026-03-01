@@ -62,12 +62,44 @@ const getOpenRouterKey = () => {
 };
 
 /**
- * OpenRouter Fallback: Uses OpenRouter API (OpenAI-compatible) as a powerful fallback
- * when Gemini hits rate limits. Supports all models via a single paid key.
+ * Primary AI Engine: Perplexity (sonar-pro for quality, sonar for speed)
+ * Fallback: Gemini (if Perplexity fails)
  */
 async function askOpenRouter(prompt: string, sys?: string): Promise<string> {
-    console.warn("OpenRouter credits exhausted, falling back to Gemini for all OpenRouter requests.");
-    return await askGemini(prompt, sys);
+    // PRIMARY: Perplexity
+    const pKey = getPerplexityKey();
+    if (pKey) {
+        try {
+            return await askPerplexity(prompt, sys, 'sonar-pro');
+        } catch (e) {
+            console.warn('[AI Router] Perplexity sonar-pro failed, trying sonar...', e);
+            try {
+                return await askPerplexity(prompt, sys, 'sonar');
+            } catch (e2) {
+                console.warn('[AI Router] Perplexity sonar failed, falling back to Gemini...', e2);
+            }
+        }
+    }
+    // FALLBACK: Gemini
+    return await executeWithRetry(async () => {
+        const currentKey = getApiKey();
+        if (!currentKey) throw new Error('No API keys available (Gemini key is blocked)');
+        try {
+            const ai = new GoogleGenAI({ apiKey: currentKey });
+            const res = await ai.models.generateContent({
+                model: SMART_MODEL,
+                contents: prompt,
+                config: { systemInstruction: sys, temperature: 0.7, maxOutputTokens: 2048 }
+            });
+            return res.text || '';
+        } catch (err: any) {
+            const msg = err?.message?.toLowerCase() || '';
+            if (msg.includes('429') || msg.includes('quota') || msg.includes('exhausted') || msg.includes('permission') || msg.includes('leaked')) {
+                reportExhaustedKey(currentKey);
+            }
+            throw err;
+        }
+    });
 }
 
 export function parseRobustJSON(text: string): any {
@@ -90,6 +122,21 @@ export function parseRobustJSON(text: string): any {
 }
 
 async function askOpenRouterJSON(prompt: string, sys?: string): Promise<any> {
+    // PRIMARY: Perplexity JSON
+    const pKey = getPerplexityKey();
+    if (pKey) {
+        try {
+            return await askPerplexityJSON(prompt, sys, 'sonar-pro');
+        } catch (e) {
+            console.warn('[AI Router JSON] Perplexity sonar-pro failed, trying sonar...', e);
+            try {
+                return await askPerplexityJSON(prompt, sys, 'sonar');
+            } catch (e2) {
+                console.warn('[AI Router JSON] Perplexity sonar failed, falling back to Gemini...', e2);
+            }
+        }
+    }
+    // FALLBACK: Gemini
     return executeWithRetry(async () => {
         const text = await askOpenRouter(prompt, sys);
         return parseRobustJSON(text);
@@ -240,18 +287,26 @@ export async function generateFlowVideo(script: string, aspectRatio: "9:16" | "1
 }
 
 export async function askGemini(prompt: string, sys?: string, temperature: number = 0.7): Promise<string> {
+    // PRIMARY: Perplexity (sonar-pro for quality)
     const pKey = getPerplexityKey();
     if (pKey) {
         try {
-            return await askPerplexity(prompt, sys);
+            return await askPerplexity(prompt, sys, 'sonar-pro', temperature);
         } catch (e) {
-            console.warn("Perplexity failed, falling back to Gemini", e);
+            console.warn("[AI Engine] Perplexity sonar-pro failed, trying sonar...", e);
+            try {
+                return await askPerplexity(prompt, sys, 'sonar', temperature);
+            } catch (e2) {
+                console.warn("[AI Engine] Perplexity sonar failed, falling back to Gemini...", e2);
+            }
         }
     }
 
+    // FALLBACK: Gemini
     try {
         return await executeWithRetry(async () => {
             const currentKey = getApiKey();
+            if (!currentKey) throw new Error('No Gemini API keys available');
             try {
                 const ai = new GoogleGenAI({ apiKey: currentKey });
                 const res = await ai.models.generateContent({
@@ -267,7 +322,7 @@ export async function askGemini(prompt: string, sys?: string, temperature: numbe
                 return res.text || "";
             } catch (innerError: any) {
                 const msg = innerError?.message?.toLowerCase() || "";
-                if (msg.includes("429") || msg.includes("quota") || msg.includes("exhausted")) {
+                if (msg.includes("429") || msg.includes("quota") || msg.includes("exhausted") || msg.includes("permission") || msg.includes("leaked")) {
                     reportExhaustedKey(currentKey);
                 }
                 throw innerError;
