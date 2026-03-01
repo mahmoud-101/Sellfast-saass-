@@ -8,6 +8,7 @@ import {
     agentResultValidator,
     agentObjectionHandler,
     generateImage,
+    generateImagesBatch,
     AgentProductData
 } from '../../services/geminiService';
 import { deductCredits, CREDIT_COSTS } from '../../lib/supabase';
@@ -159,8 +160,8 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId, onUpscale }
                 console.warn("Validation agent failed, using raw visuals", validationErr);
             }
 
-            // Step 3c: Generate images SEQUENTIALLY with unique variationIndex per image
-            // Sequential = no rate limits + forces unique scene presets
+            // Step 3c: Generate images in PARALLEL BATCHES (3 at a time)
+            // Turbo Mode: uses generateImagesBatch instead of sequential loop
             setPipeline(prev => ({ ...prev, status: 'visualizing' }));
             const imgFile = {
                 base64: productImage.includes('base64,') ? productImage.split('base64,')[1] : productImage,
@@ -169,23 +170,30 @@ const ProModeDashboard: React.FC<ProModeDashboardProps> = ({ userId, onUpscale }
             };
             const finalGeneratedAds: FinalProModeAd[] = [...preliminaryAdsList];
 
-            for (let i = 0; i < finalGeneratedAds.length; i++) {
-                const ad = finalGeneratedAds[i];
+            // Prepare all image prompts
+            const imagePrompts = finalGeneratedAds.map((ad, i) => {
                 const finalVisual = validatedVisuals[i] || ad.visual;
                 ad.visual = finalVisual;
+                return finalVisual.imagePrompt || 'Premium product photography';
+            });
 
-                try {
-                    if (i > 0) await new Promise(resolve => setTimeout(resolve, 2000)); // Rate limit protection
-                    const aiImage = await generateImage([imgFile], finalVisual.imagePrompt, null, "1:1", i);
-                    ad.visual.generatedImageUrl = `data:${aiImage.mimeType};base64,${aiImage.base64}`;
-                } catch (imgError) {
-                    console.error("🖼️ AI Image generation error for angle", i, imgError);
-                    ad.visual.generatedImageUrl = productImage; // Fallback
-                }
-
-                // Update UI after each image so user sees progress
+            // Generate all images in parallel batches of 3
+            const generatedImages = await generateImagesBatch(imgFile, imagePrompts, (done, total) => {
                 setPipeline(prev => ({ ...prev, finalAds: [...finalGeneratedAds] }));
+            });
+
+            // Assign generated images to ads
+            for (let i = 0; i < finalGeneratedAds.length; i++) {
+                const aiImage = generatedImages[i];
+                if (aiImage && aiImage.base64) {
+                    finalGeneratedAds[i].visual.generatedImageUrl = `data:${aiImage.mimeType};base64,${aiImage.base64}`;
+                } else {
+                    finalGeneratedAds[i].visual.generatedImageUrl = productImage; // Fallback
+                }
             }
+
+            // Update UI with all images at once
+            setPipeline(prev => ({ ...prev, finalAds: [...finalGeneratedAds] }));
 
             setPipeline(prev => ({ ...prev, status: 'objections', finalAds: finalGeneratedAds }));
 

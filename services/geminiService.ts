@@ -12,6 +12,164 @@ const SMART_MODEL = 'gemini-2.5-flash';
 
 let availableGeminiKeys: string[] | null = null;
 let currentKeyIndex = 0;
+
+// ============================================================================
+// CONCURRENCY MANAGER — Handles parallel API requests safely
+// ============================================================================
+class ConcurrencyManager {
+    private queue: Array<{ resolve: (v: void) => void }> = [];
+    private running = 0;
+    constructor(private maxConcurrent: number = 3) { }
+
+    async acquire(): Promise<void> {
+        if (this.running < this.maxConcurrent) {
+            this.running++;
+            return;
+        }
+        return new Promise<void>(resolve => this.queue.push({ resolve }));
+    }
+
+    release(): void {
+        this.running--;
+        if (this.queue.length > 0) {
+            this.running++;
+            this.queue.shift()!.resolve();
+        }
+    }
+
+    get activeCount() { return this.running; }
+    get queueLength() { return this.queue.length; }
+}
+
+// Global concurrency limits
+const textSemaphore = new ConcurrencyManager(5);   // 5 text requests at once
+const imageSemaphore = new ConcurrencyManager(3);   // 3 image requests at once
+
+// ============================================================================
+// SMART CACHE — Avoid redundant API calls for identical prompts
+// ============================================================================
+const responseCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function getCached(key: string): any | null {
+    const entry = responseCache.get(key);
+    if (entry && Date.now() - entry.timestamp < CACHE_TTL) return entry.data;
+    if (entry) responseCache.delete(key);
+    return null;
+}
+
+function setCache(key: string, data: any): void {
+    if (responseCache.size > 100) {
+        const oldest = responseCache.keys().next().value;
+        if (oldest) responseCache.delete(oldest);
+    }
+    responseCache.set(key, { data, timestamp: Date.now() });
+}
+
+// ============================================================================
+// PARALLEL BATCH IMAGE GENERATION
+// ============================================================================
+export async function generateImagesBatch(
+    productImage: ImageFile,
+    prompts: string[],
+    onProgress?: (index: number, total: number) => void
+): Promise<ImageFile[]> {
+    const results: ImageFile[] = new Array(prompts.length);
+    const batchSize = Math.min(3, availableGeminiKeys?.length || 1); // Parallel based on available keys
+
+    for (let i = 0; i < prompts.length; i += batchSize) {
+        const batch = prompts.slice(i, i + batchSize);
+        const batchResults = await Promise.allSettled(
+            batch.map(async (prompt, j) => {
+                await imageSemaphore.acquire();
+                try {
+                    const img = await generateImage([productImage], prompt, null, '1:1', i + j);
+                    if (onProgress) onProgress(i + j + 1, prompts.length);
+                    return img;
+                } finally {
+                    imageSemaphore.release();
+                }
+            })
+        );
+        batchResults.forEach((result, j) => {
+            results[i + j] = result.status === 'fulfilled' ? result.value : productImage;
+        });
+    }
+    return results;
+}
+
+// ============================================================================
+// TURBO BATCH AD GENERATION — Generate 20 ads in parallel
+// ============================================================================
+export async function turboBatchGenerate(config: {
+    product: AgentProductData;
+    productImage: ImageFile;
+    count?: number;  // How many ads (default 5, max 20)
+    onProgress?: (step: string, percent: number) => void;
+}): Promise<any[]> {
+    const { product, productImage, count = 5, onProgress } = config;
+    const adCount = Math.min(count, 20);
+
+    // Phase 1: Market Analysis (1 call)
+    if (onProgress) onProgress('🔍 تحليل السوق والجمهور...', 5);
+    const cacheKey = `market_${product.name}_${product.description.slice(0, 50)}`;
+    let marketData = getCached(cacheKey);
+    if (!marketData) {
+        marketData = await agentMarketAnalyzer(product);
+        setCache(cacheKey, marketData);
+    }
+
+    // Phase 2: Generate angle variations (1 call for 5 base angles)
+    if (onProgress) onProgress('🎯 بناء الزوايا التسويقية...', 15);
+    const angles = await agentAngleStrategist(product, marketData);
+
+    // Phase 3: Parallel — Generate hooks + visual directions + copy for ALL angles at once
+    if (onProgress) onProgress('⚡ توليد موازي للهوكات والكوبي والاتجاه البصري...', 25);
+
+    // Duplicate angles to match count (cycle through 5 angles)
+    const targetAngles = Array.from({ length: adCount }, (_, i) => angles[i % angles.length]);
+
+    const adDataPromises = targetAngles.map(async (angle, i) => {
+        await textSemaphore.acquire();
+        try {
+            const [hooks, visualData] = await Promise.all([
+                agentHookWriter(product, angle),
+                agentVisualDirector(product, angle)
+            ]);
+            const bestHook = hooks[0] || '';
+            const copyData = await agentCopywriter(product, angle, bestHook);
+            return { angle, hooks, copy: copyData, visual: visualData, index: i };
+        } finally {
+            textSemaphore.release();
+        }
+    });
+
+    const adDataResults = await Promise.allSettled(adDataPromises);
+    const adDataList = adDataResults
+        .filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled')
+        .map(r => r.value);
+
+    if (onProgress) onProgress('🎨 توليد الصور بالتوازي...', 50);
+
+    // Phase 4: Batch generate images (3 at a time)
+    const imagePrompts = adDataList.map(ad => ad.visual.imagePrompt || 'Premium product photography');
+    const images = await generateImagesBatch(productImage, imagePrompts, (done, total) => {
+        if (onProgress) onProgress(`📸 صورة ${done}/${total}...`, 50 + (done / total) * 40);
+    });
+
+    // Phase 5: Combine results
+    if (onProgress) onProgress('✅ تجميع النتائج...', 95);
+    const finalAds = adDataList.map((ad, i) => ({
+        ...ad,
+        visual: {
+            ...ad.visual,
+            generatedImageUrl: images[i] ? `data:${images[i].mimeType};base64,${images[i].base64}` : undefined
+        }
+    }));
+
+    if (onProgress) onProgress('🚀 تم توليد ' + finalAds.length + ' إعلان!', 100);
+    return finalAds;
+}
 const initKeys = () => {
     if (availableGeminiKeys !== null) return;
     let rawKeys = '';

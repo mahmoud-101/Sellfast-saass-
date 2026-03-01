@@ -264,17 +264,17 @@ const AdContentFactory: React.FC<AdContentFactoryProps> = ({
             if (deducted) {
                 const prompts = await generateImagePromptsFromStrategy(masterProject.finalScript);
                 setImagePrompts(prompts);
-
-                // Generate images one by one but update state immediately for gradual feel
-                for (const p of prompts) {
-                    try {
+                // Generate ALL images in parallel for maximum speed
+                const imageResults = await Promise.allSettled(
+                    prompts.map(async (p) => {
                         const res = await generateImage([], p, null, "1:1");
-                        const url = `data:${res.mimeType};base64,${res.base64}`;
-                        setGeneratedImages(prev => [...prev, url]);
-                    } catch (err) {
-                        console.error("Image gen failed", err);
-                    }
-                }
+                        return `data:${res.mimeType};base64,${res.base64}`;
+                    })
+                );
+                const successfulImages = imageResults
+                    .filter((r): r is PromiseFulfilledResult<string> => r.status === 'fulfilled')
+                    .map(r => r.value);
+                setGeneratedImages(successfulImages);
                 if (refreshCredits) refreshCredits();
             }
         } catch (e) { console.error(e); }
@@ -629,7 +629,7 @@ const AdContentFactory: React.FC<AdContentFactoryProps> = ({
                                         <div className="p-8 bg-black/40 rounded-3xl border border-white/5 text-center space-y-2">
                                             <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">قوة الخطاف (Hook)</h4>
                                             <p className={`text-3xl font-black ${performanceProject.result.performanceSimulation.hookStrength === 'High' ? 'text-emerald-500' :
-                                                    performanceProject.result.performanceSimulation.hookStrength === 'Medium' ? 'text-[#FFD700]' : 'text-red-500'
+                                                performanceProject.result.performanceSimulation.hookStrength === 'Medium' ? 'text-[#FFD700]' : 'text-red-500'
                                                 }`}>{performanceProject.result.performanceSimulation.hookStrength}</p>
                                         </div>
                                         <div className="p-8 bg-black/40 rounded-3xl border border-white/5 text-center space-y-2">
