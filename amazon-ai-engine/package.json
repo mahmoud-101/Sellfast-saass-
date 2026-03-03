@@ -1,0 +1,13 @@
+{
+    "name": "ebdaapro-ai-engine",
+    "version": "1.0.0",
+    "description": "Unlimited AWS Lambda AI Backend for EbdaaPro",
+    "main": "handler.js",
+    "dependencies": {
+        "@google/genai": "^1.41.0",
+        "axios": "^1.6.5"
+    },
+    "devDependencies": {
+        "serverless-offline": "^13.3.3"
+    }
+}

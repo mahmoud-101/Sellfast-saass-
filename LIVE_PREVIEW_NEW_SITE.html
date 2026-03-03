@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>معاينة المنصة الجديدة - إبداع برو</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #030712;
+            color: white;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn.active {
+            background-color: #FFD700;
+            color: black;
+            box-shadow: 0 4px 14px 0 rgba(255, 215, 0, 0.39);
+        }
+    </style>
+</head>
+
+<body class="flex h-screen overflow-hidden text-right">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-gray-950 border-l border-white/5 flex flex-col justify-between hidden md:flex">
+        <div class="p-6 overflow-y-auto">
+            <div class="flex items-center gap-3 mb-10">
+                <span class="text-3xl">🚀</span>
+                <span class="text-2xl font-black tracking-tighter uppercase whitespace-nowrap">إبداع <span
+                        class="text-[#FFD700]">برو</span></span>
+            </div>
+
+            <nav class="space-y-2">
+                <p class="px-4 text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">الأدوات الأساسية</p>
+
+                <button
+                    class="w-full text-right px-4 py-3 rounded-2xl flex items-center gap-3 text-white glass-panel mb-2">
+                    <span class="text-xl">🏠</span>
+                    <span class="font-bold relative top-0.5">لوحة التحكم</span>
+                </button>
+
+                <hr class="border-white/5 my-4" />
+                <p class="px-4 text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">أدوات الإنتاج</p>
+
+                <button
+                    class="w-full text-right px-4 py-3 rounded-2xl flex items-center gap-3 text-white hover:bg-white/5 transition mb-2">
+                    <span class="text-xl">🗓️</span>
+                    <span class="font-bold relative top-0.5">خطة المحتوى</span>
+                </button>
+
+                <button
+                    class="w-full text-right px-4 py-3 rounded-2xl flex items-center gap-3 text-white hover:bg-white/5 transition mb-2">
+                    <span class="text-xl">📈</span>
+                    <span class="font-bold relative top-0.5">الاستراتيجية</span>
+                </button>
+
+                <button
+                    class="w-full text-right px-4 py-3 rounded-2xl flex items-center gap-3 text-white hover:bg-white/5 transition mb-2">
+                    <span class="text-xl">🎬</span>
+                    <span class="font-bold relative top-0.5">مصنع المحتوى</span>
+                </button>
+
+                <hr class="border-white/5 my-4" />
+                <p class="px-4 text-xs font-bold text-[#FFD700] mb-2 uppercase tracking-wider">الميزة الجديدة 🌟</p>
+
+                <button
+                    class="w-full text-right px-4 py-3 rounded-2xl flex items-center gap-3 bg-[#FFD700] text-black shadow-lg mb-2">
+                    <span class="text-xl">📚</span>
+                    <div>
+                        <span class="font-black block">مكتبات المحتوى</span>
+                        <span class="text-[10px] text-black/60 font-medium leading-none block">تلقائي الحفظ</span>
+                    </div>
+                </button>
+            </nav>
+        </div>
+        <div class="p-6 glass-panel m-4 rounded-3xl">
+            <div class="flex items-center gap-3">
+                <div
+                    class="w-10 h-10 rounded-full bg-gradient-to-tr from-[#FFD700] to-orange-500 flex items-center justify-center text-black font-black">
+                    M
+                </div>
+                <div>
+                    <h4 class="font-bold text-sm">حساب برو</h4>
+                    <p class="text-xs text-[#FFD700]">950 رصيد متبقي</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 bg-gradient-to-b from-gray-900 to-black overflow-y-auto w-full relative">
+        <div class="max-w-7xl mx-auto p-8 lg:p-12">
+
+            <!-- Content Library View -->
+            <div class="space-y-8 animate-fade-in">
+
+                <!-- Library Header -->
+                <div
+                    class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 glass-panel p-8 rounded-[2.5rem]">
+                    <div>
+                        <h1 class="text-4xl font-black text-white flex items-center gap-4">
+                            <span>📚</span> مكتبة المحتوى
+                        </h1>
+                        <p class="text-gray-400 text-lg mt-2 font-medium">كل ما قمت بإنشائه محفوظ هنا بأمان وجاهز
+                            للاستخدام.</p>
+                    </div>
+
+                    <div class="flex bg-black/40 p-1.5 rounded-2xl border border-white/10 overflow-x-auto">
+                        <button class="px-5 py-2.5 rounded-xl text-sm font-bold tab-btn active">الكل</button>
+                        <button
+                            class="px-5 py-2.5 rounded-xl text-sm font-bold text-gray-400 hover:text-white transition">📸
+                            صور</button>
+                        <button
+                            class="px-5 py-2.5 rounded-xl text-sm font-bold text-gray-400 hover:text-white transition">🎬
+                            فيديو</button>
+                        <button
+                            class="px-5 py-2.5 rounded-xl text-sm font-bold text-gray-400 hover:text-white transition">📄
+                            خطط</button>
+                    </div>
+                </div>
+
+                <!-- Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+
+                    <!-- Card 1: Text Plan -->
+                    <div
+                        class="glass-panel rounded-3xl border border-white/10 hover:border-[#FFD700]/50 transition-all flex flex-col h-80 group overflow-hidden">
+                        <div class="h-40 bg-zinc-900 relative p-6 border-b border-white/5 overflow-hidden">
+                            <div class="absolute inset-0 bg-gradient-to-t from-zinc-900 to-transparent z-10"></div>
+                            <p class="text-[10px] text-gray-500 font-mono text-left opacity-50 z-0 leading-relaxed">
+                                {
+                                "targetAccount": "coffee_shop_sa",
+                                "day1": {
+                                "platform": "Instagram Reel",
+                                "hook": "كيف تفرق بين البن المختص والقهوة التجارية؟ سر ما يخبرونك به!"
+                                }
+                                }
+                            </p>
+                            <div class="absolute top-4 right-4 z-20">
+                                <span
+                                    class="bg-blue-500/20 text-blue-400 border border-blue-500/20 px-3 py-1.5 rounded-xl text-xs font-black tracking-wider flex items-center gap-1.5">
+                                    <span>📄</span> خطة محتوى
+                                </span>
+                            </div>
+                        </div>
+                        <div class="p-5 flex flex-col flex-1 justify-between">
+                            <div>
+                                <h3 class="font-bold text-white text-base mb-1">خطة تسويق مقهى 9 أيام</h3>
+                                <p class="text-xs text-gray-400">منذ ساعتين</p>
+                            </div>
+                            <div class="flex gap-2 mt-4">
+                                <button
+                                    class="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-2 rounded-xl text-xs transition">نسخ
+                                    الكود 📋</button>
+                                <button
+                                    class="w-10 flex text-lg items-center justify-center bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition">🗑️</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Marketing Strategy -->
+                    <div
+                        class="glass-panel rounded-3xl border border-white/10 hover:border-[#FFD700]/50 transition-all flex flex-col h-80 group overflow-hidden">
+                        <div
+                            class="h-40 bg-zinc-900 relative p-6 border-b border-white/5 flex items-center justify-center">
+                            <span class="text-6xl group-hover:scale-110 transition duration-500">📈</span>
+                            <div class="absolute top-4 right-4 z-20">
+                                <span
+                                    class="bg-purple-500/20 text-purple-400 border border-purple-500/20 px-3 py-1.5 rounded-xl text-xs font-black tracking-wider flex items-center gap-1.5">
+                                    <span>📄</span> استراتيجية
+                                </span>
+                            </div>
+                        </div>
+                        <div class="p-5 flex flex-col flex-1 justify-between">
+                            <div>
+                                <h3 class="font-bold text-white text-base mb-1">تحليل "متجر عطور فاخرة"</h3>
+                                <p class="text-xs text-gray-400">منذ 5 ساعات</p>
+                            </div>
+                            <div class="flex gap-2 mt-4">
+                                <button
+                                    class="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-2 rounded-xl text-xs transition">عرض
+                                    الاستراتيجية 👀</button>
+                                <button
+                                    class="w-10 flex text-lg items-center justify-center bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition">🗑️</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Image -->
+                    <div
+                        class="glass-panel rounded-3xl border border-white/10 hover:border-[#FFD700]/50 transition flex flex-col h-80 group overflow-hidden">
+                        <div class="h-40 bg-zinc-900 relative border-b border-white/5">
+                            <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=300&fit=crop"
+                                class="w-full h-full object-cover group-hover:scale-110 transition duration-700 opacity-80 group-hover:opacity-100" />
+                            <div class="absolute top-4 right-4 z-20">
+                                <span
+                                    class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 px-3 py-1.5 rounded-xl text-xs font-black tracking-wider flex items-center gap-1.5 backdrop-blur-md">
+                                    <span>📸</span> صورة
+                                </span>
+                            </div>
+                        </div>
+                        <div class="p-5 flex flex-col flex-1 justify-between">
+                            <div>
+                                <h3 class="font-bold text-white text-sm mb-1 leading-snug">"حذاء رياضي أحمر بإضاءة نيون
+                                    سينمائية"</h3>
+                                <p class="text-xs text-gray-400">منذ يوم واحد</p>
+                            </div>
+                            <div class="flex gap-2 mt-4">
+                                <button
+                                    class="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-2 rounded-xl text-xs transition">تحميل
+                                    ⬇️</button>
+                                <button
+                                    class="w-10 flex text-lg items-center justify-center bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition">🗑️</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 4: Ad Script -->
+                    <div
+                        class="glass-panel rounded-3xl border border-white/10 hover:border-[#FFD700]/50 transition-all flex flex-col h-80 group overflow-hidden">
+                        <div
+                            class="h-40 bg-zinc-900 relative p-6 border-b border-white/5 overflow-hidden flex items-center justify-center">
+                            <span class="text-6xl group-hover:scale-110 transition duration-500 opacity-60">✍️</span>
+                            <div class="absolute top-4 right-4 z-20">
+                                <span
+                                    class="bg-blue-500/20 text-blue-400 border border-blue-500/20 px-3 py-1.5 rounded-xl text-xs font-black tracking-wider flex items-center gap-1.5">
+                                    <span>📄</span> سكربت إعلان
+                                </span>
+                            </div>
+                        </div>
+                        <div class="p-5 flex flex-col flex-1 justify-between">
+                            <div>
+                                <h3 class="font-bold text-white text-base mb-1">سكربت UGC (شامبو عضوي)</h3>
+                                <p class="text-xs text-gray-400">منذ 3 أيام</p>
+                            </div>
+                            <div class="flex gap-2 mt-4">
+                                <button
+                                    class="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-2 rounded-xl text-xs transition">نسخ
+                                    📋</button>
+                                <button
+                                    class="w-10 flex text-lg items-center justify-center bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition">🗑️</button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <style>
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+    </style>
+</body>
+
+</html>

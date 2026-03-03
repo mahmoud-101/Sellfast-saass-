@@ -1,0 +1,72 @@
+
+import React from 'react';
+import { AppView } from '../types';
+
+const LOGO_IMAGE_URL = "https://i.ibb.co/MDrpHPzS/Artboard-1.png";
+
+interface FooterProps {
+    onNavigate: (view: AppView) => void;
+    onOpenPricing: () => void;
+}
+
+const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenPricing }) => {
+    return (
+        <footer className="w-full mt-32 border-t border-white/5 bg-[#050505] py-24 px-10 relative overflow-hidden group/footer">
+            <div className="absolute -top-24 -right-24 w-96 h-96 bg-yellow-500/10 rounded-full blur-[120px] opacity-30 group-hover/footer:opacity-50 transition-opacity duration-1000"></div>
+            <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px] opacity-30 group-hover/footer:opacity-50 transition-opacity duration-1000"></div>
+
+            <div className="max-w-7xl mx-auto relative z-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-20 text-right" dir="rtl">
+
+                    <div className="space-y-8">
+                        <div className="flex items-center justify-start gap-3">
+                            <img src={LOGO_IMAGE_URL} alt="Ebdaa Pro" className="h-10 w-auto" />
+                            <span className="text-3xl font-black text-white tracking-tighter uppercase">إبداع <span className="text-[#FFD700]">برو</span></span>
+                        </div>
+                        <p className="text-slate-500 text-sm leading-relaxed font-medium">
+                            المنصة العربية الرائدة التي تجمع كافة أدوات الذكاء الاصطناعي في مكان واحد لمساعدة الميديا بايرز وأصحاب المتاجر على النمو.
+                        </p>
+                    </div>
+
+                    <div>
+                        <h4 className="text-[#FFD700] font-black mb-8 uppercase tracking-widest text-[10px]">الوصول السريع</h4>
+                        <ul className="space-y-5 text-slate-400 text-sm font-bold">
+                            <li><button onClick={() => onNavigate('suite_view')} className="hover:text-[#FFD700] transition-colors">لوحة المحطات الإبداعية</button></li>
+                            <li><button onClick={() => onNavigate('power')} className="hover:text-[#FFD700] transition-colors">المركز الاستراتيجي</button></li>
+                            <li><button onClick={() => onNavigate('ads_studio')} className="hover:text-[#FFD700] transition-colors">استوديو الإعلانات</button></li>
+                            <li><button onClick={() => onNavigate('photoshoot')} className="hover:text-[#FFD700] transition-colors">مركز التصوير</button></li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h4 className="text-[#FFD700] font-black mb-8 uppercase tracking-widest text-[10px]">الموارد</h4>
+                        <ul className="space-y-5 text-slate-400 text-sm font-bold">
+                            <li><button onClick={onOpenPricing} className="text-yellow-500 hover:text-yellow-400 transition-colors">💰 شحن رصيد النقاط</button></li>
+                            <li><button onClick={() => onNavigate('faq')} className="hover:text-[#FFD700] transition-colors">مركز المساعدة</button></li>
+                            <li><a href="https://wa.me/201090624823" target="_blank" className="hover:text-[#FFD700] transition-colors">الدعم الفني المباشر</a></li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h4 className="text-[#FFD700] font-black mb-8 uppercase tracking-widest text-[10px]">قانوني</h4>
+                        <ul className="space-y-5 text-slate-400 text-sm font-bold">
+                            <li><button onClick={() => onNavigate('privacy_policy')} className="hover:text-[#FFD700] transition-colors">سياسة الخصوصية</button></li>
+                            <li><button onClick={() => onNavigate('terms_of_service')} className="hover:text-[#FFD700] transition-colors">شروط الاستخدام</button></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div className="mt-24 pt-10 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] font-black text-slate-600 uppercase tracking-[0.4em]">
+                    <p className="hover:text-white transition-colors">Ebdaa Pro Intelligence © 2025</p>
+                    <div className="flex items-center gap-2">
+                        <span>Built for growth</span>
+                        <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(234,179,8,0.8)]"></div>
+                        <span>Cairo, Egypt</span>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    );
+};
+
+export default Footer;
